@@ -1,0 +1,72 @@
+# k8s/applications/financial-mlops-pytorch/base/training-pipeline.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate # This should be a WorkflowTemplate for reusability
+metadata:
+  name: financial-training-pipeline-template
+  namespace: financial-mlops-pytorch # Ensure this namespace exists or is created by Kustomize
+spec:
+  entrypoint: train-model
+  serviceAccountName: argo-workflow-sa # Ensure this service account has necessary permissions
+
+  # Volume Claim Templates:
+  # If you want a new PVC created for each workflow run to hold processed data/scalers,
+  # keep these. If you have a pre-existing, shared PVC (recommended for large datasets),
+  # remove these and define a standard `volumes` block below.
+  volumeClaimTemplates:
+  - metadata:
+      name: shared-data-pvc # This name should match the mountName in your steps
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi # Adjust based on your processed data size
+  - metadata:
+      name: shared-artifacts-pvc # This name should match the mountName for artifacts
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi # For scalers and potentially other artifacts
+
+  templates:
+  - name: train-model
+    container:
+      image: jtayl22/financial-predictor:latest
+      command: ["python", "src/train_pytorch_model.py"]
+      env:
+      - name: MLFLOW_TRACKING_URI
+        value: "http://mlflow-service.mlflow.svc.cluster.local:5000" # Your MLflow service URI
+      - name: PROCESSED_DATA_INPUT_DIR
+        value: "/mnt/shared-data/processed" # Where processed features/targets are
+      - name: SCALER_INPUT_DIR
+        value: "/mnt/shared-artifacts/scalers" # Where the scaler is
+      - name: MODEL_SAVE_DIR
+        value: "/mnt/shared-models" # Optional: if you save models directly before MLflow log
+      # Hyperparameters for training. Can be passed as workflow parameters for more flexibility
+      - name: EPOCHS
+        value: "20"
+      - name: BATCH_SIZE
+        value: "64"
+      - name: LEARNING_RATE
+        value: "0.001"
+      - name: SEQUENCE_LENGTH # Crucial: Must match FE script's sequence length
+        value: "10" # Example value. Adjust as per your feature_engineering_pytorch.py
+      volumeMounts:
+        - name: shared-data-vol
+          mountPath: /mnt/shared-data
+        - name: shared-artifacts-vol
+          mountPath: /mnt/shared-artifacts
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+    volumes:
+      - name: shared-data-vol
+        persistentVolumeClaim:
+          claimName: shared-data-pvc
+      - name: shared-artifacts-vol
+        persistentVolumeClaim:
+          claimName: shared-artifacts-pvc

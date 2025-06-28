@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - sensor.yaml
+  - event-source.yaml
+  - applications.yaml
+  - financial-predictor-ab-test.yaml
+  - training-pipeline.yaml
+  - financial-data-pipeline.yaml
+  - rbac.yaml
+
+labels:
+- includeSelectors: false
+  pairs:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize

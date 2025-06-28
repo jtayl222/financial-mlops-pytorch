@@ -1,0 +1,13 @@
+.git/
+.venv/
+__pycache__/
+*.pyc
+*.ipynb_checkpoints/
+.vscode/
+.pytest_cache/
+data/          # Your local data directories
+models/        # Your local models directory
+artifacts/     # Your local artifacts directory
+tmp/
+*.log
+.DS_Store

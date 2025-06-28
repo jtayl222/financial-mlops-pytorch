@@ -1,0 +1,42 @@
+apiVersion: machinelearning.seldon.io/v1
+kind: SeldonDeployment
+metadata:
+  name: financial-predictor
+  namespace: seldon-system # Or your serving namespace
+spec:
+  name: financial-predictor
+  predictors:
+  - name: default
+    graph:
+      modelUri: "mlflow://FinancialDirectionPredictor/Production" # Example: serve the "Production" stage model
+      implementation: MLFLOW_SERVER # Seldon's pre-packaged MLflow server
+      name: financial-predictor-model
+    replicas: 1
+    # resources: # Optional: define resource limits
+    #   limits:
+    #     memory: "500Mi"
+    #     cpu: "0.5"
+    # ... inside spec: predictors:
+  # - name: champion-model
+  #   graph:
+  #     modelUri: "mlflow://FinancialDirectionPredictor/Production"
+  #     implementation: MLFLOW_SERVER
+  #     name: champion
+  #   replicas: 1
+  #   traffic: 90 # 90% traffic to champion
+  # - name: challenger-model
+  #   graph:
+  #     modelUri: "mlflow://FinancialDirectionPredictor/Staging" # Example: a new model in Staging
+  #     implementation: MLFLOW_SERVER
+  #     name: challenger
+  #   replicas: 1
+  #   traffic: 10 # 10% traffic to challenger
+  #
+  #
+  # - name: custom-predictor
+  # graph:
+  #   implementation: CUSTOM_MODEL_SERVER # Or whatever you named it
+  #   modelUri: "s3://your-mlflow-artifacts/path-to-model-weights" # If model weights are separate
+  #   image: jtayl22/seldon-custom-predictor:latest # Your custom server image
+  #   name: custom-model
+  # replicas: 1

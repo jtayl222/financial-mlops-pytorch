@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow-infra
+  namespace: argocd
+spec:
+  project: default # Your Argo CD project
+  source:
+    repoURL: https://github.com/your-username/financial-mlops-pytorch.git # Your Git repo
+    targetRevision: HEAD
+    path: kubernetes/mlflow # Path to your MLflow manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlflow # Namespace where MLflow is deployed
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argo-workflows-pipelines
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-username/financial-mlops-pytorch.git
+    targetRevision: HEAD
+    path: kubernetes/argo-workflows # Path to your Argo Workflows
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: financial-mlops-pytorch # Namespace where Argo Workflows run
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: seldon-deployments
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-username/financial-mlops-pytorch.git
+    targetRevision: HEAD
+    path: kubernetes/seldon-deployments # Path to your Seldon Deployments
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: seldon-system # Namespace where Seldon Core runs
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
