@@ -1,0 +1,25 @@
+# Core scientific stack
+numpy
+pandas
+scikit-learn
+torch
+mlflow
+
+# For YAML, Kubernetes, and cloud-native workflows (if needed)
+pyyaml
+
+# For Jupyter/Notebook support (optional, if you use notebooks)
+jupyter
+
+# For mocking and testing
+pytest
+pytest-mock
+
+# For downloading stock data (if used in your pipeline)
+yfinance
+
+# For logging and monitoring
+loguru
+
+# Pin Python version if needed (optional)
+# python==3.9.*
