@@ -1,0 +1,22 @@
+# pyproject.toml
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --ignore=temp_data_dir" # Example: run all tests, show summary for failed/skipped, ignore a path
+testpaths = [
+    "tests",
+]
+pythonpath = [
+    "src", # Add your src directory to Python path for imports
+]
+markers = [ # Define custom markers for your tests
+    "integration: marks tests as integration tests",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+# You can also add other tool configurations here
+# [tool.black]
+# line-length = 88
+# target-version = ['py39']
+
+# [tool.mypy]
+# strict = true

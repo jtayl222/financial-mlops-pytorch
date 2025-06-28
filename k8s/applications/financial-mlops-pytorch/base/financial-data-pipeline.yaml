@@ -1,0 +1,103 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: financial-data-pipeline-template
+  namespace: financial-mlops-pytorch
+spec:
+  entrypoint: data-ingestion-and-feature-engineering
+  serviceAccountName: argo-workflow-sa # If you need specific permissions
+  volumeClaimTemplates: # Shared PVC for data and artifacts
+  - metadata:
+      name: shared-data-pvc
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi # Adjust size as needed
+  - metadata:
+      name: shared-artifacts-pvc
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi # For scalers, etc.
+
+  templates:
+  - name: data-ingestion-and-feature-engineering
+    dag:
+      tasks:
+      - name: ingest-data
+        template: ingest-stock-data
+      - name: engineer-features
+        dependencies: [ingest-data] # This task runs after ingest-data completes
+        template: process-and-engineer-features
+
+  - name: ingest-stock-data
+    container:
+      image: jtayl22/financial-predictor:latest
+      command: ["python", "src/data_ingestion.py"]
+      env:
+      - name: MLFLOW_TRACKING_URI
+        value: "http://mlflow-service.mlflow.svc.cluster.local:5000" # Internal cluster URI
+      - name: RAW_DATA_OUTPUT_DIR
+        value: "/mnt/shared-data/raw" # Points to the mounted PVC
+      - name: INGESTION_START_DATE
+        value: "2018-01-01"
+      - name: INGESTION_END_DATE
+        value: "2023-12-31"
+      - name: TICKERS
+        value: "AAPL,MSFT" # Can be passed as Workflow parameter too
+      volumeMounts:
+      - name: shared-data-vol
+        mountPath: /mnt/shared-data
+      - name: shared-artifacts-vol
+        mountPath: /mnt/shared-artifacts
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+    volumes:
+      - name: shared-data-vol
+        persistentVolumeClaim:
+          claimName: shared-data-pvc
+      - name: shared-artifacts-vol
+        persistentVolumeClaim:
+          claimName: shared-artifacts-pvc
+
+  - name: process-and-engineer-features
+    container:
+      image: jtayl22/financial-predictor:latest
+      command: ["python", "src/feature_engineering_pytorch.py"]
+      env:
+      - name: MLFLOW_TRACKING_URI
+        value: "http://mlflow-service.mlflow.svc.cluster.local:5000"
+      - name: RAW_DATA_INPUT_DIR # If feature_engineering needs to read from here
+        value: "/mnt/shared-data/raw"
+      - name: PROCESSED_DATA_OUTPUT_DIR
+        value: "/mnt/shared-data/processed"
+      - name: SCALER_OUTPUT_DIR
+        value: "/mnt/shared-artifacts/scalers"
+      - name: SEQUENCE_LENGTH
+        value: "10" # Example
+      volumeMounts:
+      - name: shared-data-vol
+        mountPath: /mnt/shared-data
+      - name: shared-artifacts-vol
+        mountPath: /mnt/shared-artifacts
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+    volumes:
+      - name: shared-data-vol
+        persistentVolumeClaim:
+          claimName: shared-data-pvc
+      - name: shared-artifacts-vol
+        persistentVolumeClaim:
+          claimName: shared-artifacts-pvc
