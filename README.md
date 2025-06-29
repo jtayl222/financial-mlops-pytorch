@@ -3,10 +3,10 @@
 ```
 # b3175a7bc9d7473aaa3ea61316de1889
 
-docker buildx build --platform linux/amd64 -t jtayl22/financial-predictor:latest . --push
+docker build -t jtayl22/financial-predictor:latest . --push
 
 # Build and push the Jupyter image
-docker buildx build --platform linux/amd64 -t jtayl22/financial-predictor-jupyter:latest -f jupyter/Dockerfile . --push
+docker build -t jtayl22/financial-predictor-jupyter:latest -f jupyter/Dockerfile . --push
 
 
 kustomize build k8s/applications/financial-mlops-pytorch/overlays/dev | kubectl apply -f -

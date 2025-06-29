@@ -101,6 +101,11 @@ def save_data(dataframe: pd.DataFrame, file_path: str, ticker: str):
 if __name__ == "__main__":
     logging.info("Starting data ingestion process.")
 
+    # Print environment variables for debugging
+    print(f"LOGLEVEL={os.environ.get('LOGLEVEL')}")
+    for k, v in os.environ.items():
+        logging.debug(f"{k}={v}")
+
     # Start an MLflow run
     # This ensures all parameters, metrics, and artifacts are logged under one run
     with mlflow.start_run(run_name="data_ingestion"):
