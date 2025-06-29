@@ -23,3 +23,5 @@ loguru
 
 # Pin Python version if needed (optional)
 # python==3.9.*
+
+boto3  # If using AWS S3 for storage

@@ -40,9 +40,12 @@ spec:
     container:
       image: jtayl22/financial-predictor:latest
       command: ["python", "src/data_ingestion.py"]
+      envFrom:
+        - secretRef:
+            name: ml-platform
       env:
-      - name: MLFLOW_TRACKING_URI
-        value: "http://mlflow.mlflow.svc.cluster.local:5000"
+      - name: LOGLEVEL
+        value: "DEBUG"
       - name: RAW_DATA_OUTPUT_DIR
         value: "/mnt/shared-data/raw"
       - name: INGESTION_START_DATE
@@ -51,8 +54,6 @@ spec:
         value: "2023-12-31"
       - name: TICKERS
         value: "AAPL,MSFT"
-      - name: LOGLEVEL
-        value: "INFO"
       volumeMounts:
         - name: shared-data-pvc
           mountPath: /mnt/shared-data
@@ -100,3 +101,5 @@ spec:
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
+  imagePullSecrets:
+  - name: ghcr

@@ -7,7 +7,8 @@ import logging
 import mlflow
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+loglevel = os.environ.get("LOGLEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, loglevel), format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuration ---
 # List of ticker symbols to download
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     # Print environment variables for debugging
     print(f"LOGLEVEL={os.environ.get('LOGLEVEL')}")
     for k, v in os.environ.items():
-        logging.debug(f"{k}={v}")
+        print(f"{k}={v}")
 
     # Start an MLflow run
     # This ensures all parameters, metrics, and artifacts are logged under one run

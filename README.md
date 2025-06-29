@@ -8,10 +8,20 @@ docker build -t jtayl22/financial-predictor:latest . --push
 # Build and push the Jupyter image
 docker build -t jtayl22/financial-predictor-jupyter:latest -f jupyter/Dockerfile . --push
 
+RUN THIS COMMAND IN the ml-platform repository root directory
+./scripts/package-ml-secrets.sh financial-mlops-pytorch dev,production financial-team@company.com
 
 kustomize build k8s/applications/financial-mlops-pytorch/overlays/dev | kubectl apply -f -
 
 argo submit --from workflowtemplate/financial-data-pipeline-template -n financial-mlops-pytorch --watch
+
+cp -r ../k3s-homelab/infrastructure/packages/financial-mlops-pytorch/* k8s/manifests/
+
+k delete ns financial-mlops-pytorch; \
+k create  ns financial-mlops-pytorch; \
+k apply -k k8s/manifests/production/; \
+k apply -k k8s/overlays/dev; \
+argo submit --from workflowtemplate/financial-data-pipeline-template -n financial-mlops-pytorch
 ```
 
 -----
