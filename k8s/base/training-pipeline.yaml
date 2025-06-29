@@ -47,8 +47,10 @@ spec:
         value: "0.001"
       - name: SEQUENCE_LENGTH
         value: "10"
+      envFrom:
+        - secretRef:
+            name: ml-platform
       volumeMounts:
-        # Fix: Volume mount names should match the PVC template names
         - name: shared-data-pvc
           mountPath: /mnt/shared-data
         - name: shared-artifacts-pvc
@@ -60,3 +62,5 @@ spec:
         limits:
           memory: "4Gi"
           cpu: "2"
+    imagePullSecrets:
+      - name: ghcr
