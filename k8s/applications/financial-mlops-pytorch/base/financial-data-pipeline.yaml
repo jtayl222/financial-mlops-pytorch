@@ -5,22 +5,26 @@ metadata:
   namespace: financial-mlops-pytorch
 spec:
   entrypoint: data-ingestion-and-feature-engineering
-  serviceAccountName: argo-workflow-sa # If you need specific permissions
-  volumeClaimTemplates: # Shared PVC for data and artifacts
+  serviceAccountName: argo-workflow-sa
+  
+  # Fix 1: Add storage class specification for better compatibility
+  volumeClaimTemplates:
   - metadata:
       name: shared-data-pvc
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: nfs-shared # Use default storage class or specify your NFS storage class
       resources:
         requests:
-          storage: 5Gi # Adjust size as needed
+          storage: 5Gi
   - metadata:
       name: shared-artifacts-pvc
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: nfs-shared # Use default storage class or specify your NFS storage class
       resources:
         requests:
-          storage: 1Gi # For scalers, etc.
+          storage: 1Gi
 
   templates:
   - name: data-ingestion-and-feature-engineering
@@ -29,7 +33,7 @@ spec:
       - name: ingest-data
         template: ingest-stock-data
       - name: engineer-features
-        dependencies: [ingest-data] # This task runs after ingest-data completes
+        dependencies: [ingest-data]
         template: process-and-engineer-features
 
   - name: ingest-stock-data
@@ -38,34 +42,31 @@ spec:
       command: ["python", "src/data_ingestion.py"]
       env:
       - name: MLFLOW_TRACKING_URI
-        value: "http://mlflow-service.mlflow.svc.cluster.local:5000" # Internal cluster URI
+        value: "http://mlflow.mlflow.svc.cluster.local:5000"
       - name: RAW_DATA_OUTPUT_DIR
-        value: "/mnt/shared-data/raw" # Points to the mounted PVC
+        value: "/mnt/shared-data/raw"
       - name: INGESTION_START_DATE
         value: "2018-01-01"
       - name: INGESTION_END_DATE
         value: "2023-12-31"
       - name: TICKERS
-        value: "AAPL,MSFT" # Can be passed as Workflow parameter too
+        value: "AAPL,MSFT"
       volumeMounts:
-      - name: shared-data-vol
-        mountPath: /mnt/shared-data
-      - name: shared-artifacts-vol
-        mountPath: /mnt/shared-artifacts
+        - name: shared-data-pvc
+          mountPath: /mnt/shared-data
+        - name: shared-artifacts-pvc
+          mountPath: /mnt/shared-artifacts
       resources:
         requests:
-          memory: "4Gi"
-          cpu: "2"
+          memory: "2Gi"  # Fix 2: Reduced memory requests
+          cpu: "1"
         limits:
-          memory: "8Gi"
-          cpu: "4"
-    volumes:
-      - name: shared-data-vol
-        persistentVolumeClaim:
-          claimName: shared-data-pvc
-      - name: shared-artifacts-vol
-        persistentVolumeClaim:
-          claimName: shared-artifacts-pvc
+          memory: "4Gi"  # Fix 3: More reasonable limits
+          cpu: "2"
+      # Fix 4: Add security context if needed
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
 
   - name: process-and-engineer-features
     container:
@@ -73,31 +74,27 @@ spec:
       command: ["python", "src/feature_engineering_pytorch.py"]
       env:
       - name: MLFLOW_TRACKING_URI
-        value: "http://mlflow-service.mlflow.svc.cluster.local:5000"
-      - name: RAW_DATA_INPUT_DIR # If feature_engineering needs to read from here
+        value: "http://mlflow.mlflow.svc.cluster.local:5000"
+      - name: RAW_DATA_INPUT_DIR
         value: "/mnt/shared-data/raw"
       - name: PROCESSED_DATA_OUTPUT_DIR
         value: "/mnt/shared-data/processed"
       - name: SCALER_OUTPUT_DIR
         value: "/mnt/shared-artifacts/scalers"
       - name: SEQUENCE_LENGTH
-        value: "10" # Example
+        value: "10"
       volumeMounts:
-      - name: shared-data-vol
-        mountPath: /mnt/shared-data
-      - name: shared-artifacts-vol
-        mountPath: /mnt/shared-artifacts
+        - name: shared-data-pvc
+          mountPath: /mnt/shared-data
+        - name: shared-artifacts-pvc
+          mountPath: /mnt/shared-artifacts
       resources:
         requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
           memory: "4Gi"
           cpu: "2"
-        limits:
-          memory: "8Gi"
-          cpu: "4"
-    volumes:
-      - name: shared-data-vol
-        persistentVolumeClaim:
-          claimName: shared-data-pvc
-      - name: shared-artifacts-vol
-        persistentVolumeClaim:
-          claimName: shared-artifacts-pvc
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0

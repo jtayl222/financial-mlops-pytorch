@@ -77,7 +77,7 @@ Follow these steps to begin using JupyterHub for your project:
       * **MLflow:**
         ```bash
         echo $MLFLOW_TRACKING_URI
-        # Expected output: http://mlflow-service.mlflow.svc.cluster.local:5000
+        # Expected output: http://mlflow.mlflow.svc.cluster.local:5000
         ```
         You can also run a small Python snippet in a notebook cell:
         ```python

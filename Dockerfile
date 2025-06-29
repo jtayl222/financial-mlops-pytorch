@@ -15,7 +15,7 @@ COPY src ./src
 RUN mkdir -p data/raw data/processed models artifacts/scalers
 
 # Define MLflow tracking URI as an environment variable to be set by K8s
-ENV MLFLOW_TRACKING_URI="http://mlflow-service.mlflow.svc.cluster.local:5000"
+ENV MLFLOW_TRACKING_URI="http://mlflow.mlflow.svc.cluster.local:5000"
 # Other default environment variables can be set here or overridden by K8s
 ENV RAW_DATA_OUTPUT_DIR="data/raw"
 ENV PROCESSED_DATA_OUTPUT_DIR="data/processed"
