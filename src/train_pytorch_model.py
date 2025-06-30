@@ -83,11 +83,12 @@ def train_model(
         model.train()  # Set model to training mode
         train_loss = 0.0
         for batch_idx, (features, targets) in enumerate(train_dataloader):
-            # Ensure data is on CPU
-            features, targets = features.to('cpu'), targets.to('cpu').unsqueeze(1)  # Add a dimension for BCELoss
+            # FIXED: Ensure proper tensor shapes and types
+            features = features.to('cpu')
+            targets = targets.to('cpu').float().unsqueeze(1)  # Shape: [batch_size, 1]
 
             optimizer.zero_grad()  # Zero the gradients
-            outputs = model(features)  # Forward pass
+            outputs = model(features)  # Forward pass - Shape: [batch_size, 1]
             loss = criterion(outputs, targets)  # Calculate loss
             loss.backward()  # Backward pass
             optimizer.step()  # Update weights
@@ -104,12 +105,16 @@ def train_model(
 
         with torch.no_grad():  # No gradient calculations during validation
             for features, targets in val_dataloader:
-                features, targets = features.to('cpu'), targets.to('cpu').unsqueeze(1)
-                outputs = model(features)
+                # FIXED: Ensure proper tensor shapes and types
+                features = features.to('cpu')
+                targets = targets.to('cpu').float().unsqueeze(1)  # Shape: [batch_size, 1]
+                
+                outputs = model(features)  # Shape: [batch_size, 1]
                 loss = criterion(outputs, targets)
                 val_loss += loss.item() * features.size(0)
 
-                predicted_classes = (outputs > 0.5).float()  # Binary prediction
+                # FIXED: Apply sigmoid for predictions since we're using BCEWithLogitsLoss
+                predicted_classes = (torch.sigmoid(outputs) > 0.5).float()
                 total_predictions += targets.size(0)
                 correct_predictions += (predicted_classes == targets).sum().item()
 
@@ -131,9 +136,6 @@ def train_model(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = epoch
-            # You might save the best model state dict here if not using MLflow's auto-logging
-            # torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR, 'best_model.pth'))
-            # logging.info(f"Saved best model at epoch {epoch+1} with validation loss: {best_val_loss:.4f}")
 
     logging.info(f"Training finished. Best validation loss: {best_val_loss:.4f} at epoch {best_epoch + 1}")
     return model
@@ -189,7 +191,7 @@ def run_training_pipeline():
             dropout_prob=DROPOUT_PROB
         ).to('cpu')
 
-        criterion = nn.BCELoss()
+        criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
         logging.info(f"Model architecture:\n{model}")
