@@ -8,6 +8,7 @@ import logging
 import mlflow
 import mlflow.pytorch  # Needed for mlflow.pytorch.log_model
 import json  # For loading model config if needed
+import math  # For checking NaN values
 
 # Import the model definition from models.py
 from models import StockPredictor
@@ -65,6 +66,20 @@ def load_processed_data(data_dir: str):
         exit(1)
 
 
+def safe_log_metric(metric_name: str, value: float, step: int):
+    """
+    Safely log a metric to MLflow, handling NaN values and potential duplicates.
+    """
+    if math.isnan(value) or math.isinf(value):
+        logging.warning(f"Skipping logging of {metric_name} at step {step} due to NaN/Inf value: {value}")
+        return
+    
+    try:
+        mlflow.log_metric(metric_name, value, step=step)
+    except Exception as e:
+        logging.warning(f"Failed to log metric {metric_name}={value} at step {step}: {e}")
+
+
 def train_model(
         model: nn.Module,
         train_dataloader: DataLoader,
@@ -82,26 +97,56 @@ def train_model(
     for epoch in range(epochs):
         model.train()  # Set model to training mode
         train_loss = 0.0
+        train_batches = 0
+        
         for batch_idx, (features, targets) in enumerate(train_dataloader):
             # FIXED: Ensure proper tensor shapes and types
             features = features.to('cpu')
             targets = targets.to('cpu').float().unsqueeze(1)  # Shape: [batch_size, 1]
 
+            # Check for NaN in input data
+            if torch.isnan(features).any() or torch.isnan(targets).any():
+                logging.warning(f"NaN detected in batch {batch_idx} of epoch {epoch}. Skipping batch.")
+                continue
+
             optimizer.zero_grad()  # Zero the gradients
             outputs = model(features)  # Forward pass - Shape: [batch_size, 1]
+            
+            # Check for NaN in model outputs
+            if torch.isnan(outputs).any():
+                logging.warning(f"NaN detected in model outputs at batch {batch_idx} of epoch {epoch}. Skipping batch.")
+                continue
+                
             loss = criterion(outputs, targets)  # Calculate loss
+            
+            # Check for NaN in loss
+            if torch.isnan(loss):
+                logging.warning(f"NaN loss detected at batch {batch_idx} of epoch {epoch}. Skipping batch.")
+                continue
+                
             loss.backward()  # Backward pass
+            
+            # Gradient clipping to prevent exploding gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             optimizer.step()  # Update weights
 
             train_loss += loss.item() * features.size(0)
+            train_batches += features.size(0)
 
-        train_loss /= len(train_dataloader.dataset)
+        # Calculate average training loss, handling case where no valid batches
+        if train_batches > 0:
+            train_loss /= train_batches
+        else:
+            logging.error(f"No valid training batches in epoch {epoch}")
+            train_loss = float('nan')
 
         # Validation phase
         model.eval()  # Set model to evaluation mode
         val_loss = 0.0
         correct_predictions = 0
         total_predictions = 0
+        val_batches = 0
 
         with torch.no_grad():  # No gradient calculations during validation
             for features, targets in val_dataloader:
@@ -109,17 +154,41 @@ def train_model(
                 features = features.to('cpu')
                 targets = targets.to('cpu').float().unsqueeze(1)  # Shape: [batch_size, 1]
                 
+                # Check for NaN in validation data
+                if torch.isnan(features).any() or torch.isnan(targets).any():
+                    logging.warning(f"NaN detected in validation batch. Skipping batch.")
+                    continue
+                
                 outputs = model(features)  # Shape: [batch_size, 1]
+                
+                # Check for NaN in validation outputs
+                if torch.isnan(outputs).any():
+                    logging.warning(f"NaN detected in validation model outputs. Skipping batch.")
+                    continue
+                    
                 loss = criterion(outputs, targets)
+                
+                # Check for NaN in validation loss
+                if torch.isnan(loss):
+                    logging.warning(f"NaN validation loss detected. Skipping batch.")
+                    continue
+                    
                 val_loss += loss.item() * features.size(0)
+                val_batches += features.size(0)
 
                 # FIXED: Apply sigmoid for predictions since we're using BCEWithLogitsLoss
                 predicted_classes = (torch.sigmoid(outputs) > 0.5).float()
                 total_predictions += targets.size(0)
                 correct_predictions += (predicted_classes == targets).sum().item()
 
-        val_loss /= len(val_dataloader.dataset)
-        val_accuracy = correct_predictions / total_predictions
+        # Calculate average validation loss and accuracy
+        if val_batches > 0:
+            val_loss /= val_batches
+            val_accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0.0
+        else:
+            logging.error(f"No valid validation batches in epoch {epoch}")
+            val_loss = float('nan')
+            val_accuracy = 0.0
 
         logging.info(
             f"Epoch {epoch + 1}/{epochs} | "
@@ -128,12 +197,13 @@ def train_model(
             f"Validation Accuracy: {val_accuracy:.4f}"
         )
 
-        mlflow.log_metric("train_loss", train_loss, step=epoch)
-        mlflow.log_metric("val_loss", val_loss, step=epoch)
-        mlflow.log_metric("val_accuracy", val_accuracy, step=epoch)
+        # Safely log metrics to MLflow
+        safe_log_metric("train_loss", train_loss, step=epoch)
+        safe_log_metric("val_loss", val_loss, step=epoch)
+        safe_log_metric("val_accuracy", val_accuracy, step=epoch)
 
-        # Simple early stopping
-        if val_loss < best_val_loss:
+        # Simple early stopping (only if we have valid loss)
+        if not math.isnan(val_loss) and val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = epoch
 
@@ -168,6 +238,14 @@ def run_training_pipeline():
         val_features = data['val_features']
         val_targets = data['val_targets']
 
+        # Check for NaN values in loaded data
+        if np.isnan(train_features).any():
+            logging.error("NaN values found in training features!")
+            return
+        if np.isnan(train_targets).any():
+            logging.error("NaN values found in training targets!")
+            return
+
         actual_input_size = train_features.shape[1]
         if actual_input_size != INPUT_SIZE:
             logging.warning(
@@ -191,8 +269,25 @@ def run_training_pipeline():
             dropout_prob=DROPOUT_PROB
         ).to('cpu')
 
+        # Initialize model weights properly
+        def init_weights(m):
+            if isinstance(m, nn.Linear):
+                torch.nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    torch.nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.LSTM):
+                for name, param in m.named_parameters():
+                    if 'weight_ih' in name:
+                        torch.nn.init.xavier_uniform_(param.data)
+                    elif 'weight_hh' in name:
+                        torch.nn.init.orthogonal_(param.data)
+                    elif 'bias' in name:
+                        torch.nn.init.constant_(param.data, 0)
+
+        model.apply(init_weights)
+
         criterion = nn.BCEWithLogitsLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
 
         logging.info(f"Model architecture:\n{model}")
         logging.info(f"Number of trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
@@ -206,13 +301,18 @@ def run_training_pipeline():
             EPOCHS
         )
 
-        mlflow.pytorch.log_model(
-            pytorch_model=trained_model,
-            artifact_path="stock_predictor_model",
-            registered_model_name="FinancialDirectionPredictor",
-            code_paths=["src/models.py"]
-        )
-        logging.info("PyTorch model logged and registered with MLflow.")
+        # Only log the model if training completed without major issues
+        try:
+            mlflow.pytorch.log_model(
+                pytorch_model=trained_model,
+                artifact_path="stock_predictor_model",
+                registered_model_name="FinancialDirectionPredictor",
+                code_paths=["src/models.py"]
+            )
+            logging.info("PyTorch model logged and registered with MLflow.")
+        except Exception as e:
+            logging.error(f"Failed to log model to MLflow: {e}")
+            
         logging.info("PyTorch model training completed successfully.")
 
 
