@@ -13,9 +13,9 @@ import mlflow
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuration ---
-RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "data/raw")
-PROCESSED_DATA_DIR = os.environ.get("PROCESSED_DATA_DIR", "data/processed")
-SCALER_DIR = os.environ.get("SCALER_DIR", "artifacts/scalers")  # Directory to save scalers
+RAW_DATA_DIR = os.environ.get("RAW_DATA_OUTPUT_DIR", "data/raw")
+PROCESSED_DATA_DIR = os.environ.get("PROCESSED_DATA_OUTPUT_DIR", "data/processed")
+SCALER_DIR = os.environ.get("SCALER_OUTPUT_DIR", "artifacts/scalers")  # Directory to save scalers
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 os.makedirs(SCALER_DIR, exist_ok=True)
 
@@ -104,7 +104,11 @@ def process_ticker_data(file_path: str):
     and returns the processed DataFrame.
     """
     logging.info(f"Processing file: {file_path}")
+    # Extract ticker from filename, e.g., "AAPL_raw_2018-01-01_2023-12-31.csv"
+    base = os.path.basename(file_path)
+    ticker = base.split('_')[0]
     df = pd.read_csv(file_path, index_col='Date', parse_dates=True)
+    logging.info(f"Columns in {file_path}: {list(df.columns)}")
     df = df.sort_index()  # Ensure chronological order
 
     # Drop rows with any NaN values that might prevent feature calculation
@@ -113,23 +117,31 @@ def process_ticker_data(file_path: str):
     if len(df) != initial_rows:
         logging.warning(f"Dropped {initial_rows - len(df)} rows due to initial NaNs for {os.path.basename(file_path)}")
 
+    # Dynamically construct column names
+    close_col = f'Close_{ticker}'
+    high_col = f'High_{ticker}'
+    low_col = f'Low_{ticker}'
+    open_col = f'Open_{ticker}'
+    volume_col = f'Volume_{ticker}'
+    adj_close_col = f'Adj_Close_{ticker}'
+
     # 1. Calculate Lagged Features (e.g., lagged Close prices and Volume)
-    df = calculate_lagged_features(df, 'Close', lags=5)
-    df = calculate_lagged_features(df, 'Volume', lags=3)
+    df = calculate_lagged_features(df, close_col, lags=5)
+    df = calculate_lagged_features(df, volume_col, lags=3)
 
     # 2. Calculate Moving Averages (on Close price)
     for window in SMA_WINDOWS:
-        df = calculate_sma(df, 'Close', window)
+        df = calculate_sma(df, close_col, window)
 
     # 3. Calculate RSI (on Close price)
     for window in RSI_WINDOWS:
-        df = calculate_rsi(df, 'Close', window)
+        df = calculate_rsi(df, close_col, window)
 
     # 4. Calculate Daily Returns (Simple returns)
-    df['Daily_Return'] = df['Close'].pct_change()
+    df['Daily_Return'] = df[close_col].pct_change()
 
     # 5. Create Target Variable
-    df = create_target(df, 'Close', horizon=PREDICTION_HORIZON)
+    df = create_target(df, close_col, horizon=PREDICTION_HORIZON)
 
     # Drop any remaining NaNs created by feature engineering and target creation
     # This will remove the initial rows where lags/rolling windows don't have enough data
@@ -262,21 +274,41 @@ if __name__ == "__main__":
 
         # Save processed data as NumPy arrays or Parquet/CSV
         # NumPy .npy format is convenient for tensors
-        np.save(os.path.join(PROCESSED_DATA_DIR, 'train_features.npy'), train_dataset.features)
-        np.save(os.path.join(PROCESSED_DATA_DIR, 'train_targets.npy'), train_dataset.targets)
-        np.save(os.path.join(PROCESSED_DATA_DIR, 'val_features.npy'), val_dataset.features)
-        np.save(os.path.join(PROCESSED_DATA_DIR, 'val_targets.npy'), val_dataset.targets)
-        np.save(os.path.join(PROCESSED_DATA_DIR, 'test_features.npy'), test_dataset.features)
-        np.save(os.path.join(PROCESSED_DATA_DIR, 'test_targets.npy'), test_dataset.targets)
+        train_features_path = os.path.join(PROCESSED_DATA_DIR, 'train_features.npy')
+        train_targets_path = os.path.join(PROCESSED_DATA_DIR, 'train_targets.npy')
+        val_features_path = os.path.join(PROCESSED_DATA_DIR, 'val_features.npy')
+        val_targets_path = os.path.join(PROCESSED_DATA_DIR, 'val_targets.npy')
+        test_features_path = os.path.join(PROCESSED_DATA_DIR, 'test_features.npy')
+        test_targets_path = os.path.join(PROCESSED_DATA_DIR, 'test_targets.npy')
+
+        np.save(train_features_path, train_dataset.features)
+        np.save(train_targets_path, train_dataset.targets)
+        np.save(val_features_path, val_dataset.features)
+        np.save(val_targets_path, val_dataset.targets)
+        np.save(test_features_path, test_dataset.features)
+        np.save(test_targets_path, test_dataset.targets)
 
         # Log processed data as artifacts
-        mlflow.log_artifact(os.path.join(PROCESSED_DATA_DIR, 'train_features.npy'), artifact_path="processed_data")
-        mlflow.log_artifact(os.path.join(PROCESSED_DATA_DIR, 'train_targets.npy'), artifact_path="processed_data")
-        mlflow.log_artifact(os.path.join(PROCESSED_DATA_DIR, 'val_features.npy'), artifact_path="processed_data")
-        mlflow.log_artifact(os.path.join(PROCESSED_DATA_DIR, 'val_targets.npy'), artifact_path="processed_data")
-        mlflow.log_artifact(os.path.join(PROCESSED_DATA_DIR, 'test_features.npy'), artifact_path="processed_data")
-        mlflow.log_artifact(os.path.join(PROCESSED_DATA_DIR, 'test_targets.npy'), artifact_path="processed_data")
+        mlflow.log_artifact(train_features_path, artifact_path="processed_data")
+        mlflow.log_artifact(train_targets_path, artifact_path="processed_data")
+        mlflow.log_artifact(val_features_path, artifact_path="processed_data")
+        mlflow.log_artifact(val_targets_path, artifact_path="processed_data")
+        mlflow.log_artifact(test_features_path, artifact_path="processed_data")
+        mlflow.log_artifact(test_targets_path, artifact_path="processed_data")
         logging.info("Processed data saved and logged to MLflow.")
+
+        # Log file existence and shapes for debugging
+        for path, arr in [
+            (train_features_path, train_dataset.features),
+            (train_targets_path, train_dataset.targets),
+            (val_features_path, val_dataset.features),
+            (val_targets_path, val_dataset.targets),
+            (test_features_path, test_dataset.features),
+            (test_targets_path, test_dataset.targets),
+        ]:
+            exists = os.path.exists(path)
+            shape = arr.shape if hasattr(arr, 'shape') else 'N/A'
+            logging.info(f"File written: {path} | Exists: {exists} | Shape: {shape}")
 
         mlflow.log_metric("num_train_sequences", len(train_dataset))
         mlflow.log_metric("num_val_sequences", len(val_dataset))
@@ -284,3 +316,10 @@ if __name__ == "__main__":
         mlflow.log_metric("num_features", train_features_scaled.shape[1])
 
         logging.info("Feature engineering and PyTorch data preparation completed successfully.")
+
+        # Save the combined DataFrame to CSV for reference
+        combined_csv_path = os.path.join(PROCESSED_DATA_DIR, "combined_processed_data.csv")
+        combined_df.index.name = "Date"
+        combined_df.to_csv(combined_csv_path, index=True)
+        mlflow.log_artifact(combined_csv_path, artifact_path="processed_data")
+        logging.info(f"Combined processed data saved to {combined_csv_path} and logged to MLflow.")

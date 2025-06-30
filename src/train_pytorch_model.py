@@ -17,7 +17,7 @@ from feature_engineering_pytorch import FinancialTimeSeriesDataset, SEQUENCE_LEN
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuration ---
-PROCESSED_DATA_DIR = os.environ.get("PROCESSED_DATA_DIR", "data/processed")
+PROCESSED_DATA_INPUT_DIR = os.getenv("PROCESSED_DATA_INPUT_DIR", "/mnt/shared-data/processed")
 MODEL_SAVE_DIR = os.environ.get("MODEL_SAVE_DIR", "models")  # Directory to save trained models locally before MLflow logging
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
 
@@ -153,7 +153,6 @@ def run_training_pipeline():
         mlflow.log_param("learning_rate", LEARNING_RATE)
         mlflow.log_param("epochs", EPOCHS)
         mlflow.log_param("random_seed", RANDOM_SEED)
-        mlflow.log_param("input_size", INPUT_SIZE)
         mlflow.log_param("hidden_size", HIDDEN_SIZE)
         mlflow.log_param("num_layers", NUM_LAYERS)
         mlflow.log_param("dropout_prob", DROPOUT_PROB)
@@ -161,7 +160,7 @@ def run_training_pipeline():
         mlflow.log_param("device", "cpu")  # Explicitly log CPU usage
 
         # 1. Load processed data
-        data = load_processed_data(PROCESSED_DATA_DIR)
+        data = load_processed_data(PROCESSED_DATA_INPUT_DIR)
         train_features = data['train_features']
         train_targets = data['train_targets']
         val_features = data['val_features']
@@ -174,6 +173,8 @@ def run_training_pipeline():
             INPUT_SIZE = actual_input_size
             mlflow.log_param("input_size", INPUT_SIZE)  # Re-log if adjusted
 
+        mlflow.log_param("input_size", INPUT_SIZE)
+        
         train_dataset = FinancialTimeSeriesDataset(train_features, train_targets, sequence_length=SEQUENCE_LENGTH)
         val_dataset = FinancialTimeSeriesDataset(val_features, val_targets, sequence_length=SEQUENCE_LENGTH)
 

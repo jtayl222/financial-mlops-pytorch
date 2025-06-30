@@ -37,7 +37,6 @@ END_DATE = os.getenv("INGESTION_END_DATE", "2023-12-31")
 TICKERS = os.getenv("TICKERS", "AAPL,MSFT").split(',') # Example comma-separated list
 
 # Output directory for raw data
-RAW_DATA_DIR = "data/raw"
 os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
 def run_ingestion_pipeline():
@@ -93,8 +92,14 @@ def save_data(dataframe: pd.DataFrame, file_path: str, ticker: str):
         ticker (str): The ticker symbol for logging purposes.
     """
     try:
+        dataframe.index.name = "Date"  # Ensure index is named 'Date' for CSV compatibility
+        # Flatten MultiIndex columns if present
+        if isinstance(dataframe.columns, pd.MultiIndex):
+            dataframe.columns = ['_'.join([str(i) for i in col if i]) for col in dataframe.columns.values]
         dataframe.to_csv(file_path, index=True) # Save with Date index
         logging.info(f"Data for {ticker} saved to {file_path}")
+        # Log the columns written to the CSV for debugging
+        logging.info(f"Columns written for {ticker}: {[dataframe.index.name] + list(dataframe.columns)}")
     except Exception as e:
         logging.error(f"Error saving data for {ticker} to {file_path}: {e}")
 
@@ -105,7 +110,13 @@ if __name__ == "__main__":
     # Print environment variables for debugging
     print(f"LOGLEVEL={os.environ.get('LOGLEVEL')}")
     for k, v in os.environ.items():
-        print(f"{k}={v}")
+        logging.debug(f"{k}={v}")
+
+    # Log output directory and tickers
+    logging.info(f"Configured RAW_DATA_DIR: {RAW_DATA_DIR}")
+    logging.info(f"Configured TICKERS: {TICKERS}")
+    logging.info(f"Configured START_DATE: {START_DATE}")
+    logging.info(f"Configured END_DATE: {END_DATE}")
 
     # Start an MLflow run
     # This ensures all parameters, metrics, and artifacts are logged under one run
@@ -119,23 +130,30 @@ if __name__ == "__main__":
         total_rows_downloaded = 0
 
         for ticker in TICKERS:
+            logging.info(f"Downloading data for ticker: {ticker}")
             df = download_stock_data(ticker, START_DATE, END_DATE)
 
             if not df.empty:
                 file_name = f"{ticker}_raw_{START_DATE}_{END_DATE}.csv"
                 file_path = os.path.join(RAW_DATA_DIR, file_name)
                 save_data(df, file_path, ticker)
+                logging.info(f"Saved data for {ticker} to {file_path} with {len(df)} rows.")
 
                 total_files_downloaded += 1
                 total_rows_downloaded += len(df)
 
                 # Log each individual raw data file as an artifact
                 mlflow.log_artifact(file_path, artifact_path="raw_data")
+            else:
+                logging.warning(f"No data downloaded for ticker: {ticker}")
 
         # Log overall metrics for the ingestion run
         mlflow.log_metric("total_tickers_attempted", len(TICKERS))
         mlflow.log_metric("total_files_downloaded", total_files_downloaded)
         mlflow.log_metric("total_rows_downloaded", total_rows_downloaded)
+
+        logging.info(f"Total files downloaded: {total_files_downloaded}")
+        logging.info(f"Total rows downloaded: {total_rows_downloaded}")
 
         if total_files_downloaded > 0:
             logging.info(f"Data ingestion completed. Downloaded data for {total_files_downloaded}/{len(TICKERS)} tickers.")
