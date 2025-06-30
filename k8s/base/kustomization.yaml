@@ -10,6 +10,8 @@ resources:
   - training-pipeline.yaml
   - financial-data-pipeline.yaml
   - rbac.yaml
+  - shared-artifacts-pvc.yaml
+  - shared-data-pvc.yaml
 
 labels:
 - includeSelectors: false

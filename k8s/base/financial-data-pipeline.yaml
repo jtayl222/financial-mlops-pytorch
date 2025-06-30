@@ -7,16 +7,13 @@ spec:
   entrypoint: data-ingestion-and-feature-engineering
   serviceAccountName: argo-workflow-sa
   
-  # Fix 1: Add storage class specification for better compatibility
-  volumeClaimTemplates:
-  - metadata:
-      name: shared-data-pvc
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: nfs-shared # Use default storage class or specify your NFS storage class
-      resources:
-        requests:
-          storage: 5Gi
+  volumes:
+  - name: shared-data-pvc
+    persistentVolumeClaim:
+      claimName: shared-data-pvc  # Reference the pre-created PVC
+  - name: shared-artifacts-pvc
+    persistentVolumeClaim:
+      claimName: shared-artifacts-pvc
   - metadata:
       name: shared-artifacts-pvc
     spec:
@@ -45,7 +42,7 @@ spec:
             name: ml-platform
       env:
       - name: LOGLEVEL
-        value: "DEBUG"
+        value: "INFO"
       - name: RAW_DATA_OUTPUT_DIR
         value: "/mnt/shared-data/raw"
       - name: INGESTION_START_DATE
@@ -75,10 +72,13 @@ spec:
     container:
       image: jtayl22/financial-predictor:latest
       command: ["python", "src/feature_engineering_pytorch.py"]
+      envFrom:
+        - secretRef:
+            name: ml-platform
       env:
       - name: MLFLOW_TRACKING_URI
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
-      - name: RAW_DATA_INPUT_DIR
+      - name: RAW_DATA_OUTPUT_DIR
         value: "/mnt/shared-data/raw"
       - name: PROCESSED_DATA_OUTPUT_DIR
         value: "/mnt/shared-data/processed"

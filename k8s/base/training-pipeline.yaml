@@ -6,16 +6,13 @@ metadata:
 spec:
   entrypoint: train-model
   serviceAccountName: argo-workflow-sa
-
-  volumeClaimTemplates:
-  - metadata:
-      name: shared-data-pvc
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: nfs-shared # Specify your storage class if needed
-      resources:
-        requests:
-          storage: 5Gi
+  volumes:
+  - name: shared-data-pvc
+    persistentVolumeClaim:
+      claimName: shared-data-pvc
+  - name: shared-artifacts-pvc
+    persistentVolumeClaim:
+      claimName: shared-artifacts-pvc
   - metadata:
       name: shared-artifacts-pvc
     spec:

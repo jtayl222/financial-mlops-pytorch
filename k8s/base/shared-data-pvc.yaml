@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: shared-data-pvc # Can be same name, but different namespace
-  namespace: financial-mlops-pytorch # This app's namespace
+  name: shared-data-pvc
+  namespace: financial-mlops-pytorch
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 500Gi # Consistent size for the same underlying share
+      storage: 500Gi
   storageClassName: nfs-shared
