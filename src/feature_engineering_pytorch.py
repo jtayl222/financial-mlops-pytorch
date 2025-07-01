@@ -13,9 +13,9 @@ import mlflow
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuration ---
-RAW_DATA_DIR = os.environ.get("RAW_DATA_OUTPUT_DIR", "data/raw")
-PROCESSED_DATA_DIR = os.environ.get("PROCESSED_DATA_OUTPUT_DIR", "data/processed")
-SCALER_DIR = os.environ.get("SCALER_OUTPUT_DIR", "artifacts/scalers")  # Directory to save scalers
+RAW_DATA_DIR = os.environ.get("RAW_DATA_DIR", "data/raw")  # Fixed: using RAW_DATA_DIR env var
+PROCESSED_DATA_DIR = os.environ.get("PROCESSED_DATA_DIR", "data/processed")  # Fixed: using PROCESSED_DATA_DIR env var
+SCALER_DIR = os.environ.get("SCALER_DIR", "artifacts/scalers")  # Fixed: using SCALER_DIR env var
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 os.makedirs(SCALER_DIR, exist_ok=True)
 
@@ -81,8 +81,16 @@ def calculate_rsi(df: pd.DataFrame, column: str, window: int) -> pd.DataFrame:
     delta = df[column].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-    rs = gain / loss
-    df[f'RSI_{column}_{window}'] = 100 - (100 / (1 + rs))
+    
+    # Handle division by zero in RSI calculation
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+    
+    # Replace inf and -inf with NaN, then forward fill
+    rsi = rsi.replace([np.inf, -np.inf], np.nan)
+    
+    df[f'RSI_{column}_{window}'] = rsi
     return df
 
 
@@ -160,7 +168,24 @@ def process_ticker_data(file_path: str):
 
     # It's good practice to ensure all selected feature columns are numeric
     df[feature_columns] = df[feature_columns].apply(pd.to_numeric, errors='coerce')
-    df.dropna(subset=feature_columns, inplace=True)  # Drop rows if features are NaN after coercion
+    
+    # Drop rows if features are NaN after coercion
+    before_drop = len(df)
+    df.dropna(subset=feature_columns, inplace=True)
+    if len(df) != before_drop:
+        logging.warning(f"Dropped {before_drop - len(df)} rows due to NaN features for {os.path.basename(file_path)}")
+    
+    # Final check: ensure no NaNs or infinities remain
+    for col in feature_columns:
+        if df[col].isnull().any():
+            logging.warning(f"Column {col} still has NaN values, filling with forward fill then backward fill")
+            df[col] = df[col].fillna(method='ffill').fillna(method='bfill')
+        
+        # Replace any remaining infinities
+        df[col] = df[col].replace([np.inf, -np.inf], np.nan)
+        if df[col].isnull().any():
+            # If still NaN after replacing infinities, use column mean
+            df[col] = df[col].fillna(df[col].mean())
 
     logging.info(f"Processed {len(df)} rows for {os.path.basename(file_path)}. Features: {feature_columns}")
     return df[feature_columns + ['Target']]
@@ -169,6 +194,9 @@ def process_ticker_data(file_path: str):
 # --- Main execution ---
 if __name__ == "__main__":
     logging.info("Starting feature engineering and PyTorch data preparation process.")
+    logging.info(f"Using RAW_DATA_DIR: {RAW_DATA_DIR}")
+    logging.info(f"Using PROCESSED_DATA_DIR: {PROCESSED_DATA_DIR}")
+    logging.info(f"Using SCALER_DIR: {SCALER_DIR}")
 
     # Start an MLflow run
     with mlflow.start_run(run_name="feature_engineering_pytorch"):
@@ -211,6 +239,24 @@ if __name__ == "__main__":
         # Define features and target after combining and ensuring all NaNs are handled
         features_df = combined_df.drop(columns=['Target'])
         target_series = combined_df['Target']
+        
+        # Final NaN check and handling for combined data
+        if features_df.isnull().any().any():
+            logging.warning("Found NaN values in combined features, handling them...")
+            # Fill NaN values with forward fill, then backward fill, then mean
+            features_df = features_df.fillna(method='ffill').fillna(method='bfill')
+            for col in features_df.columns:
+                if features_df[col].isnull().any():
+                    features_df[col] = features_df[col].fillna(features_df[col].mean())
+        
+        # Check for infinities
+        inf_mask = np.isinf(features_df.values)
+        if inf_mask.any():
+            logging.warning("Found infinity values in features, replacing with large finite values")
+            features_df = features_df.replace([np.inf, -np.inf], np.nan)
+            for col in features_df.columns:
+                if features_df[col].isnull().any():
+                    features_df[col] = features_df[col].fillna(features_df[col].mean())
 
         # --- Data Splitting (Time-series aware) ---
         # Get the split index based on chronological order
@@ -240,9 +286,25 @@ if __name__ == "__main__":
         # --- Feature Scaling ---
         # Fit scaler ONLY on the training data to prevent data leakage
         scaler = MinMaxScaler()  # Or StandardScaler()
+        
+        # Fit the scaler and handle any potential NaN/inf issues
         train_features_scaled = scaler.fit_transform(train_features_df)
         val_features_scaled = scaler.transform(val_features_df)
         test_features_scaled = scaler.transform(test_features_df)
+        
+        # Final NaN check after scaling
+        if np.isnan(train_features_scaled).any():
+            logging.error("NaN values found in scaled training features!")
+            # Replace NaN with 0 as a last resort
+            train_features_scaled = np.nan_to_num(train_features_scaled, nan=0.0, posinf=1.0, neginf=0.0)
+        
+        if np.isnan(val_features_scaled).any():
+            logging.warning("NaN values found in scaled validation features, replacing with 0")
+            val_features_scaled = np.nan_to_num(val_features_scaled, nan=0.0, posinf=1.0, neginf=0.0)
+        
+        if np.isnan(test_features_scaled).any():
+            logging.warning("NaN values found in scaled test features, replacing with 0")
+            test_features_scaled = np.nan_to_num(test_features_scaled, nan=0.0, posinf=1.0, neginf=0.0)
 
         # Save the scaler
         scaler_file_path = os.path.join(SCALER_DIR, 'minmax_scaler.pkl')
@@ -309,6 +371,14 @@ if __name__ == "__main__":
             exists = os.path.exists(path)
             shape = arr.shape if hasattr(arr, 'shape') else 'N/A'
             logging.info(f"File written: {path} | Exists: {exists} | Shape: {shape}")
+            
+            # Verify no NaNs in saved data
+            if hasattr(arr, 'shape'):
+                nan_count = np.isnan(arr).sum()
+                if nan_count > 0:
+                    logging.error(f"WARNING: {path} contains {nan_count} NaN values!")
+                else:
+                    logging.info(f"{path} is NaN-free")
 
         mlflow.log_metric("num_train_sequences", len(train_dataset))
         mlflow.log_metric("num_val_sequences", len(val_dataset))
@@ -323,3 +393,11 @@ if __name__ == "__main__":
         combined_df.to_csv(combined_csv_path, index=True)
         mlflow.log_artifact(combined_csv_path, artifact_path="processed_data")
         logging.info(f"Combined processed data saved to {combined_csv_path} and logged to MLflow.")
+        
+        # Save feature names for later use
+        feature_names_path = os.path.join(PROCESSED_DATA_DIR, "feature_names.txt")
+        with open(feature_names_path, 'w') as f:
+            for feature in features_df.columns:
+                f.write(f"{feature}\n")
+        mlflow.log_artifact(feature_names_path, artifact_path="processed_data")
+        logging.info(f"Feature names saved to {feature_names_path}")

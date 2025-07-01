@@ -32,7 +32,7 @@ spec:
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
       - name: PROCESSED_DATA_INPUT_DIR
         value: "/mnt/shared-data/processed"
-      - name: SCALER_INPUT_DIR
+      - name: SCALER_DIR
         value: "/mnt/shared-artifacts/scalers"
       - name: MODEL_SAVE_DIR
         value: "/mnt/shared-models"
