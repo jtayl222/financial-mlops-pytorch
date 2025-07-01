@@ -43,7 +43,7 @@ spec:
       env:
       - name: LOGLEVEL
         value: "INFO"
-      - name: RAW_DATA_OUTPUT_DIR
+      - name: RAW_DATA_DIR
         value: "/mnt/shared-data/raw"
       - name: INGESTION_START_DATE
         value: "2018-01-01"
@@ -78,11 +78,11 @@ spec:
       env:
       - name: MLFLOW_TRACKING_URI
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
-      - name: RAW_DATA_OUTPUT_DIR
+      - name: RAW_DATA_DIR
         value: "/mnt/shared-data/raw"
-      - name: PROCESSED_DATA_OUTPUT_DIR
+      - name: PROCESSED_DATA_DIR
         value: "/mnt/shared-data/processed"
-      - name: SCALER_OUTPUT_DIR
+      - name: SCALER_DIR
         value: "/mnt/shared-artifacts/scalers"
       - name: SEQUENCE_LENGTH
         value: "10"

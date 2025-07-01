@@ -31,7 +31,7 @@ START_DATE = "2018-01-01"
 END_DATE = datetime.date.today().strftime("%Y-%m-%d") # Current date
 
 # Configuration from environment variables, with fallbacks for local dev/testing
-RAW_DATA_DIR = os.getenv("RAW_DATA_OUTPUT_DIR", "data/raw")
+RAW_DATA_DIR = os.getenv("RAW_DATA_DIR", "data/raw")
 START_DATE = os.getenv("INGESTION_START_DATE", "2018-01-01")
 END_DATE = os.getenv("INGESTION_END_DATE", "2023-12-31")
 TICKERS = os.getenv("TICKERS", "AAPL,MSFT").split(',') # Example comma-separated list
@@ -42,7 +42,7 @@ os.makedirs(RAW_DATA_DIR, exist_ok=True)
 def run_ingestion_pipeline():
     # Your existing logic, now using the ENV-configurable variables
     with mlflow.start_run(run_name="data_ingestion"):
-        mlflow.log_param("raw_data_output_dir", RAW_DATA_DIR)
+        mlflow.log_param("RAW_DATA_DIR", RAW_DATA_DIR)
         mlflow.log_param("tickers", TICKERS)
         mlflow.log_param("start_date", START_DATE)
         mlflow.log_param("end_date", END_DATE)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
         mlflow.log_param("start_date", START_DATE)
         mlflow.log_param("end_date", END_DATE)
         mlflow.log_param("tickers", TICKERS)
-        mlflow.log_param("raw_data_output_dir", RAW_DATA_DIR)
+        mlflow.log_param("RAW_DATA_DIR", RAW_DATA_DIR)
 
         total_files_downloaded = 0
         total_rows_downloaded = 0
