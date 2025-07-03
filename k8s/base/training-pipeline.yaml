@@ -24,13 +24,19 @@ spec:
 
   templates:
   - name: train-model
+    inputs:
+      parameters:
+      - name: model-variant
+        value: baseline  # Default value, can be overridden by the sensor
     container:
       image: jtayl22/financial-predictor:latest
       command: ["python", "src/train_pytorch_model.py"]
       env:
+      - name: MODEL_VARIANT
+        value: "{{inputs.parameters.model-variant}}"
       - name: MLFLOW_TRACKING_URI
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
-      - name: PROCESSED_DATA_INPUT_DIR
+      - name: PROCESSED_DATA_DIR
         value: "/mnt/shared-data/processed"
       - name: SCALER_DIR
         value: "/mnt/shared-artifacts/scalers"
@@ -44,6 +50,8 @@ spec:
         value: "0.001"
       - name: SEQUENCE_LENGTH
         value: "10"
+      - name: LOGLEVEL
+        value: "INFO"
       envFrom:
         - secretRef:
             name: ml-platform
@@ -54,10 +62,10 @@ spec:
           mountPath: /mnt/shared-artifacts
       resources:
         requests:
-          memory: "2Gi"
-          cpu: "1"
-        limits:
           memory: "4Gi"
           cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
     imagePullSecrets:
       - name: ghcr

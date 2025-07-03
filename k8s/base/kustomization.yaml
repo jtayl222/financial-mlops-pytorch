@@ -12,6 +12,7 @@ resources:
   - rbac.yaml
   - shared-artifacts-pvc.yaml
   - shared-data-pvc.yaml
+  - financial-predictor-vs.yaml
 
 labels:
 - includeSelectors: false
