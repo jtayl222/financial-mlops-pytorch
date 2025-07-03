@@ -1,23 +1,9 @@
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ml-platform
-  namespace: seldon-mesh
-type: Opaque
-stringData:
-  AWS_ACCESS_KEY_ID: minioadmin
-  AWS_SECRET_ACCESS_KEY: minioadmin123
-  AWS_ENDPOINT_URL: http://192.168.1.85:30900
-  MLFLOW_TRACKING_URI: http://mlflow.mlflow.svc.cluster.local:5000
-  MLFLOW_S3_ENDPOINT_URL: http://192.168.1.85:30900
-
----
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: seldon-mesh
+  namespace: financial-ml
 spec:
   storageUri: s3://mlflow-artifacts/28/models/m-d6d788df1b5849b3a3df1d04434c17b9/artifacts/
   requirements:
@@ -33,7 +19,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: enhanced-predictor
-  namespace: seldon-mesh
+  namespace: financial-ml
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-232922a2285b471d8fc0740fd9ff1551/artifacts/
   requirements:
@@ -46,24 +32,10 @@ spec:
 
 ---
 apiVersion: mlops.seldon.io/v1alpha1
-kind: Pipeline
-metadata:
-  name: financial-ab-test-pipeline
-  namespace: seldon-mesh
-spec:
-  steps:
-  - name: model-step
-    model: baseline-predictor  # Changed from modelName
-  output:
-    steps:
-    - model-step
-
----
-apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: seldon-mesh
+  namespace: financial-ml
 spec:
   default: baseline-predictor
   candidates:

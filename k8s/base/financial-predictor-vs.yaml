@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: seldon-gateway
-  namespace: seldon-mesh
+  namespace: financial-ml
 spec:
   selector:
     istio: gateway
@@ -19,7 +19,7 @@ apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: seldon-vs
-  namespace: seldon-mesh
+  namespace: financial-ml
 spec:
   hosts:
   - financial-predictor.local
@@ -28,6 +28,6 @@ spec:
   http:
   - route:
     - destination:
-        host: seldon-mesh-financial-ab-test-experiment
+        host: financial-ab-test-experiment
         port:
           number: 9000

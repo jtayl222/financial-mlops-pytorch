@@ -197,3 +197,5 @@ cython_debug/
 
 # MLflow tracking directory
 mlruns/
+
+.claude

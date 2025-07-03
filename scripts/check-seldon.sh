@@ -16,7 +16,7 @@ kubectl get models,pipelines,experiments -n seldon-mesh -o wide
 echo
 
 echo "=== SELDON CONTROLLER LOGS (Last 20 lines) ==="
-kubectl logs -n seldon-system deployment/seldon-v2-controller-manager --tail=20
+kubectl logs -n seldon-system deployment/seldon-v2-controller-manager --tail=20 | cut -c 1-160
 echo
 
 echo "=== SELDON SCHEDULER LOGS (Last 20 lines) ==="
