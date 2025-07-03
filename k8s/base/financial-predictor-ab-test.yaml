@@ -1,42 +1,74 @@
-apiVersion: machinelearning.seldon.io/v1
-kind: SeldonDeployment
+---
+apiVersion: v1
+kind: Secret
 metadata:
-  name: financial-predictor
-  namespace: seldon-system # Or your serving namespace
+  name: ml-platform
+  namespace: seldon-mesh
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: minioadmin
+  AWS_SECRET_ACCESS_KEY: minioadmin123
+  AWS_ENDPOINT_URL: http://192.168.1.85:30900
+  MLFLOW_TRACKING_URI: http://mlflow.mlflow.svc.cluster.local:5000
+  MLFLOW_S3_ENDPOINT_URL: http://192.168.1.85:30900
+
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: baseline-predictor
+  namespace: seldon-mesh
 spec:
-  name: financial-predictor
-  predictors:
-  - name: default
-    graph:
-      modelUri: "mlflow://FinancialDirectionPredictor/Production" # Example: serve the "Production" stage model
-      implementation: MLFLOW_SERVER # Seldon's pre-packaged MLflow server
-      name: financial-predictor-model
-    replicas: 1
-    # resources: # Optional: define resource limits
-    #   limits:
-    #     memory: "500Mi"
-    #     cpu: "0.5"
-    # ... inside spec: predictors:
-  # - name: champion-model
-  #   graph:
-  #     modelUri: "mlflow://FinancialDirectionPredictor/Production"
-  #     implementation: MLFLOW_SERVER
-  #     name: champion
-  #   replicas: 1
-  #   traffic: 90 # 90% traffic to champion
-  # - name: challenger-model
-  #   graph:
-  #     modelUri: "mlflow://FinancialDirectionPredictor/Staging" # Example: a new model in Staging
-  #     implementation: MLFLOW_SERVER
-  #     name: challenger
-  #   replicas: 1
-  #   traffic: 10 # 10% traffic to challenger
-  #
-  #
-  # - name: custom-predictor
-  # graph:
-  #   implementation: CUSTOM_MODEL_SERVER # Or whatever you named it
-  #   modelUri: "s3://your-mlflow-artifacts/path-to-model-weights" # If model weights are separate
-  #   image: jtayl22/seldon-custom-predictor:latest # Your custom server image
-  #   name: custom-model
-  # replicas: 1
+  storageUri: s3://mlflow-artifacts/28/models/m-d6d788df1b5849b3a3df1d04434c17b9/artifacts/
+  requirements:
+  - mlflow
+  - torch
+  - numpy
+  - scikit-learn
+  secretName: ml-platform
+  server: mlserver
+
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: enhanced-predictor
+  namespace: seldon-mesh
+spec:
+  storageUri: s3://mlflow-artifacts/29/models/m-232922a2285b471d8fc0740fd9ff1551/artifacts/
+  requirements:
+  - mlflow
+  - torch
+  - numpy
+  - scikit-learn
+  secretName: ml-platform
+  server: mlserver
+
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Pipeline
+metadata:
+  name: financial-ab-test-pipeline
+  namespace: seldon-mesh
+spec:
+  steps:
+  - name: model-step
+    model: baseline-predictor  # Changed from modelName
+  output:
+    steps:
+    - model-step
+
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Experiment
+metadata:
+  name: financial-ab-test-experiment
+  namespace: seldon-mesh
+spec:
+  default: baseline-predictor
+  candidates:
+  - name: baseline-predictor
+    weight: 70
+  - name: enhanced-predictor
+    weight: 30
+

@@ -11,14 +11,16 @@ import json  # For loading model config if needed
 import math  # For checking NaN values
 from datetime import datetime
 import time
+from sklearn.utils.class_weight import compute_class_weight
 
 # Import the model definition from models.py
 from models import StockPredictor
 from feature_engineering_pytorch import FinancialTimeSeriesDataset, SEQUENCE_LENGTH  # Re-use the Dataset class
 
 # Configure logging with more detailed format
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO, 
+    level=getattr(logging, log_level, logging.INFO),
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),  # Console output
@@ -27,26 +29,45 @@ logging.basicConfig(
 )
 
 # --- Configuration ---
-PROCESSED_DATA_INPUT_DIR = os.getenv("PROCESSED_DATA_INPUT_DIR", "/mnt/shared-data/processed")
+PROCESSED_DATA_DIR = os.getenv("PROCESSED_DATA_DIR", "/mnt/shared-data/processed")
 MODEL_SAVE_DIR = os.environ.get("MODEL_SAVE_DIR", "models")  # Directory to save trained models locally before MLflow logging
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
 
+# Model variant configuration - can be set via environment variables for A/B testing
+MODEL_VARIANT = os.environ.get("MODEL_VARIANT", "baseline")  # baseline, enhanced, lightweight
+logging.info(f"DEBUG: MODEL_VARIANT env: {os.environ.get('MODEL_VARIANT')}, variable: {MODEL_VARIANT}")
+
 # Training Hyperparameters (configurable via environment variables)
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 64))
-LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.001))
-EPOCHS = int(os.environ.get("EPOCHS", 20))  # Keep this relatively low for quick iteration on CPU
+EPOCHS = int(os.environ.get("EPOCHS", 50))  # Increased for better convergence
 RANDOM_SEED = 42
 SEQUENCE_LENGTH = int(os.environ.get("SEQUENCE_LENGTH", 10))
 
-# Model Hyperparameters (must match what was used/expected by feature engineering)
-# These should be determined based on your feature_engineering_pytorch.py output
-# You might pass these as command-line arguments or load from a config file.
-# For now, let's hardcode based on common setup, but be aware these need to align
-INPUT_SIZE = 12  # This should be `train_features.shape[1]` from FE script. Example value.
-HIDDEN_SIZE = 64
-NUM_LAYERS = 2
-DROPOUT_PROB = 0.2
-NUM_CLASSES = 1  # Binary classification (up/down)
+# Model Hyperparameters - Tuned configurations for A/B testing variants
+if MODEL_VARIANT == "enhanced":
+    # Enhanced model for better performance
+    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.0005))
+    INPUT_SIZE = 35  # Fixed to match actual feature dimensions
+    HIDDEN_SIZE = 128  # Increased capacity
+    NUM_LAYERS = 3     # Deeper network
+    DROPOUT_PROB = 0.3 # Higher regularization
+    NUM_CLASSES = 1    # Binary classification (up/down)
+elif MODEL_VARIANT == "lightweight":
+    # Lightweight model for fast inference
+    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.001))
+    INPUT_SIZE = 35
+    HIDDEN_SIZE = 32   # Reduced capacity
+    NUM_LAYERS = 1     # Shallow network
+    DROPOUT_PROB = 0.1 # Lower regularization
+    NUM_CLASSES = 1
+else:  # baseline
+    # Baseline model configuration
+    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.001))
+    INPUT_SIZE = 35    # Fixed to match actual feature dimensions (was 12)
+    HIDDEN_SIZE = 64   # Original configuration
+    NUM_LAYERS = 2     # Original configuration
+    DROPOUT_PROB = 0.2 # Original configuration
+    NUM_CLASSES = 1    # Binary classification (up/down)
 
 # Ensure MLflow tracking URI is picked up from the environment
 if os.environ.get("MLFLOW_TRACKING_URI"):
@@ -220,11 +241,24 @@ def train_model(
         val_dataloader: DataLoader,
         optimizer: torch.optim.Optimizer,
         criterion: nn.Module,
-        epochs: int
+        epochs: int,
+        train_targets: np.ndarray
 ):
     """
     Trains and validates the PyTorch model with detailed epoch-by-epoch progress.
+    Includes class weights for handling imbalanced datasets.
     """
+    # Compute class weights for imbalanced dataset handling
+    unique_classes = np.unique(train_targets)
+    class_weights = compute_class_weight('balanced', classes=unique_classes, y=train_targets)
+    class_weight_tensor = torch.FloatTensor([class_weights[1]]).to('cpu')  # Weight for positive class
+    
+    # Update criterion with class weights
+    criterion = nn.BCEWithLogitsLoss(pos_weight=class_weight_tensor)
+    
+    logging.info(f"Class distribution: {np.bincount(train_targets.astype(int))}")
+    logging.info(f"Applied class weight for positive class: {class_weight_tensor.item():.4f}")
+    
     best_val_loss = float('inf')
     best_epoch = -1
     
@@ -247,7 +281,7 @@ def train_model(
         logging.info("-" * 40)
         
         for batch_idx, (features, targets) in enumerate(train_dataloader):
-            # FIXED: Ensure proper tensor shapes and types
+            # Ensure proper tensor shapes and types
             features = features.to('cpu')
             targets = targets.to('cpu').float().unsqueeze(1)
 
@@ -375,7 +409,44 @@ def train_model(
     logging.info(f"Best validation loss: {best_val_loss:.6f} at epoch {best_epoch + 1}")
     logging.info("=" * 80)
     
-    return model
+    return model, best_val_loss, best_epoch
+
+
+def export_onnx_model(model, sample_input, model_save_dir, model_variant):
+    """
+    Export trained PyTorch model to ONNX format for Seldon Core serving.
+    """
+    try:
+        onnx_path = os.path.join(model_save_dir, f"stock_predictor_{model_variant}.onnx")
+        
+        # Export to ONNX
+        torch.onnx.export(
+            model,
+            sample_input,
+            onnx_path,
+            export_params=True,
+            opset_version=11,
+            do_constant_folding=True,
+            input_names=['features'],
+            output_names=['predictions'],
+            dynamic_axes={
+                'features': {0: 'batch_size'},
+                'predictions': {0: 'batch_size'}
+            }
+        )
+        
+        if os.path.exists(onnx_path):
+            logging.info(f"✅ ONNX model exported successfully: {onnx_path}")
+            # Log ONNX model to MLflow
+            mlflow.log_artifact(onnx_path, artifact_path="onnx_model")
+            return onnx_path
+        else:
+            logging.error("❌ ONNX export failed - file not created")
+            return None
+            
+    except Exception as e:
+        logging.error(f"❌ ONNX export failed: {e}")
+        return None
 
 
 def run_training_pipeline():
@@ -383,7 +454,7 @@ def run_training_pipeline():
     
     start_time = datetime.now()
     logging.info("=" * 100)
-    logging.info(f"PYTORCH FINANCIAL MODEL TRAINING PIPELINE")
+    logging.info(f"PYTORCH FINANCIAL MODEL TRAINING PIPELINE - {MODEL_VARIANT.upper()} VARIANT")
     logging.info(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
     logging.info("=" * 100)
 
@@ -391,13 +462,15 @@ def run_training_pipeline():
     torch.manual_seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
-    # Set experiment name for better organization
-    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", "financial-mlops-pytorch")
+    # Set experiment name for better organization with variant tracking
+    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"financial-mlops-pytorch-{MODEL_VARIANT}")
     mlflow.set_experiment(experiment_name)
     
     # Start an MLflow run
-    with mlflow.start_run(run_name=f"pytorch_stock_predictor_training_{start_time.strftime('%Y%m%d_%H%M%S')}"):
-        # Log all parameters
+    run_name = f"pytorch_stock_predictor_{MODEL_VARIANT}_{start_time.strftime('%Y%m%d_%H%M%S')}"
+    with mlflow.start_run(run_name=run_name):
+        # Log all parameters including model variant
+        mlflow.log_param("model_variant", MODEL_VARIANT)
         mlflow.log_param("batch_size", BATCH_SIZE)
         mlflow.log_param("learning_rate", LEARNING_RATE)
         mlflow.log_param("epochs", EPOCHS)
@@ -412,7 +485,7 @@ def run_training_pipeline():
 
         # 1. Load processed data
         logging.info("Step 1: Loading processed data...")
-        data = load_processed_data(PROCESSED_DATA_INPUT_DIR)
+        data = load_processed_data(PROCESSED_DATA_DIR)
         train_features = data['train_features']
         train_targets = data['train_targets']
         val_features = data['val_features']
@@ -428,7 +501,7 @@ def run_training_pipeline():
             logging.error("NaN values found in training targets!")
             return
 
-        # Adjust input size if needed
+        # Adjust input size if needed (dynamic adjustment logic retained)
         actual_input_size = train_features.shape[1]
         if actual_input_size != INPUT_SIZE:
             logging.warning(
@@ -485,24 +558,27 @@ def run_training_pipeline():
 
         # 4. Initialize training components
         logging.info("Step 4: Initializing training components...")
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss()  # Will be updated with class weights in train_model
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
 
         # 5. Train the model
         logging.info("Step 5: Starting model training...")
         training_start_time = time.time()
         
-        trained_model = train_model(
+        trained_model, best_val_loss, best_epoch = train_model(
             model,
             train_dataloader,
             val_dataloader,
             optimizer,
             criterion,
-            EPOCHS
+            EPOCHS,
+            train_targets
         )
         
         training_duration = time.time() - training_start_time
         mlflow.log_metric("total_training_time_seconds", training_duration)
+        mlflow.log_metric("best_val_loss", best_val_loss)
+        mlflow.log_metric("best_epoch", best_epoch)
         logging.info(f"Total training time: {training_duration:.2f} seconds")
 
         # 6. Evaluate on test set
@@ -515,14 +591,17 @@ def run_training_pipeline():
             BATCH_SIZE
         )
 
-        # 7. Log model to MLflow with proper documentation
-        logging.info("Step 7: Logging model to MLflow...")
+        # 7. Export ONNX model for Seldon Core serving
+        logging.info("Step 7: Exporting ONNX model for serving...")
+        sample_input = torch.randn(1, SEQUENCE_LENGTH, INPUT_SIZE)
+        onnx_path = export_onnx_model(trained_model, sample_input, MODEL_SAVE_DIR, MODEL_VARIANT)
+
+        # 8. Log model to MLflow with proper documentation
+        logging.info("Step 8: Logging model to MLflow...")
         try:
-            # Create a sample input for model signature
-            sample_input = torch.randn(1, SEQUENCE_LENGTH, INPUT_SIZE)
-            
-            # Create model info dictionary
+            # Create model info dictionary with variant-specific information
             model_info = {
+                "model_variant": MODEL_VARIANT,
                 "model_type": "LSTM Binary Classifier",
                 "task": "Financial Direction Prediction",
                 "input_features": INPUT_SIZE,
@@ -530,30 +609,37 @@ def run_training_pipeline():
                 "hidden_size": HIDDEN_SIZE,
                 "num_layers": NUM_LAYERS,
                 "dropout_prob": DROPOUT_PROB,
+                "learning_rate": LEARNING_RATE,
                 "total_parameters": total_params,
                 "training_time_seconds": training_duration,
-                "best_val_loss": test_results['test_loss'] if test_results else None,
+                "best_val_loss": best_val_loss,
+                "best_epoch": best_epoch,
                 "test_accuracy": test_results['test_accuracy'] if test_results else None,
+                "test_f1_score": test_results['test_f1_score'] if test_results else None,
                 "pytorch_version": torch.__version__,
-                "trained_on": start_time.isoformat()
+                "trained_on": start_time.isoformat(),
+                "onnx_exported": onnx_path is not None,
+                "onnx_path": onnx_path
             }
             
             # Log model info as artifact
-            with open("model_info.json", "w") as f:
+            model_info_path = f"model_info_{MODEL_VARIANT}.json"
+            with open(model_info_path, "w") as f:
                 json.dump(model_info, f, indent=2)
-            mlflow.log_artifact("model_info.json")
+            mlflow.log_artifact(model_info_path)
             
             # Log the model with signature and example
+            registered_model_name = f"FinancialDirectionPredictor_{MODEL_VARIANT.title()}"
             mlflow.pytorch.log_model(
                 pytorch_model=trained_model,
-                artifact_path="stock_predictor_model",
-                registered_model_name="FinancialDirectionPredictor",
+                name=f"stock_predictor_{MODEL_VARIANT}_model",
+                registered_model_name=registered_model_name,
                 code_paths=["src/models.py"],
                 input_example=sample_input.numpy(),
                 signature=mlflow.models.infer_signature(sample_input.numpy(), trained_model(sample_input).detach().numpy())
             )
             
-            logging.info("✅ PyTorch model successfully logged and registered with MLflow.")
+            logging.info(f"✅ PyTorch model ({MODEL_VARIANT}) successfully logged and registered with MLflow.")
             
         except Exception as e:
             logging.error(f"❌ Failed to log model to MLflow: {e}")
@@ -563,15 +649,22 @@ def run_training_pipeline():
         total_duration = (end_time - start_time).total_seconds()
         
         logging.info("=" * 100)
-        logging.info("TRAINING PIPELINE COMPLETED SUCCESSFULLY!")
+        logging.info(f"TRAINING PIPELINE COMPLETED SUCCESSFULLY! - {MODEL_VARIANT.upper()} VARIANT")
         logging.info("=" * 100)
+        logging.info(f"Model Variant: {MODEL_VARIANT}")
         logging.info(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
         logging.info(f"End time: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         logging.info(f"Total duration: {total_duration:.2f} seconds")
+        logging.info(f"Best validation loss: {best_val_loss:.4f} at epoch {best_epoch + 1}")
         if test_results:
             logging.info(f"Final test accuracy: {test_results['test_accuracy']:.4f}")
             logging.info(f"Final test F1-score: {test_results['test_f1_score']:.4f}")
+        if onnx_path:
+            logging.info(f"ONNX model exported: {onnx_path}")
         logging.info("=" * 100)
+
+    if os.path.exists("training.log"):
+        mlflow.log_artifact("training.log")
 
 
 # --- Main execution ---
