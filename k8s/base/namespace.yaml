@@ -2,3 +2,18 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: financial-mlops-pytorch
+  labels:
+    name: financial-mlops-pytorch
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: financial-ml
+  labels:
+    name: financial-ml
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize

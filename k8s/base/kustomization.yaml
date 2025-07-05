@@ -13,6 +13,7 @@ resources:
   - shared-artifacts-pvc.yaml
   - shared-data-pvc.yaml
   - financial-predictor-vs.yaml
+  - seldon-runtime.yaml
 
 labels:
 - includeSelectors: false

@@ -1,0 +1,33 @@
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: SeldonRuntime
+metadata:
+  name: financial-ml-runtime
+  namespace: financial-ml
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  config:
+    agentConfig:
+      rclone: {}
+    kafkaConfig: {}
+    serviceConfig: {}
+    tracingConfig: {}
+  overrides:
+  - name: hodometer
+    replicas: 1
+  - name: seldon-scheduler
+    replicas: 1
+  - name: seldon-envoy
+    replicas: 1
+  - name: seldon-dataflow-engine
+    replicas: 1
+  - name: seldon-modelgateway
+    replicas: 1
+  - name: seldon-pipelinegateway
+    replicas: 1
+  - name: mlserver
+    replicas: 1
+  seldonConfig: default

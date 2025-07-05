@@ -19,6 +19,7 @@ This platform implements a complete MLOps workflow with:
 - ✅ **Model Registry**: MLflow integration for experiment tracking and model versioning
 - ✅ **Container-native**: Full containerization with Docker and Kubernetes deployment
 - ✅ **GitOps Ready**: Kustomize-based configuration management
+- ✅ **Enterprise Security**: Package-based secret delivery with team-based namespace isolation
 
 ## Quick Start
 
@@ -41,6 +42,12 @@ docker build -t <REGISTRY>/<USERNAME>/financial-predictor-jupyter:latest -f jupy
 ### 2. Deploy Infrastructure Requirements
 
 Ensure your infrastructure provides the required secrets and namespaces as documented in [`INFRASTRUCTURE-REQUIREMENTS.md`](./INFRASTRUCTURE-REQUIREMENTS.md).
+
+```bash
+# Apply infrastructure-delivered secret packages
+kubectl apply -k k8s/manifests/financial-ml/production
+kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
+```
 
 ### 3. Deploy Application
 
@@ -91,8 +98,10 @@ The platform supports multiple model configurations:
 ## Documentation
 
 - **[Operations Guide](./OPERATIONS.md)**: Detailed operational procedures and troubleshooting
-- **[Infrastructure Requirements](./INFRASTRUCTURE-REQUIREMENTS.md)**: Platform requirements and secret configuration
+- **[Infrastructure Requirements](./INFRASTRUCTURE-REQUIREMENTS.md)**: Platform requirements and secret configuration  
 - **[Networking Guide](./NETWORKING.md)**: Network architecture and deployment options (Istio, NodePort, LoadBalancer)
+- **[Testing Framework](./TESTING.md)**: Comprehensive testing procedures and validation
+- **[Lessons Learned](./LESSONS-LEARNED.md)**: Technical insights and enterprise MLOps patterns
 - **[Seldon Core Documentation](https://docs.seldon.ai/seldon-core-2)**: Official Seldon Core v2 documentation
 
 ## Development
