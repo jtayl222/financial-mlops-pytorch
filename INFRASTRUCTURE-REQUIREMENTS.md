@@ -74,14 +74,60 @@ stringData:
 
 This secret contains GitHub Container Registry credentials for pulling private images.
 
-## Deployment Notes
+## Secret Management Strategy
 
-- Models and experiments are deployed to `seldon-system` namespace because the Seldon controller is configured with `CLUSTERWIDE=false`
-- The infrastructure team should manage all secrets using SealedSecrets or another secure secret management solution
-- Secret rotation and updates should be handled by the infrastructure repository
-- The application repository only references these secrets by name and expects them to exist
+### Package-Based Delivery
+
+The infrastructure team delivers secrets through package-based deployment for development autonomy:
+
+- **Infrastructure Repository**: Creates and manages secrets using SealedSecrets
+- **Package Creation**: Secrets are packaged into tar.gz files with kustomization overlays  
+- **Development Application**: Developers extract packages to `k8s/manifests/` directory (gitignored)
+- **Namespace Application**: Each team applies secrets to their respective namespaces
+
+This approach enables:
+- **Development Autonomy**: Teams can deploy and test without infrastructure dependencies
+- **Security Compliance**: Infrastructure maintains centralized secret management
+- **Environment Consistency**: Same secret structure across dev/staging/production
+- **Complete Reset Capability**: Teams can recreate entire environments for end-to-end testing
+
+### Deployment Workflow
+
+```bash
+# Infrastructure team creates and delivers packages (done once)
+# Creates: financial-mlops-pytorch-ml-secrets-20250704.tar.gz
+# Creates: financial-mlops-pytorch-models-secrets-20250704.tar.gz
+
+# Development team extracts and applies packages
+tar xzf financial-mlops-pytorch-ml-secrets-20250704.tar.gz -C k8s/manifests/financial-mlops-pytorch
+tar xzf financial-mlops-pytorch-models-secrets-20250704.tar.gz -C k8s/manifests/financial-ml
+
+tree k8s/manifests/
+# k8s/manifests/
+# ├── financial-ml/
+# │   └── production/
+# │       ├── kustomization.yaml
+# │       └── ml-platform-secret.yaml
+# └── financial-mlops-pytorch/
+#     └── production/
+#         ├── ghcr-secret.yaml
+#         ├── kustomization.yaml
+#         └── ml-platform-secret.yaml
+
+kubectl apply -k k8s/manifests/financial-ml/production
+kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
+```
+
+### Secret Lifecycle
+
+- **Creation**: Infrastructure team manages SealedSecrets in infrastructure repository
+- **Distribution**: Package delivery through tar.gz extraction to development repositories  
+- **Application**: Development teams apply packages to target namespaces
+- **Rotation**: Infrastructure team updates packages, development teams re-apply
 
 ## Seldon Configuration
+
+### Controller Configuration
 
 The Seldon v2 controller must be configured for **cluster-wide watching** to support team-based namespace isolation:
 
@@ -92,6 +138,74 @@ env:
 args:
 - --clusterwide=true
 ```
+
+### Runtime Deployment Patterns
+
+**Industry Best Practice: Dedicated SeldonRuntime per Namespace**
+
+Instead of sharing runtime components across namespaces, deploy dedicated SeldonRuntime instances for complete isolation:
+
+```yaml
+apiVersion: mlops.seldon.io/v1alpha1
+kind: SeldonRuntime
+metadata:
+  name: financial-ml-runtime
+  namespace: financial-ml
+spec:
+  config:
+    agentConfig:
+      rclone: {}
+    kafkaConfig: {}
+    serviceConfig: {}
+    tracingConfig: {}
+  overrides:
+  - name: hodometer
+    replicas: 1
+  - name: seldon-scheduler
+    replicas: 1
+  - name: seldon-envoy
+    replicas: 1
+  - name: seldon-dataflow-engine
+    replicas: 1
+  - name: seldon-modelgateway
+    replicas: 1
+  - name: seldon-pipelinegateway
+    replicas: 1
+  - name: mlserver
+    replicas: 1
+  seldonConfig: default
+```
+
+**Benefits of Dedicated Runtime:**
+- ✅ **Complete Isolation**: Each team has independent infrastructure
+- ✅ **Independent Scaling**: Runtime components scale per team needs  
+- ✅ **Fault Isolation**: Issues in one team don't affect others
+- ✅ **Security Boundaries**: Clear separation of concerns
+- ✅ **Operational Independence**: Teams can manage their own runtime
+
+**Resource Quota Considerations:**
+
+SeldonRuntime components may not include CPU limits by default. For environments with ResourceQuotas requiring CPU limits, either:
+
+1. **Remove CPU limits requirement** (recommended for development):
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: 20Gi
+    limits.memory: 40Gi  # CPU limits removed
+    count/models.mlops.seldon.io: "10"
+```
+
+2. **Configure runtime with resource limits** (requires infrastructure team support)
+
+**Known Limitations:**
+
+- SeldonRuntime CRD doesn't support `resources` field in `overrides` for CPU/memory limits
+- MLServer instances may need separate deployment configuration
+- Cross-namespace networking requires careful NetworkPolicy configuration
 
 ## Security Requirements
 
