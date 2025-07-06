@@ -1,0 +1,14 @@
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: test-model
+  namespace: financial-ml
+spec:
+  storageUri: s3://mlflow-artifacts/28/models/m-d6d788df1b5849b3a3df1d04434c17b9/artifacts/
+  requirements:
+  - mlflow
+  - torch
+  - numpy
+  - scikit-learn
+  secretName: ml-platform
+  server: mlserver
