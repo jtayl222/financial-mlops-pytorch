@@ -23,11 +23,11 @@ spec:
   - name: seldon-envoy
     replicas: 1
   - name: seldon-dataflow-engine
-    replicas: 1
+    replicas: 0  # Disable until Kafka is available
   - name: seldon-modelgateway
     replicas: 1
   - name: seldon-pipelinegateway
-    replicas: 1
+    replicas: 0  # Also disable pipeline gateway (depends on dataflow)
   - name: mlserver
     replicas: 1
   seldonConfig: default
