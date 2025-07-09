@@ -77,19 +77,9 @@ We have two models:
 
 Our A/B testing infrastructure follows GitOps principles with full observability:
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Argo CD       │    │  Seldon Core    │    │   Prometheus    │
-│   (GitOps)      │───▶│  (A/B Testing)  │───▶│   (Metrics)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│     MLflow      │    │   Kubernetes    │    │    Grafana      │
-│  (Registry)     │    │  (Platform)     │    │ (Visualization) │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+![Production MLOps A/B testing architecture with GitOps automation](images/architecture_diagram.png)
+
+*Production MLOps A/B testing architecture with GitOps automation*
 ### Seldon Core v2 Deployment Details
 
 Our production cluster runs the following Seldon Core v2 components (Helm releases):
@@ -168,6 +158,10 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5
 ```
 
+![Live A/B testing execution with real-time metrics collection](images/terminal_metrics_view.png)
+
+*Live A/B testing execution with real-time metrics collection*
+
 ### Real-World Results Analysis
 
 **Test Configuration:**
@@ -214,6 +208,10 @@ net_value = revenue_lift - cost_impact + risk_reduction
 
 **Recommendation**: ✅ **STRONG RECOMMEND** - Deploy enhanced model
 
+![Comprehensive A/B testing results showing 3.9% net business value improvement](images/financial_ab_testing_dashboard_20250708_223743.png)
+
+*Comprehensive A/B testing results showing 3.9% net business value improvement*
+
 ---
 
 ## Advanced Monitoring and Observability
@@ -249,6 +247,10 @@ Our Grafana dashboard provides comprehensive visibility:
   annotations:
     summary: "P95 response time exceeds 200ms"
 ```
+
+![Production monitoring dashboard with automated alerting and KPI tracking](images/monitoring_alerts_dashboard.png)
+
+*Production monitoring dashboard with automated alerting and KPI tracking*
 
 ### Business Metrics Tracking
 
@@ -298,6 +300,10 @@ daily_cost_increase = requests_per_day * latency_increase * cost_per_ms * 1000
 | **Net Annual Value** | +$658,825 |
 | **Infrastructure Cost** | -$53,000 |
 | **Net ROI** | **1,143%** |
+
+![ROI analysis demonstrating 1,143% return on A/B testing infrastructure](images/business_impact_analysis.png)
+
+*ROI analysis demonstrating 1,143% return on A/B testing infrastructure*
 
 ### Risk Assessment
 
