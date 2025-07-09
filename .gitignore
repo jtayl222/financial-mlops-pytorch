@@ -198,4 +198,18 @@ cython_debug/
 # MLflow tracking directory
 mlruns/
 
+# Claude AI assistant files (contains sensitive information)
+CLAUDE.md
 .claude
+
+# Sensitive operational files
+curl.sh
+*.tar.gz
+
+# Temporary and backup files
+*.bak
+/tmp/
+EXPERT-QUESTION.md
+METALLB-MIGRATION-NOTES.md
+TECHNICAL-DEBT.md
+ARTICLE-OUTLINE.md

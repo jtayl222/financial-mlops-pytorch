@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: financial-mlops-infrastructure
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jtayl222/financial-mlops-pytorch.git
+    targetRevision: HEAD
+    path: k8s/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: financial-ml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+  ignoreDifferences:
+  - group: mlops.seldon.io
+    kind: Model
+    jsonPointers:
+    - /status
+  - group: mlops.seldon.io  
+    kind: Experiment
+    jsonPointers:
+    - /status

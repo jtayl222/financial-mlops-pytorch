@@ -1,0 +1,180 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: financial-training-pipeline-gitops-template
+  namespace: financial-mlops-pytorch
+spec:
+  entrypoint: train-and-deploy
+  serviceAccountName: argo-workflow-sa
+  
+  podSpecPatch: |
+    initContainers:
+    - name: init
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    containers:
+    - name: wait
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+  volumes:
+  - name: shared-data-pvc
+    persistentVolumeClaim:
+      claimName: shared-data-pvc
+  - name: shared-artifacts-pvc
+    persistentVolumeClaim:
+      claimName: shared-artifacts-pvc
+
+  templates:
+  
+  # Main DAG template
+  - name: train-and-deploy
+    inputs:
+      parameters:
+      - name: model-variant
+        value: baseline
+    dag:
+      tasks:
+      - name: train-model
+        template: training-step
+        arguments:
+          parameters:
+          - name: model-variant
+            value: "{{inputs.parameters.model-variant}}"
+      
+      - name: deploy-model
+        template: gitops-deployment
+        dependencies: [train-model]
+        arguments:
+          parameters:
+          - name: model-variant
+            value: "{{inputs.parameters.model-variant}}"
+
+  # Training step (existing)
+  - name: training-step
+    inputs:
+      parameters:
+      - name: model-variant
+    container:
+      image: jtayl22/financial-predictor:latest
+      command: ["python", "src/train_pytorch_model.py"]
+      env:
+      - name: MODEL_VARIANT
+        value: "{{inputs.parameters.model-variant}}"
+      - name: MLFLOW_TRACKING_URI
+        value: "http://mlflow.mlflow.svc.cluster.local:5000"
+      - name: PROCESSED_DATA_DIR
+        value: "/mnt/shared-data/processed"
+      - name: SCALER_DIR
+        value: "/mnt/shared-artifacts/scalers"
+      - name: MODEL_SAVE_DIR
+        value: "/mnt/shared-models"
+      - name: EPOCHS
+        value: "20"
+      - name: BATCH_SIZE
+        value: "64"
+      - name: LEARNING_RATE
+        value: "0.001"
+      - name: SEQUENCE_LENGTH
+        value: "10"
+      - name: LOGLEVEL
+        value: "INFO"
+      envFrom:
+        - secretRef:
+            name: ml-platform
+      volumeMounts:
+        - name: shared-data-pvc
+          mountPath: /mnt/shared-data
+        - name: shared-artifacts-pvc
+          mountPath: /mnt/shared-artifacts
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+
+  # GitOps deployment step
+  - name: gitops-deployment
+    inputs:
+      parameters:
+      - name: model-variant
+    container:
+      image: jtayl22/financial-predictor:latest
+      command: ["bash", "-c"]
+      args:
+      - |
+        set -e
+        echo "🚀 Starting GitOps model deployment for variant: {{inputs.parameters.model-variant}}"
+        
+        # Install git if not present
+        apk add --no-cache git || apt-get update && apt-get install -y git || yum install -y git || true
+        
+        # Clone repository (assumes CI/CD has credentials)
+        git clone https://github.com/jtayl222/financial-mlops-pytorch.git /tmp/repo
+        cd /tmp/repo
+        
+        # Configure git (required for commits)
+        git config user.name "Argo Workflows Bot"
+        git config user.email "argo-workflows@company.com"
+        
+        # Update model URIs
+        python3 scripts/update_model_uris.py \
+          --mlflow-endpoint "http://192.168.1.203:5000" \
+          --model-variant "{{inputs.parameters.model-variant}}"
+        
+        # Check for changes and commit if needed
+        if ! git diff --quiet k8s/base/financial-predictor-ab-test.yaml; then
+          echo "📝 Committing model URI updates..."
+          git add k8s/base/financial-predictor-ab-test.yaml
+          git commit -m "update: model URIs from training pipeline
+          
+          🤖 Automated deployment via Argo Workflows
+          - Model variant: {{inputs.parameters.model-variant}}
+          - Training workflow: {{workflow.name}}
+          - Training timestamp: $(date -Iseconds)
+          
+          Co-Authored-By: Argo-Workflows-Bot <argo@company.com>"
+          
+          # Push changes (requires CI/CD credentials)
+          git push origin main
+          echo "✅ Model URIs updated and pushed to git"
+        else
+          echo "ℹ️  No model URI changes detected"
+        fi
+      env:
+      - name: MLFLOW_TRACKING_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: ml-platform
+            key: MLFLOW_TRACKING_USERNAME
+      - name: MLFLOW_TRACKING_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: ml-platform
+            key: MLFLOW_TRACKING_PASSWORD
+      # Note: In production, you'd use SSH keys or PAT for git authentication
+      - name: GITHUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: ml-platform
+            key: GITHUB_TOKEN
+            optional: true
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "100m"
+        limits:
+          memory: "1Gi"
+          cpu: "500m"
