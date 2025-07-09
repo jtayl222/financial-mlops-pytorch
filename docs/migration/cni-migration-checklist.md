@@ -92,6 +92,27 @@
 - **Multi-key secrets**: Some components expect single-key secrets
 - **Environment variables**: Service endpoints may need updates
 
+## Known Issues During Cleanup
+
+### Seldon Resources with Finalizers
+**Symptom**: Namespace stuck in "Terminating" state
+**Cause**: Seldon Model/Experiment resources have finalizers that prevent deletion
+**Solution**:
+```bash
+# Check stuck resources
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n financial-ml
+
+# Remove finalizers from stuck resources (safe with error handling)
+kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch model enhanced-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch experiment financial-ab-test-experiment -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch server mlserver -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+
+# Force delete namespaces if still stuck
+kubectl delete namespace financial-ml --grace-period=0 --force 2>/dev/null || true
+kubectl delete namespace financial-mlops-pytorch --grace-period=0 --force 2>/dev/null || true
+```
+
 ## Rollback Procedures
 
 ### 1. Quick Rollback
