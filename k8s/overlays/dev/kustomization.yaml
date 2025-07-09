@@ -1,2 +1,11 @@
 resources:
   - ../../base
+
+patches:
+- target:
+    kind: Experiment
+    name: financial-ab-test-experiment
+  patch: |
+    - op: replace
+      path: /spec/mirror/percent
+      value: 0

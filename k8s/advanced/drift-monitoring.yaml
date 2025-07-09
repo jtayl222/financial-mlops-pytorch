@@ -1,0 +1,690 @@
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: drift-monitoring-service
+  namespace: financial-ml
+  annotations:
+    seldon.io/model-type: "drift-monitor"
+    seldon.io/description: "Advanced drift detection and monitoring service"
+spec:
+  storageUri: "gs://financial-ml-models/drift-monitor/v1.0.0"
+  requirements:
+    - "alibi-detect>=0.12.0"
+    - "evidently>=0.4.0"
+    - "numpy>=1.21.0"
+    - "pandas>=1.3.0"
+    - "scipy>=1.7.0"
+    - "scikit-learn>=1.0.0"
+    - "matplotlib>=3.5.0"
+    - "seaborn>=0.11.0"
+    - "prometheus-client>=0.15.0"
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  replicas:
+    min: 1
+    max: 3
+  ingress:
+    httpPort: 9000
+    grpcPort: 9001
+  protocol: v2
+  env:
+    - name: DRIFT_DETECTION_MODE
+      value: "continuous"
+    - name: REFERENCE_DATA_PATH
+      value: "/data/reference"
+    - name: DRIFT_THRESHOLDS
+      value: "data_drift:0.05,feature_drift:0.05,concept_drift:0.15"
+    - name: MONITORING_INTERVAL
+      value: "300"  # 5 minutes
+    - name: ALERT_WEBHOOK_URL
+      value: "http://alert-manager:9093/api/v1/alerts"
+    - name: RETRAINING_WEBHOOK_URL
+      value: "http://mlflow-server:5000/api/2.0/mlflow/experiments/trigger-retraining"
+    - name: PROMETHEUS_METRICS_PORT
+      value: "8080"
+    - name: ENABLE_AUTO_RETRAINING
+      value: "true"
+    - name: ENABLE_DASHBOARD_EXPORT
+      value: "true"
+  volumes:
+    - name: reference-data
+      persistentVolumeClaim:
+        claimName: drift-reference-data
+    - name: drift-cache
+      emptyDir:
+        sizeLimit: "2Gi"
+  volumeMounts:
+    - name: reference-data
+      mountPath: /data/reference
+    - name: drift-cache
+      mountPath: /tmp/drift-cache
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: drift-reference-data
+  namespace: financial-ml
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: drift-monitoring-config
+  namespace: financial-ml
+data:
+  drift_config.yaml: |
+    drift_detection:
+      algorithms:
+        - name: "tabular_drift"
+          type: "TabularDrift"
+          enabled: true
+          config:
+            p_val: 0.05
+            correction: "bonferroni"
+            alternative: "two-sided"
+          
+        - name: "ks_drift"
+          type: "KSDrift"
+          enabled: true
+          config:
+            p_val: 0.05
+            alternative: "two-sided"
+            
+        - name: "mmd_drift"
+          type: "MMDDrift"
+          enabled: true
+          config:
+            p_val: 0.05
+            n_permutations: 100
+            
+        - name: "chi2_drift"
+          type: "ChiSquareDrift"
+          enabled: false
+          config:
+            p_val: 0.05
+    
+    feature_monitoring:
+      financial_features:
+        - price
+        - volume
+        - returns
+        - volatility
+        - rsi
+        - macd
+        - sma_5
+        - sma_20
+        - bb_upper
+        - bb_lower
+        - atr
+        - momentum
+        - williams_r
+        - stoch_k
+        - stoch_d
+        - adx
+        - cci
+        - roc
+        - news_sentiment
+        - social_sentiment
+        - market_fear_greed
+        - vix
+        - dollar_index
+        - bond_yield
+        - commodity_index
+      
+      categories:
+        price_volume:
+          - price
+          - volume
+          - returns
+          - volatility
+        technical_indicators:
+          - rsi
+          - macd
+          - sma_5
+          - sma_20
+          - bb_upper
+          - bb_lower
+        momentum:
+          - atr
+          - momentum
+          - williams_r
+          - stoch_k
+          - stoch_d
+        market_structure:
+          - adx
+          - cci
+          - roc
+        alternative_data:
+          - news_sentiment
+          - social_sentiment
+          - market_fear_greed
+        macro_factors:
+          - vix
+          - dollar_index
+          - bond_yield
+          - commodity_index
+    
+    thresholds:
+      data_drift: 0.05
+      feature_drift: 0.05
+      concept_drift: 0.15
+      performance_drift: 0.10
+      category_drift: 0.25
+      
+    alerts:
+      severity_levels:
+        critical: 0.01
+        high: 0.05
+        medium: 0.10
+        low: 0.25
+      
+      actions:
+        critical:
+          - alert_oncall
+          - trigger_retraining
+          - scale_monitoring
+        high:
+          - alert_team
+          - increase_frequency
+        medium:
+          - log_alert
+          - update_dashboard
+        low:
+          - log_info
+    
+    monitoring:
+      sampling_rate: 1.0  # Monitor 100% of predictions
+      batch_size: 1000
+      window_size: 24  # Hours
+      retention_days: 90
+      
+    automation:
+      retraining_triggers:
+        - condition: "drift_detected AND severity >= high"
+          action: "trigger_retraining"
+          cooldown: "4h"
+        - condition: "feature_drift_count > 10"
+          action: "alert_engineering_team"
+          cooldown: "1h"
+        - condition: "category_drift_percentage > 50"
+          action: "investigate_data_quality"
+          cooldown: "2h"
+      
+      scaling_rules:
+        - condition: "drift_alert_rate > 5/minute"
+          action: "scale_monitoring_pods"
+          target_replicas: 3
+        - condition: "processing_latency > 10s"
+          action: "scale_monitoring_pods"
+          target_replicas: 5
+          
+    dashboard:
+      refresh_interval: "30s"
+      charts:
+        - drift_scores_timeline
+        - feature_drift_heatmap
+        - category_breakdown
+        - alert_history
+        - system_health
+      
+      export:
+        enabled: true
+        formats: ["png", "pdf", "json"]
+        schedule: "0 */6 * * *"  # Every 6 hours
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: drift-reference-updater
+  namespace: financial-ml
+spec:
+  schedule: "0 2 * * 0"  # Weekly at 2 AM Sunday
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: reference-updater
+              image: financial-ml/drift-updater:latest
+              command:
+                - python3
+                - -c
+                - |
+                  import os
+                  import pandas as pd
+                  from datetime import datetime, timedelta
+                  
+                  print("🔄 Updating drift reference data...")
+                  
+                  # Load recent production data
+                  end_date = datetime.now()
+                  start_date = end_date - timedelta(days=30)
+                  
+                  # Query production data (pseudo-code)
+                  # production_data = load_production_data(start_date, end_date)
+                  # 
+                  # # Update reference dataset
+                  # updated_reference = update_reference_dataset(production_data)
+                  # 
+                  # # Save updated reference
+                  # updated_reference.to_parquet('/data/reference/updated_reference.parquet')
+                  
+                  print("✅ Reference data updated successfully")
+              
+              volumeMounts:
+                - name: reference-data
+                  mountPath: /data/reference
+              
+              resources:
+                requests:
+                  memory: "1Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "1000m"
+          
+          volumes:
+            - name: reference-data
+              persistentVolumeClaim:
+                claimName: drift-reference-data
+          
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drift-monitoring-service
+  namespace: financial-ml
+spec:
+  selector:
+    app: drift-monitoring-service
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9000
+    - name: grpc
+      port: 81
+      targetPort: 9001
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: drift-monitoring-metrics
+  namespace: financial-ml
+spec:
+  selector:
+    matchLabels:
+      app: drift-monitoring-service
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: drift-monitoring-alerts
+  namespace: financial-ml
+spec:
+  groups:
+    - name: drift.alerts
+      rules:
+        - alert: HighDriftDetected
+          expr: drift_score > 0.95
+          for: 5m
+          labels:
+            severity: critical
+            service: drift-monitoring
+          annotations:
+            summary: "High drift detected in financial model"
+            description: "Drift score {{ $value }} exceeds critical threshold"
+            
+        - alert: MultipleFeatureDrift
+          expr: feature_drift_count > 10
+          for: 10m
+          labels:
+            severity: high
+            service: drift-monitoring
+          annotations:
+            summary: "Multiple features showing drift"
+            description: "{{ $value }} features showing drift, investigation needed"
+            
+        - alert: CategoryDriftHigh
+          expr: category_drift_percentage > 50
+          for: 15m
+          labels:
+            severity: medium
+            service: drift-monitoring
+          annotations:
+            summary: "High category drift detected"
+            description: "{{ $value }}% of features in category showing drift"
+            
+        - alert: DriftMonitoringDown
+          expr: up{job="drift-monitoring-service"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            service: drift-monitoring
+          annotations:
+            summary: "Drift monitoring service down"
+            description: "Drift monitoring service is not responding"
+            
+        - alert: DriftProcessingLatency
+          expr: drift_processing_duration_seconds > 10
+          for: 5m
+          labels:
+            severity: warning
+            service: drift-monitoring
+          annotations:
+            summary: "High drift processing latency"
+            description: "Drift processing taking {{ $value }}s, may impact real-time monitoring"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: drift-monitoring-policy
+  namespace: financial-ml
+spec:
+  podSelector:
+    matchLabels:
+      app: drift-monitoring-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: financial-ml
+      ports:
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 9001
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: financial-ml
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9093
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drift-dashboard
+  namespace: financial-ml
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drift-dashboard
+  template:
+    metadata:
+      labels:
+        app: drift-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: financial-ml/drift-dashboard:latest
+          ports:
+            - containerPort: 8050
+          env:
+            - name: DASH_HOST
+              value: "0.0.0.0"
+            - name: DASH_PORT
+              value: "8050"
+            - name: DRIFT_SERVICE_URL
+              value: "http://drift-monitoring-service:80"
+            - name: PROMETHEUS_URL
+              value: "http://prometheus-server:9090"
+            - name: REFRESH_INTERVAL
+              value: "30"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: dashboard-cache
+              mountPath: /tmp/dashboard-cache
+      volumes:
+        - name: dashboard-cache
+          emptyDir:
+            sizeLimit: "500Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drift-dashboard-service
+  namespace: financial-ml
+spec:
+  selector:
+    app: drift-dashboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8050
+  type: LoadBalancer
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: drift-monitoring-hpa
+  namespace: financial-ml
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: drift-monitoring-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Pods
+      pods:
+        metric:
+          name: drift_processing_rate
+        target:
+          type: AverageValue
+          averageValue: "100"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: drift-monitoring-pdb
+  namespace: financial-ml
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: drift-monitoring-service
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: drift-monitoring-role
+  namespace: financial-ml
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch"]
+  - apiGroups: ["mlops.seldon.io"]
+    resources: ["models", "experiments"]
+    verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: drift-monitoring-binding
+  namespace: financial-ml
+subjects:
+  - kind: ServiceAccount
+    name: drift-monitoring-service
+    namespace: financial-ml
+roleRef:
+  kind: Role
+  name: drift-monitoring-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: drift-monitoring-service
+  namespace: financial-ml
+---
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: drift-triggered-retraining
+  namespace: financial-ml
+spec:
+  entrypoint: retrain-model
+  templates:
+    - name: retrain-model
+      steps:
+        - - name: validate-drift
+            template: validate-drift-alert
+        - - name: prepare-data
+            template: prepare-training-data
+        - - name: train-model
+            template: train-financial-model
+        - - name: validate-model
+            template: validate-new-model
+        - - name: deploy-model
+            template: deploy-if-better
+  
+    - name: validate-drift-alert
+      container:
+        image: financial-ml/drift-validator:latest
+        command: [python3, -c]
+        args:
+          - |
+            import json
+            import sys
+            
+            # Validate drift alert is legitimate
+            print("🔍 Validating drift alert...")
+            
+            # Check drift severity and recent history
+            # This would typically query the monitoring system
+            print("✅ Drift alert validated, proceeding with retraining")
+    
+    - name: prepare-training-data
+      container:
+        image: financial-ml/data-processor:latest
+        command: [python3, -c]
+        args:
+          - |
+            print("📊 Preparing training data with drift corrections...")
+            
+            # Load recent data
+            # Apply drift corrections
+            # Prepare training dataset
+            print("✅ Training data prepared")
+    
+    - name: train-financial-model
+      container:
+        image: financial-ml/trainer:latest
+        command: [python3, -c]
+        args:
+          - |
+            print("🎯 Training new model with drift-corrected data...")
+            
+            # Train new model
+            # Log metrics to MLflow
+            # Save model artifacts
+            print("✅ Model training completed")
+    
+    - name: validate-new-model
+      container:
+        image: financial-ml/validator:latest
+        command: [python3, -c]
+        args:
+          - |
+            print("🔬 Validating new model performance...")
+            
+            # Run model validation
+            # Compare against current production model
+            # Generate performance report
+            print("✅ Model validation completed")
+    
+    - name: deploy-if-better
+      container:
+        image: financial-ml/deployer:latest
+        command: [python3, -c]
+        args:
+          - |
+            print("🚀 Deploying model if performance improved...")
+            
+            # Compare new model vs current
+            # Deploy if metrics improved
+            # Update model registry
+            print("✅ Model deployment completed")

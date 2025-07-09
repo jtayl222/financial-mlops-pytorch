@@ -1,0 +1,239 @@
+{
+  "scenario": {
+    "type": "volatile",
+    "description": "High volatility with uncertain direction",
+    "features": {
+      "price": 101.3519902005654,
+      "volume": 2581040.5409425995,
+      "returns": 0.0019908184271749513,
+      "volatility": 0.4063515960765259,
+      "rsi": 48.58910519273843,
+      "macd": -0.1955887243172174,
+      "sma_5": 0.9927192230201353,
+      "sma_20": 0.9912357202289516,
+      "bb_upper": 103.3790300045767,
+      "bb_lower": 99.32495039655409,
+      "atr": 0.8236908596706433,
+      "momentum": 0.019908184271749514,
+      "williams_r": -27.002185636803695,
+      "stoch_k": 56.3426475520828,
+      "stoch_d": 50.708382796874524,
+      "adx": 41.80112957640597,
+      "cci": 65.21653458437027,
+      "roc": 0.19908184271749513,
+      "news_sentiment": 0.4889653064955678,
+      "social_sentiment": 0.46141011902797896,
+      "market_fear_greed": 34.1432689519417,
+      "vix": 33.46157351596674,
+      "dollar_index": 94.10231596899403,
+      "bond_yield": 0.027763756769948533,
+      "commodity_index": 97.62309514850001
+    },
+    "scenario_params": {
+      "base_return": 0.002,
+      "volatility": 0.4,
+      "rsi": 50,
+      "vix": 35,
+      "news_sentiment": 0.45,
+      "description": "High volatility with uncertain direction"
+    }
+  },
+  "prediction": {
+    "probability": 0.73840453769754,
+    "direction": "Up",
+    "confidence": 0.5,
+    "class_probabilities": {
+      "Down": 0.26159546230246,
+      "Up": 0.73840453769754
+    }
+  },
+  "feature_impacts": {
+    "returns": 0.009235100780886619,
+    "volume": 0.07152051659647513,
+    "price": 0.00028427800268153707,
+    "volatility": -0.1461487099422316,
+    "rsi": 0.01167134542875059,
+    "macd": -0.021992627680480752,
+    "momentum": 0.017036987371521203,
+    "sma_5": 0.024934686796246847,
+    "sma_20": -0.015823976912895606,
+    "news_sentiment": -0.01140230377520833,
+    "social_sentiment": 0.01026186557338479,
+    "market_fear_greed": -0.018542835411849215,
+    "vix": -0.09254943424512226,
+    "dollar_index": -0.0046157694991602535,
+    "bond_yield": 0.012313166137399818,
+    "bb_upper": 0.016874689393049917,
+    "bb_lower": 0.019620074791943557,
+    "atr": -0.051117713476374046,
+    "williams_r": 0.013035628959355759,
+    "stoch_k": 0.00419532827988833,
+    "stoch_d": 0.004142411483964791,
+    "adx": -0.027777884280922906,
+    "cci": -0.019137400934582167,
+    "roc": 0.030170855202388554,
+    "commodity_index": -0.001372527117364678
+  },
+  "top_features": [
+    [
+      "volatility",
+      -0.1461487099422316
+    ],
+    [
+      "vix",
+      -0.09254943424512226
+    ],
+    [
+      "volume",
+      0.07152051659647513
+    ],
+    [
+      "atr",
+      -0.051117713476374046
+    ],
+    [
+      "roc",
+      0.030170855202388554
+    ],
+    [
+      "adx",
+      -0.027777884280922906
+    ],
+    [
+      "sma_5",
+      0.024934686796246847
+    ],
+    [
+      "macd",
+      -0.021992627680480752
+    ],
+    [
+      "bb_lower",
+      0.019620074791943557
+    ],
+    [
+      "cci",
+      -0.019137400934582167
+    ]
+  ],
+  "category_importance": {
+    "Price & Volume": {
+      "total_impact": -0.06510881456218834,
+      "average_impact": -0.016277203640547085,
+      "max_impact": -0.1461487099422316,
+      "feature_count": 4
+    },
+    "Technical Indicators": {
+      "total_impact": 0.03528419181661455,
+      "average_impact": 0.005880698636102425,
+      "max_impact": 0.024934686796246847,
+      "feature_count": 6
+    },
+    "Momentum": {
+      "total_impact": -0.012707357381643964,
+      "average_impact": -0.0025414714763287924,
+      "max_impact": -0.051117713476374046,
+      "feature_count": 5
+    },
+    "Market Structure": {
+      "total_impact": -0.01674443001311652,
+      "average_impact": -0.00558147667103884,
+      "max_impact": 0.030170855202388554,
+      "feature_count": 3
+    },
+    "Alternative Data": {
+      "total_impact": -0.019683273613672756,
+      "average_impact": -0.006561091204557585,
+      "max_impact": -0.018542835411849215,
+      "feature_count": 3
+    },
+    "Macro Factors": {
+      "total_impact": -0.08622456472424737,
+      "average_impact": -0.02155614118106184,
+      "max_impact": -0.09254943424512226,
+      "feature_count": 4
+    }
+  },
+  "risk_factors": [
+    {
+      "factor": "High Volatility",
+      "value": 0.4063515960765259,
+      "threshold": 0.3,
+      "impact": -0.1461487099422316,
+      "risk_level": "High",
+      "explanation": "Volatility of 0.406 exceeds high risk threshold"
+    },
+    {
+      "factor": "High Impact: volatility",
+      "value": 0.4063515960765259,
+      "threshold": 0.1,
+      "impact": -0.1461487099422316,
+      "risk_level": "Medium",
+      "explanation": "volatility has significant impact on prediction"
+    },
+    {
+      "factor": "High Fear (VIX)",
+      "value": 33.46157351596674,
+      "threshold": 25,
+      "impact": -0.09254943424512226,
+      "risk_level": "High",
+      "explanation": "VIX of 33.5 indicates high market fear"
+    }
+  ],
+  "counterfactuals": [
+    {
+      "scenario": "Improved Market Sentiment",
+      "changes": {
+        "news_sentiment": {
+          "from": 0.4889653064955678,
+          "to": 0.75
+        },
+        "social_sentiment": {
+          "from": 0.46141011902797896,
+          "to": 0.72
+        }
+      },
+      "prediction_change": 0.10034071007910295,
+      "new_prediction": 0.8387452477766429,
+      "explanation": "Positive sentiment shift would increase bullish probability"
+    },
+    {
+      "scenario": "Reduced Market Volatility",
+      "changes": {
+        "volatility": {
+          "from": 0.4063515960765259,
+          "to": 0.12
+        },
+        "vix": {
+          "from": 33.46157351596674,
+          "to": 16
+        }
+      },
+      "prediction_change": -0.17330631220955584,
+      "new_prediction": 0.5650982254879842,
+      "explanation": "Lower volatility would increase prediction confidence"
+    },
+    {
+      "scenario": "Positive Momentum",
+      "changes": {
+        "momentum": {
+          "from": 0.019908184271749514,
+          "to": 0.3
+        },
+        "returns": {
+          "from": 0.0019908184271749513,
+          "to": 0.015
+        }
+      },
+      "prediction_change": 0.15619664054927418,
+      "new_prediction": 0.8946011782468142,
+      "explanation": "Positive momentum would increase bullish signals"
+    }
+  ],
+  "metadata": {
+    "analysis_timestamp": "2025-07-09T09:42:14.169156",
+    "explanation_type": "comprehensive",
+    "features_analyzed": 25,
+    "risk_factors_identified": 3
+  }
+}

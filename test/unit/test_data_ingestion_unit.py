@@ -46,6 +46,14 @@ def test_download_stock_data_empty(mock_yf_download):
     assert df.empty
 
 
+@patch('yfinance.download', side_effect=Exception("Network error"))
+def test_download_stock_data_failure(mock_yf_download):
+    """Tests the behavior when yfinance.download raises an exception."""
+    df = download_stock_data("FAIL", "2023-01-01", "2023-01-02")
+    assert df.empty
+    mock_yf_download.assert_called_once_with("FAIL", start="2023-01-01", end="2023-01-02", progress=False)
+
+
 def test_save_data(temp_raw_data_dir):
     test_df = pd.DataFrame({
         'Col1': [1, 2],
@@ -58,8 +66,3 @@ def test_save_data(temp_raw_data_dir):
     assert os.path.exists(file_path)
     loaded_df = pd.read_csv(file_path, index_col=0, parse_dates=True)
     pd.testing.assert_frame_equal(test_df, loaded_df)
-
-# Integration Test (tests/integration/test_pipeline_integration.py - part 1)
-# This would involve running data_ingestion.py and then checking the output directory.
-# You might need to adjust the RAW_DATA_DIR in data_ingestion.py for testing
-# or pass it as an argument if you refactor.

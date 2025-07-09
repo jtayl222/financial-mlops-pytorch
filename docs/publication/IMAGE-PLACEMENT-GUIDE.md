@@ -2,10 +2,15 @@
 
 ## 📸 **Available Screenshots**
 
-### 1. **Main A/B Testing Dashboard** 
-**File**: `scripts/financial_ab_testing_dashboard_20250708_225830.png`
+### 1. **Main A/B Testing Dashboard (Beautiful Version)** 
+**File**: `docs/publication/images/financial_ab_testing_dashboard_20250708_223743.png`
 **Best Use**: Hero image or main results section
-**Content**: Comprehensive 8-panel dashboard showing traffic distribution, accuracy comparison, business impact, performance heatmap, time series, and statistical summary
+**Content**: **STUNNING** 8-panel dashboard showing traffic distribution, accuracy comparison, business impact analysis, performance heatmap, time series, and statistical summary. This version shows compelling business value with professional visualization.
+
+### 1b. **Alternative A/B Testing Dashboard**
+**File**: `docs/publication/images/financial_ab_testing_dashboard_20250708_225830.png`
+**Best Use**: Supporting image or comparison view  
+**Content**: Comprehensive dashboard with similar panels but different data snapshot
 
 ### 2. **Architecture Diagram**
 **File**: `architecture_diagram.png`

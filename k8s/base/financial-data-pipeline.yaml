@@ -7,11 +7,9 @@ spec:
   entrypoint: data-ingestion-and-feature-engineering
   serviceAccountName: argo-workflow-sa
   
-  # Global resource defaults for all containers
   podGC:
     strategy: OnPodSuccess
   
-  # Resource requirements for Argo system containers
   podSpecPatch: |
     initContainers:
     - name: init
@@ -43,18 +41,10 @@ spec:
   volumes:
   - name: shared-data-pvc
     persistentVolumeClaim:
-      claimName: shared-data-pvc  # Reference the pre-created PVC
+      claimName: shared-data-pvc
   - name: shared-artifacts-pvc
     persistentVolumeClaim:
       claimName: shared-artifacts-pvc
-  - metadata:
-      name: shared-artifacts-pvc
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: nfs-shared # Use default storage class or specify your NFS storage class
-      resources:
-        requests:
-          storage: 1Gi
 
   templates:
   - name: data-ingestion-and-feature-engineering
@@ -62,8 +52,11 @@ spec:
       tasks:
       - name: ingest-data
         template: ingest-stock-data
-      - name: engineer-features
+      - name: validate-data
         dependencies: [ingest-data]
+        template: validate-raw-data
+      - name: engineer-features
+        dependencies: [validate-data]
         template: process-and-engineer-features
 
   - name: ingest-stock-data
@@ -91,12 +84,35 @@ spec:
           mountPath: /mnt/shared-artifacts
       resources:
         requests:
-          memory: "2Gi"  # Fix 2: Reduced memory requests
+          memory: "2Gi"
           cpu: "1"
         limits:
-          memory: "4Gi"  # Fix 3: More reasonable limits
+          memory: "4Gi"
           cpu: "2"
-      # Fix 4: Add security context if needed
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+
+  - name: validate-raw-data
+    container:
+      image: jtayl22/financial-predictor:latest
+      command: ["sh", "-c"]
+      args:
+        - |
+          for f in /mnt/shared-data/raw/*.csv; do
+            echo "Validating $f"
+            python src/validate_data.py "$f"
+          done
+      volumeMounts:
+        - name: shared-data-pvc
+          mountPath: /mnt/shared-data
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "1"
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
@@ -134,6 +150,3 @@ spec:
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
-  
-  # imagePullSecrets:
-  # - name: ghcr

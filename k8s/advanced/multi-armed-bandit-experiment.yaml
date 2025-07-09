@@ -1,0 +1,161 @@
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Experiment
+metadata:
+  name: financial-mab-experiment
+  namespace: financial-ml
+  annotations:
+    seldon.io/experiment-type: "multi-armed-bandit"
+    seldon.io/description: "Multi-armed bandit experiment with dynamic traffic allocation"
+spec:
+  default: baseline-predictor
+  candidates:
+    - name: baseline-predictor
+      weight: 40
+    - name: enhanced-predictor
+      weight: 30
+    - name: transformer-predictor
+      weight: 20
+    - name: ensemble-predictor
+      weight: 10
+  config:
+    type: "multi-armed-bandit"
+    exploration_rate: 0.1
+    reward_metric: "business_value"
+    update_frequency: "300s"  # 5 minutes
+    min_samples_per_arm: 50
+    confidence_level: 0.95
+  resourceRequirements:
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  mirror:
+    percent: 10
+    name: experiment-mirror
+  traffic:
+    canary:
+      percent: 100
+    stable:
+      percent: 0
+  successCondition: "business_value > 0.02"  # 2% improvement
+  failureCondition: "error_rate > 0.05"     # 5% error rate
+  analysisTemplate:
+    name: financial-mab-analysis
+    args:
+      - name: success-rate
+        value: "0.95"
+      - name: business-threshold
+        value: "0.02"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: transformer-predictor
+  namespace: financial-ml
+spec:
+  storageUri: "gs://financial-ml-models/transformer/v1.0.0"
+  requirements:
+    - "torch>=1.9.0"
+    - "transformers>=4.15.0"
+    - "numpy>=1.21.0"
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  replicas:
+    min: 1
+    max: 3
+  ingress:
+    httpPort: 9000
+    grpcPort: 9001
+  protocol: v2
+  annotations:
+    seldon.io/model-type: "transformer"
+    seldon.io/description: "Transformer-based financial predictor"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: ensemble-predictor
+  namespace: financial-ml
+spec:
+  storageUri: "gs://financial-ml-models/ensemble/v1.0.0"
+  requirements:
+    - "torch>=1.9.0"
+    - "scikit-learn>=1.0.0"
+    - "xgboost>=1.5.0"
+    - "lightgbm>=3.3.0"
+  resources:
+    requests:
+      memory: "3Gi"
+      cpu: "1500m"
+    limits:
+      memory: "6Gi"
+      cpu: "3000m"
+  replicas:
+    min: 1
+    max: 5
+  ingress:
+    httpPort: 9000
+    grpcPort: 9001
+  protocol: v2
+  annotations:
+    seldon.io/model-type: "ensemble"
+    seldon.io/description: "Ensemble of LSTM, XGBoost, and LightGBM models"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: financial-mab-analysis
+  namespace: financial-ml
+spec:
+  args:
+    - name: success-rate
+      value: "0.95"
+    - name: business-threshold
+      value: "0.02"
+  metrics:
+    - name: business-value
+      interval: 60s
+      count: 10
+      successCondition: result[0] > {{args.business-threshold}}
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            sum(rate(ab_test_business_impact{metric_type="net_business_value"}[5m])) by (model_name)
+    - name: error-rate
+      interval: 60s
+      count: 10
+      failureCondition: result[0] > 0.05
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            sum(rate(ab_test_requests_total{status="error"}[5m])) / 
+            sum(rate(ab_test_requests_total[5m]))
+    - name: response-time
+      interval: 60s
+      count: 10
+      failureCondition: result[0] > 0.200
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            histogram_quantile(0.95, 
+              sum(rate(ab_test_response_time_seconds_bucket[5m])) by (le, model_name)
+            )
+    - name: accuracy
+      interval: 60s
+      count: 10
+      successCondition: result[0] > 0.75
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            avg(ab_test_model_accuracy) by (model_name)

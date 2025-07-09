@@ -5,6 +5,9 @@ scikit-learn
 torch
 mlflow
 
+# For data validation
+pandera
+
 # For YAML, Kubernetes, and cloud-native workflows (if needed)
 pyyaml
 
@@ -14,6 +17,10 @@ jupyter
 # For mocking and testing
 pytest
 pytest-mock
+pytest-cov
+
+# For code quality and linting
+ruff
 
 # For downloading stock data (if used in your pipeline)
 yfinance
