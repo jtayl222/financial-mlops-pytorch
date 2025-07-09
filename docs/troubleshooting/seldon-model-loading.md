@@ -110,3 +110,32 @@ curl -X POST http://<model-service>/v2/models/<model-name>/infer -d '{"inputs":[
 kubectl get experiments -n financial-ml
 kubectl describe experiment financial-ab-test-experiment -n financial-ml
 ```
+
+## Cleanup Issues
+
+### Stuck Namespaces (Finalizer Problems)
+**Symptom**: Namespace remains in "Terminating" state after deletion
+**Root Cause**: Seldon resources have finalizers preventing cleanup
+
+#### Check Stuck Resources
+```bash
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n financial-ml
+```
+
+#### Remove Finalizers
+```bash
+# Models
+kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+kubectl patch model enhanced-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+
+# Experiments  
+kubectl patch experiment financial-ab-test-experiment -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+
+# Servers
+kubectl patch server mlserver -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+```
+
+#### Force Namespace Deletion
+```bash
+kubectl delete namespace financial-ml --grace-period=0 --force
+```
