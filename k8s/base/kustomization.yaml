@@ -14,7 +14,8 @@ resources:
   - shared-data-pvc.yaml
   - financial-predictor-vs.yaml
   - seldon-runtime.yaml
-  - mlserver-manual.yaml
+  - network-policy.yaml
+  - mlserver.yaml
 
 labels:
 - includeSelectors: false

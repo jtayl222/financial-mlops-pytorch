@@ -6,6 +6,27 @@ metadata:
 spec:
   entrypoint: train-model
   serviceAccountName: argo-workflow-sa
+  
+  podSpecPatch: |
+    initContainers:
+    - name: init
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    containers:
+    - name: wait
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
   volumes:
   - name: shared-data-pvc
     persistentVolumeClaim:
@@ -13,14 +34,6 @@ spec:
   - name: shared-artifacts-pvc
     persistentVolumeClaim:
       claimName: shared-artifacts-pvc
-  - metadata:
-      name: shared-artifacts-pvc
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: nfs-shared
-      resources:
-        requests:
-          storage: 1Gi
 
   templates:
   - name: train-model
@@ -67,5 +80,6 @@ spec:
         limits:
           memory: "8Gi"
           cpu: "4"
-    imagePullSecrets:
-      - name: ghcr
+  
+  # imagePullSecrets:
+  # - name: ghcr

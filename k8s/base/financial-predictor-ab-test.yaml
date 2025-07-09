@@ -5,7 +5,7 @@ metadata:
   name: baseline-predictor
   namespace: financial-ml
 spec:
-  storageUri: s3://mlflow-artifacts/28/models/m-d6d788df1b5849b3a3df1d04434c17b9/artifacts/
+  storageUri: s3://mlflow-artifacts/28/models/m-4848a05187b24af79a8d93333de1d41d/artifacts/
   requirements:
   - mlflow
   - torch
@@ -21,7 +21,7 @@ metadata:
   name: enhanced-predictor
   namespace: financial-ml
 spec:
-  storageUri: s3://mlflow-artifacts/29/models/m-232922a2285b471d8fc0740fd9ff1551/artifacts/
+  storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
   requirements:
   - mlflow
   - torch

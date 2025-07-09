@@ -1,0 +1,212 @@
+
+# Application-Level Network Policy for financial-ml namespace
+# 
+# SCOPE: This policy manages application-specific networking rules within our namespace.
+# COORDINATION: Cross-namespace and cluster-wide policies are managed by Platform Team.
+# REFERENCE: See NETWORK-POLICY-GUIDELINES.md for full responsibility matrix.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: financial-ml-app-policy
+  namespace: financial-ml
+  annotations:
+    policy.scope: "application-level"
+    managed.by: "financial-mlops-pytorch-team"
+    coordination.required: "platform-team"
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from training namespace for model deployment
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-mlops-pytorch
+  # Allow traffic from seldon-system for model management
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: seldon-system
+  # Allow intra-namespace communication for Seldon components
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-ml
+  # Allow LoadBalancer ingress traffic
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9000
+  egress:
+  # Allow communication to training namespace for shared storage
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-mlops-pytorch
+  # Allow communication to seldon-system for runtime operations
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: seldon-system
+  # Allow intra-namespace communication
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-ml
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow MLflow namespace access
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: mlflow
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow Kubernetes API server access (including cluster IP)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # Allow access to kube-system namespace for API server
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # Allow external access to LoadBalancer services (MLflow, MinIO)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 5000  # MLflow
+    - protocol: TCP
+      port: 9000  # MinIO
+    - protocol: TCP
+      port: 443   # HTTPS
+    - protocol: TCP
+      port: 80    # HTTP
+  # Allow telemetry and monitoring
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 4317  # OpenTelemetry gRPC
+    - protocol: TCP
+      port: 4318  # OpenTelemetry HTTP
+---
+# Application-Level Network Policy for financial-mlops-pytorch namespace
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: financial-mlops-app-policy
+  namespace: financial-mlops-pytorch
+  annotations:
+    policy.scope: "application-level"
+    managed.by: "financial-mlops-pytorch-team"
+    coordination.required: "platform-team"
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from serving namespace for workflow triggers
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-ml
+  # Allow traffic from argo-events for pipeline triggers
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: argo-events
+  # Allow intra-namespace communication for Argo workflows
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-mlops-pytorch
+  egress:
+  # Allow communication to serving namespace for model deployment
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-ml
+  # Allow intra-namespace communication
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: financial-mlops-pytorch
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow MLflow namespace access
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: mlflow
+    ports:
+    - protocol: TCP
+      port: 5000
+  # Allow Kubernetes API server access (including cluster IP)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # Allow access to kube-system namespace for API server
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 6443
+  # Allow external access to LoadBalancer services (MLflow, MinIO)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 5000  # MLflow
+    - protocol: TCP
+      port: 9000  # MinIO  
+    - protocol: TCP
+      port: 443   # HTTPS
+    - protocol: TCP
+      port: 80    # HTTP
+  # Allow telemetry and monitoring
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 4317  # OpenTelemetry gRPC
+    - protocol: TCP
+      port: 4318  # OpenTelemetry HTTP
