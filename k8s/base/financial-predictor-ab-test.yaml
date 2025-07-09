@@ -5,13 +5,12 @@ metadata:
   name: baseline-predictor
   namespace: financial-ml
 spec:
-  storageUri: s3://mlflow-artifacts/28/models/m-4848a05187b24af79a8d93333de1d41d/artifacts/
+  storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
   requirements:
   - mlflow
   - torch
   - numpy
   - scikit-learn
-  secretName: ml-platform
   server: mlserver
 
 ---
@@ -27,7 +26,6 @@ spec:
   - torch
   - numpy
   - scikit-learn
-  secretName: ml-platform
   server: mlserver
 
 ---

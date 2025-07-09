@@ -1,0 +1,179 @@
+groups:
+- name: financial-mlops-ab-testing
+  rules:
+  
+  # Model Accuracy Degradation Alert
+  - alert: ModelAccuracyDegraded
+    expr: ab_test_model_accuracy < 75
+    for: 5m
+    labels:
+      severity: warning
+      component: model-performance
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "Model accuracy degraded for {{ $labels.model_name }}"
+      description: "Model {{ $labels.model_name }} accuracy dropped to {{ $value }}% which is below the 75% threshold"
+      runbook_url: "https://docs.company.com/runbooks/model-accuracy-degradation"
+      
+  # High Response Time Alert
+  - alert: HighResponseTime
+    expr: histogram_quantile(0.95, rate(ab_test_response_time_seconds_bucket[5m])) > 0.200
+    for: 3m
+    labels:
+      severity: warning
+      component: model-latency
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "High response time detected for {{ $labels.model_name }}"
+      description: "P95 response time for {{ $labels.model_name }} is {{ $value }}s, exceeding 200ms threshold"
+      runbook_url: "https://docs.company.com/runbooks/high-response-time"
+      
+  # Request Rate Anomaly Alert
+  - alert: RequestRateAnomaly
+    expr: rate(ab_test_requests_total[5m]) > 100 or rate(ab_test_requests_total[5m]) < 1
+    for: 2m
+    labels:
+      severity: warning
+      component: traffic-patterns
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "Abnormal request rate for {{ $labels.model_name }}"
+      description: "Request rate for {{ $labels.model_name }} is {{ $value }} req/s, which is outside normal range"
+      runbook_url: "https://docs.company.com/runbooks/request-rate-anomaly"
+      
+  # Error Rate Alert
+  - alert: HighErrorRate
+    expr: rate(ab_test_requests_total{status="error"}[5m]) / rate(ab_test_requests_total[5m]) > 0.05
+    for: 2m
+    labels:
+      severity: critical
+      component: model-reliability
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "High error rate detected for {{ $labels.model_name }}"
+      description: "Error rate for {{ $labels.model_name }} is {{ $value | humanizePercentage }}, exceeding 5% threshold"
+      runbook_url: "https://docs.company.com/runbooks/high-error-rate"
+      
+  # Business Impact Alert
+  - alert: NegativeBusinessImpact
+    expr: ab_test_business_impact{metric_type="net_business_value"} < -2
+    for: 10m
+    labels:
+      severity: warning
+      component: business-metrics
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "Negative business impact detected for {{ $labels.model_name }}"
+      description: "Net business value for {{ $labels.model_name }} is {{ $value }}%, indicating negative ROI"
+      runbook_url: "https://docs.company.com/runbooks/negative-business-impact"
+      
+  # Traffic Distribution Imbalance Alert
+  - alert: TrafficImbalance
+    expr: abs(ab_test_traffic_percentage - 70) > 15
+    for: 5m
+    labels:
+      severity: info
+      component: traffic-distribution
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "Traffic distribution imbalance for {{ $labels.model_name }}"
+      description: "{{ $labels.model_name }} receiving {{ $value }}% of traffic, deviating from expected distribution"
+      runbook_url: "https://docs.company.com/runbooks/traffic-imbalance"
+      
+  # Model Performance Comparison Alert
+  - alert: SignificantPerformanceDifference
+    expr: |
+      (
+        ab_test_model_accuracy{model_name="enhanced-predictor"} - 
+        ab_test_model_accuracy{model_name="baseline-predictor"}
+      ) > 5
+    for: 10m
+    labels:
+      severity: info
+      component: model-comparison
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "Significant performance difference detected"
+      description: "Enhanced model shows {{ $value }}% better accuracy than baseline - consider increasing traffic allocation"
+      runbook_url: "https://docs.company.com/runbooks/performance-difference"
+      
+  # Prediction Drift Alert
+  - alert: PredictionDrift
+    expr: stddev_over_time(ab_test_prediction_value[30m]) > 0.3
+    for: 5m
+    labels:
+      severity: warning
+      component: model-drift
+      experiment: "{{ $labels.experiment }}"
+    annotations:
+      summary: "Prediction drift detected for {{ $labels.model_name }}"
+      description: "High prediction variance ({{ $value }}) detected for {{ $labels.model_name }}, indicating potential model drift"
+      runbook_url: "https://docs.company.com/runbooks/prediction-drift"
+
+# Notification channels configuration
+notification_policies:
+  - name: "critical-alerts"
+    conditions:
+      - severity: critical
+    receivers:
+      - slack-critical
+      - pagerduty
+      - email-oncall
+    
+  - name: "warning-alerts"
+    conditions:
+      - severity: warning
+    receivers:
+      - slack-warnings
+      - email-team
+      
+  - name: "info-alerts"
+    conditions:
+      - severity: info
+    receivers:
+      - slack-info
+
+receivers:
+  - name: slack-critical
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#mlops-alerts"
+        title: "🚨 Critical MLOps Alert"
+        text: "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+        
+  - name: slack-warnings
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#mlops-warnings"
+        title: "⚠️ MLOps Warning"
+        text: "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+        
+  - name: slack-info
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#mlops-info"
+        title: "ℹ️ MLOps Information"
+        text: "{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+        
+  - name: email-oncall
+    email_configs:
+      - to: "oncall@company.com"
+        subject: "MLOps Critical Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+        body: |
+          Alert Details:
+          {{ range .Alerts }}
+          - Summary: {{ .Annotations.summary }}
+          - Description: {{ .Annotations.description }}
+          - Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+          
+  - name: email-team
+    email_configs:
+      - to: "mlops-team@company.com"
+        subject: "MLOps Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}"
+        body: |
+          Alert Details:
+          {{ range .Alerts }}
+          - Summary: {{ .Annotations.summary }}
+          - Description: {{ .Annotations.description }}
+          {{ end }}
