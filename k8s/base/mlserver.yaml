@@ -1,0 +1,9 @@
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Server
+metadata:
+  name: mlserver
+  namespace: financial-ml
+spec:
+  serverConfig: mlserver
+  capabilities: ["mlflow", "torch", "scikit-learn", "numpy"]
+  replicas: 1
