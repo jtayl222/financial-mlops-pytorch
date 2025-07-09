@@ -3,11 +3,11 @@ import os
 
 
 # Get experiment info
-experiment = mlflow.get_experiment('22')
+experiment = mlflow.get_experiment('29')
 print(f"Experiment: {experiment.name}")
 
 # List runs
-runs = mlflow.search_runs(experiment_ids=['22'])
+runs = mlflow.search_runs(experiment_ids=['29'])
 print(f"\nFound {len(runs)} runs")
 
 # Check for logged models
