@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: financial-ml
+
+resources:
+- ../../k8s/base/namespace.yaml
+- ../../k8s/base/mlserver.yaml
+- ../../k8s/base/seldon-runtime.yaml
+- ../../k8s/base/financial-predictor-ab-test.yaml
+- ../../k8s/base/financial-predictor-vs.yaml
+- ../../k8s/base/network-policy.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: argocd
+  app.kubernetes.io/part-of: financial-mlops-pytorch

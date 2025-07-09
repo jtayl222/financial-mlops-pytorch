@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: financial-mlops-pytorch
+
+resources:
+- ../../k8s/base/financial-data-pipeline.yaml
+- ../../k8s/base/training-pipeline.yaml
+- ../../k8s/base/rbac.yaml
+- ../../k8s/base/shared-artifacts-pvc.yaml
+- ../../k8s/base/shared-data-pvc.yaml
+- ../../k8s/base/event-source.yaml
+- ../../k8s/base/sensor.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: argocd
+  app.kubernetes.io/part-of: financial-mlops-pytorch
