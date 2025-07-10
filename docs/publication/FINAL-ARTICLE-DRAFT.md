@@ -77,7 +77,7 @@ We have two models:
 
 Our A/B testing infrastructure follows GitOps principles with full observability:
 
-![Production MLOps A/B testing architecture with GitOps automation](images/architecture_diagram.png)
+![Production MLOps A/B testing architecture with GitOps automation](https://cdn-images-1.medium.com/v2/resize:fit:2400/1*afPybPzBA8jJUK7BjXaIiQ.png)
 
 *Production MLOps A/B testing architecture with GitOps automation*
 ### Seldon Core v2 Deployment Details
@@ -158,7 +158,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5
 ```
 
-![Live A/B testing execution with real-time metrics collection](images/terminal_metrics_view.png)
+![Live A/B testing execution with real-time metrics collection](https://cdn-images-1.medium.com/v2/resize:fit:2400/1*iJ9HuYOqvekGM-Mwuw0uZQ.png)
 
 *Live A/B testing execution with real-time metrics collection*
 
@@ -208,7 +208,7 @@ net_value = revenue_lift - cost_impact + risk_reduction
 
 **Recommendation**: ✅ **STRONG RECOMMEND** - Deploy enhanced model
 
-![Comprehensive A/B testing results showing 3.9% net business value improvement](images/financial_ab_testing_dashboard_20250708_223743.png)
+![Comprehensive A/B testing results showing 3.9% net business value improvement](https://cdn-images-1.medium.com/v2/resize:fit:2400/1*FFxI8_UsbOGJrQjHAVReMA.png)
 
 *Comprehensive A/B testing results showing 3.9% net business value improvement*
 
@@ -248,7 +248,7 @@ Our Grafana dashboard provides comprehensive visibility:
     summary: "P95 response time exceeds 200ms"
 ```
 
-![Production monitoring dashboard with automated alerting and KPI tracking](images/monitoring_alerts_dashboard.png)
+![Production monitoring dashboard with automated alerting and KPI tracking](https://cdn-images-1.medium.com/v2/resize:fit:2400/1*fSM3xDe16bwLI4z8Qm5JDQ.png)
 
 *Production monitoring dashboard with automated alerting and KPI tracking*
 
@@ -301,7 +301,7 @@ daily_cost_increase = requests_per_day * latency_increase * cost_per_ms * 1000
 | **Infrastructure Cost** | -$53,000 |
 | **Net ROI** | **1,143%** |
 
-![ROI analysis demonstrating 1,143% return on A/B testing infrastructure](images/business_impact_analysis.png)
+![ROI analysis demonstrating 1,143% return on A/B testing infrastructure](https://cdn-images-1.medium.com/v2/resize:fit:2400/1*FC6WSqynbdtj7uM00NUrVw.png)
 
 *ROI analysis demonstrating 1,143% return on A/B testing infrastructure*
 
