@@ -145,7 +145,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 ./scripts/gitops-model-update.sh enhanced v1.2.0
 
 # 3. Run A/B test
-python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5
+python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5
 ```
 
 ![Live A/B testing execution with real-time metrics collection](https://cdn-images-1.medium.com/max/2400/1*afPybPzBA8jJUK7BjXaIiQ.png)

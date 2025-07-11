@@ -48,7 +48,7 @@ This script simulates user traffic to the A/B tested models. It will send 2,500 
 
 ```bash
 echo "Running the A/B test simulation..."
-python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5
+python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5
 ```
 
 ### Step 5: Observe the Results

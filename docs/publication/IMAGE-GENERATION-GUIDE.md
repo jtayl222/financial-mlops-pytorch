@@ -374,7 +374,7 @@ def create_terminal_view():
     
     # Terminal content
     terminal_content = [
-        "user@mlops-cluster:~/financial-mlops-pytorch$ python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5",
+        "user@mlops-cluster:~/financial-mlops-pytorch$ python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5",
         "",
         "🚀 Starting Financial ML A/B Testing Demo",
         "   📊 Scenarios: 2,500 | Workers: 5 | Duration: 2h 15m",

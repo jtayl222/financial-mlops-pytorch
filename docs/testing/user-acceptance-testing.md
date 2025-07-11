@@ -89,7 +89,7 @@ kubectl get experiment financial-ab-test-experiment -n financial-inference
 kubectl describe experiment financial-ab-test-experiment -n financial-inference
 
 # Run traffic simulation
-python3 scripts/demo-ab-testing.py --scenarios 100 --workers 2
+python3 scripts/demo/demo-ab-testing.py --scenarios 100 --workers 2
 
 # Check traffic distribution
 python3 scripts/get-experiment-details.py --experiment financial-ab-test-experiment
@@ -209,7 +209,7 @@ python3 scripts/validate-explanations.py --test-cases 50
 **Test Steps**:
 ```bash
 # Run high-load A/B testing
-python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5 --duration 30m
+python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5 --duration 30m
 
 # Monitor system resources during test
 kubectl top pods -n financial-inference
@@ -314,7 +314,7 @@ python3 scripts/integration-test.py --model test-integration-predictor --request
 **Test Steps**:
 ```bash
 # Test MLflow database connection
-python3 scripts/test-database-connection.py --test-mlflow
+python3 scripts/demo/test-database-connection.py --test-mlflow
 
 # Verify experiment data persistence
 python3 -c "
@@ -387,13 +387,13 @@ python3 scripts/validate-network-policies.py --comprehensive
 ./scripts/setup-live-dashboards.sh
 
 # Test database connections
-python3 scripts/test-database-connection.py --validate-all
+python3 scripts/demo/test-database-connection.py --validate-all
 
 # Generate live A/B dashboard
 ./scripts/run-live-ab-dashboard.sh
 
 # Generate business impact dashboard
-./scripts/run-live-business-dashboard.sh
+./scripts/demo/run-live-business-dashboard.sh
 
 # Verify generated images
 ls -la live_*_dashboard_*.png
@@ -413,7 +413,7 @@ python3 scripts/validate-dashboard-images.py --check-quality
 **Test Steps**:
 ```bash
 # Start interactive dashboard
-python3 scripts/interactive-live-dashboard.py &
+python3 scripts/demo/interactive-live-dashboard.py &
 WEB_PID=$!
 
 # Wait for startup

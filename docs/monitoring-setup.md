@@ -57,7 +57,7 @@ pip3 install prometheus_client requests numpy pandas matplotlib seaborn
 python3 scripts/metrics-collector.py --port 8001 --status-interval 30
 ```
 
-### 2. Enhanced A/B Demo (`scripts/advanced-ab-demo.py`)
+### 2. Enhanced A/B Demo (`scripts/demo/advanced-ab-demo.py`)
 
 **Purpose**: Runs comprehensive A/B testing with integrated metrics collection
 
@@ -70,10 +70,10 @@ python3 scripts/metrics-collector.py --port 8001 --status-interval 30
 **Usage**:
 ```bash
 # Run with metrics enabled
-python3 scripts/advanced-ab-demo.py --scenarios 200 --workers 5 --metrics-port 8002
+python3 scripts/demo/advanced-ab-demo.py --scenarios 200 --workers 5 --metrics-port 8002
 
 # Run without metrics
-python3 scripts/advanced-ab-demo.py --scenarios 200 --no-metrics
+python3 scripts/demo/advanced-ab-demo.py --scenarios 200 --no-metrics
 ```
 
 ### 3. Grafana Dashboard (`grafana/ab-testing-dashboard.json`)
@@ -240,7 +240,7 @@ curl -X POST http://192.168.1.85:30090/api/v1/admin/tsdb/delete_series?match[]=a
 # Example GitHub Actions workflow
 - name: Run A/B Test with Metrics
   run: |
-    python3 scripts/advanced-ab-demo.py --scenarios 50 --no-viz
+    python3 scripts/demo/advanced-ab-demo.py --scenarios 50 --no-viz
     
 - name: Check Metrics Collection
   run: |

@@ -132,7 +132,7 @@ def create_metrics_terminal_view():
     
     # Terminal content
     terminal_text = """
-$ python3 scripts/advanced-ab-demo.py --scenarios 2500 --workers 5
+$ python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5
 
 🎯 Advanced Financial MLOps A/B Testing Demonstration
 ============================================================

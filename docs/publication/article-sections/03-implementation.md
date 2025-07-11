@@ -34,7 +34,7 @@ kubectl get models -n financial-inference
 
 ```python
 # Advanced A/B testing with real-time metrics
-python3 scripts/advanced-ab-demo.py \
+python3 scripts/demo/advanced-ab-demo.py \
   --endpoint "http://192.168.1.202:80" \
   --scenarios 2500 \
   --workers 5 \
