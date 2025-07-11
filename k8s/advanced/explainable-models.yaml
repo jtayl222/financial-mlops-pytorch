@@ -1,0 +1,508 @@
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: explainable-financial-predictor
+  namespace: financial-inference
+  annotations:
+    seldon.io/model-type: "explainable-predictor"
+    seldon.io/description: "Financial predictor with SHAP and LIME explainability"
+    seldon.io/explainability: "true"
+    seldon.io/compliance: "regulatory-ready"
+spec:
+  storageUri: "gs://financial-inference-models/explainable/v1.0.0"
+  requirements:
+    - "torch>=1.9.0"
+    - "shap>=0.40.0"
+    - "lime>=0.2.0"
+    - "numpy>=1.21.0"
+    - "pandas>=1.3.0"
+    - "scikit-learn>=1.0.0"
+    - "matplotlib>=3.5.0"
+    - "seaborn>=0.11.0"
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+  replicas:
+    min: 1
+    max: 3
+  ingress:
+    httpPort: 9000
+    grpcPort: 9001
+  protocol: v2
+  env:
+    - name: ENABLE_EXPLANATIONS
+      value: "true"
+    - name: EXPLANATION_METHODS
+      value: "shap,lime,feature_importance"
+    - name: EXPLANATION_CACHE_TTL
+      value: "3600"  # 1 hour
+    - name: REGULATORY_COMPLIANCE
+      value: "true"
+    - name: AUDIT_LOGGING
+      value: "true"
+    - name: CONFIDENCE_THRESHOLD
+      value: "0.7"
+    - name: RISK_THRESHOLD
+      value: "0.1"
+  volumes:
+    - name: explanation-cache
+      emptyDir:
+        sizeLimit: "1Gi"
+  volumeMounts:
+    - name: explanation-cache
+      mountPath: /tmp/explanations
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: shap-explanation-service
+  namespace: financial-inference
+  annotations:
+    seldon.io/model-type: "explainer"
+    seldon.io/description: "Dedicated SHAP explanation service"
+spec:
+  storageUri: "gs://financial-inference-models/shap-explainer/v1.0.0"
+  requirements:
+    - "shap>=0.40.0"
+    - "torch>=1.9.0"
+    - "numpy>=1.21.0"
+    - "pandas>=1.3.0"
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  replicas:
+    min: 1
+    max: 2
+  ingress:
+    httpPort: 9000
+    grpcPort: 9001
+  protocol: v2
+  env:
+    - name: EXPLAINER_TYPE
+      value: "shap"
+    - name: BACKGROUND_SAMPLES
+      value: "100"
+    - name: FEATURE_NAMES
+      value: "price,volume,returns,volatility,rsi,macd,sma_5,sma_20,bb_upper,bb_lower,atr,momentum,williams_r,stoch_k,stoch_d,adx,cci,roc,news_sentiment,social_sentiment,market_fear_greed,vix,dollar_index,bond_yield,commodity_index"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Model
+metadata:
+  name: lime-explanation-service
+  namespace: financial-inference
+  annotations:
+    seldon.io/model-type: "explainer"
+    seldon.io/description: "Dedicated LIME explanation service"
+spec:
+  storageUri: "gs://financial-inference-models/lime-explainer/v1.0.0"
+  requirements:
+    - "lime>=0.2.0"
+    - "torch>=1.9.0"
+    - "numpy>=1.21.0"
+    - "pandas>=1.3.0"
+    - "scikit-learn>=1.0.0"
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  replicas:
+    min: 1
+    max: 2
+  ingress:
+    httpPort: 9000
+    grpcPort: 9001
+  protocol: v2
+  env:
+    - name: EXPLAINER_TYPE
+      value: "lime"
+    - name: NUM_SAMPLES
+      value: "1000"
+    - name: NUM_FEATURES
+      value: "10"
+    - name: DISCRETIZE_CONTINUOUS
+      value: "true"
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: Experiment
+metadata:
+  name: explainable-model-experiment
+  namespace: financial-inference
+  annotations:
+    seldon.io/experiment-type: "explainability-comparison"
+    seldon.io/description: "A/B test comparing explainable vs standard models"
+spec:
+  default: baseline-predictor
+  candidates:
+    - name: baseline-predictor
+      weight: 50
+    - name: explainable-financial-predictor
+      weight: 50
+  config:
+    type: "explainability-study"
+    explanation_sampling_rate: 0.1  # Explain 10% of predictions
+    audit_logging: true
+    compliance_mode: true
+  resourceRequirements:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  mirror:
+    percent: 5
+    name: explanation-mirror
+  traffic:
+    canary:
+      percent: 100
+    stable:
+      percent: 0
+  successCondition: "explanation_quality > 0.8"
+  failureCondition: "explanation_latency > 500ms"
+  analysisTemplate:
+    name: explainability-analysis
+    args:
+      - name: quality-threshold
+        value: "0.8"
+      - name: latency-threshold
+        value: "500ms"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: explainability-analysis
+  namespace: financial-inference
+spec:
+  args:
+    - name: quality-threshold
+      value: "0.8"
+    - name: latency-threshold
+      value: "500ms"
+  metrics:
+    - name: explanation-quality
+      interval: 60s
+      count: 10
+      successCondition: result[0] > {{args.quality-threshold}}
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            avg(explainable_prediction_quality{model_name="explainable-financial-predictor"})
+    - name: explanation-latency
+      interval: 60s
+      count: 10
+      failureCondition: result[0] > 0.5
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            histogram_quantile(0.95, 
+              sum(rate(explainable_prediction_duration_seconds_bucket{model_name="explainable-financial-predictor"}[5m])) by (le)
+            )
+    - name: compliance-score
+      interval: 60s
+      count: 10
+      successCondition: result[0] > 0.9
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            avg(regulatory_compliance_score{model_name="explainable-financial-predictor"})
+    - name: audit-coverage
+      interval: 60s
+      count: 10
+      successCondition: result[0] > 0.95
+      provider:
+        prometheus:
+          address: http://prometheus-server:9090
+          query: |
+            sum(rate(audit_log_entries_total{model_name="explainable-financial-predictor"}[5m])) /
+            sum(rate(prediction_requests_total{model_name="explainable-financial-predictor"}[5m]))
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: explainability-config
+  namespace: financial-inference
+data:
+  explainability.yaml: |
+    explainer_config:
+      shap:
+        enabled: true
+        background_samples: 100
+        explanation_type: "kernel"
+        feature_names:
+          - price
+          - volume
+          - returns
+          - volatility
+          - rsi
+          - macd
+          - sma_5
+          - sma_20
+          - bb_upper
+          - bb_lower
+          - atr
+          - momentum
+          - williams_r
+          - stoch_k
+          - stoch_d
+          - adx
+          - cci
+          - roc
+          - news_sentiment
+          - social_sentiment
+          - market_fear_greed
+          - vix
+          - dollar_index
+          - bond_yield
+          - commodity_index
+        
+      lime:
+        enabled: true
+        num_samples: 1000
+        num_features: 10
+        discretize_continuous: true
+        categorical_features: []
+        
+      feature_importance:
+        enabled: true
+        method: "permutation"
+        n_repeats: 10
+        
+    risk_analysis:
+      enabled: true
+      thresholds:
+        volatility:
+          high: 0.30
+          medium: 0.20
+        rsi:
+          overbought: 70
+          oversold: 30
+        vix:
+          high: 25
+          medium: 20
+        news_sentiment:
+          negative: 0.3
+          positive: 0.7
+      
+    counterfactual_analysis:
+      enabled: true
+      scenarios:
+        - name: "improved_sentiment"
+          changes:
+            news_sentiment: 0.75
+            social_sentiment: 0.72
+        - name: "reduced_volatility"
+          changes:
+            volatility: 0.12
+            vix: 16
+        - name: "normalized_rsi"
+          changes:
+            rsi: 55
+        - name: "positive_momentum"
+          changes:
+            momentum: 0.3
+            returns: 0.015
+    
+    compliance:
+      regulatory_requirements:
+        - "EU_AI_Act"
+        - "GDPR_Article_22"
+        - "CCPA_Transparency"
+        - "Basel_III_Model_Risk"
+        - "MiFID_II_Algo_Trading"
+      
+      audit_logging:
+        enabled: true
+        log_level: "detailed"
+        include_features: true
+        include_explanations: true
+        retention_days: 2555  # 7 years
+        
+      explanation_requirements:
+        min_confidence: 0.7
+        max_latency_ms: 500
+        feature_coverage: 0.95
+        explanation_quality: 0.8
+        
+    monitoring:
+      enabled: true
+      metrics:
+        - name: "explanation_quality"
+          description: "Quality score of explanations"
+          type: "gauge"
+        - name: "explanation_latency"
+          description: "Time to generate explanations"
+          type: "histogram"
+        - name: "compliance_score"
+          description: "Regulatory compliance score"
+          type: "gauge"
+        - name: "audit_coverage"
+          description: "Percentage of predictions audited"
+          type: "gauge"
+      
+      alerts:
+        - name: "explanation_quality_degradation"
+          condition: "explanation_quality < 0.7"
+          action: "alert_compliance_team"
+          severity: "high"
+        - name: "explanation_latency_high"
+          condition: "explanation_latency > 1000ms"
+          action: "scale_explainer_service"
+          severity: "medium"
+        - name: "compliance_violation"
+          condition: "compliance_score < 0.9"
+          action: "alert_legal_team"
+          severity: "critical"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: explainable-model-policy
+  namespace: financial-inference
+spec:
+  podSelector:
+    matchLabels:
+      app: explainable-financial-predictor
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: financial-inference
+        - podSelector:
+            matchLabels:
+              app: seldon-mesh
+      ports:
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 9001
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: shap-explanation-service
+        - podSelector:
+            matchLabels:
+              app: lime-explanation-service
+      ports:
+        - protocol: TCP
+          port: 9000
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: explainable-predictor-service
+  namespace: financial-inference
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  selector:
+    app: explainable-financial-predictor
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9000
+      protocol: TCP
+    - name: grpc
+      port: 81
+      targetPort: 9001
+      protocol: TCP
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: explainable-model-monitor
+  namespace: financial-inference
+spec:
+  selector:
+    matchLabels:
+      app: explainable-financial-predictor
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics
+      honorLabels: true
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: explainable-predictor-pdb
+  namespace: financial-inference
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: explainable-financial-predictor
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: explainable-predictor-hpa
+  namespace: financial-inference
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: explainable-financial-predictor
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Pods
+      pods:
+        metric:
+          name: explanation_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "50"
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
