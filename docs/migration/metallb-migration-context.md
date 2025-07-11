@@ -17,7 +17,7 @@
 - **Production Ready**: More enterprise-grade than NodePort for external services
 
 #### Specific Services That Benefited
-- **MLflow**: `192.168.1.207:5000` (was NodePort)
+- **MLflow**: `192.168.1.203:5000` (was NodePort)
 - **MinIO**: `192.168.1.200:9000` (was NodePort)  
 - **Seldon Mesh**: `192.168.1.206:80` (was NodePort)
 - **ArgoCD, Grafana, JupyterHub**: All got stable LoadBalancer IPs
@@ -52,7 +52,7 @@ MLFLOW_S3_ENDPOINT_URL: http://192.168.1.107:30900  # Different node, different 
 ```
 
 #### MetalLB Solution
-- **Stable LoadBalancer IPs**: `192.168.1.207:5000` for MLflow remains consistent
+- **Stable LoadBalancer IPs**: `192.168.1.203:5000` for MLflow remains consistent
 - **Automatic DNS**: Can register stable IPs in DNS once
 - **No config drift**: YAML files don't need constant IP/port updates
 - **Operational reliability**: Services remain accessible at consistent endpoints

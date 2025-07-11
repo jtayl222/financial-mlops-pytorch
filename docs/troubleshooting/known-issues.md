@@ -96,7 +96,7 @@ Failed to establish connection to 'mlflow.mlflow.svc.cluster.local'
 
 ### Root Cause Assessment
 **Likely Platform Issue**:
-- ✅ External LoadBalancer IP works (`192.168.1.207:5000`)
+- ✅ External LoadBalancer IP works (`192.168.1.203:5000`)
 - ✅ Service exists with correct ClusterIP  
 - ❌ DNS resolution fails from workflow pods
 - ❌ Cross-namespace service discovery broken
@@ -105,7 +105,7 @@ Failed to establish connection to 'mlflow.mlflow.svc.cluster.local'
 **Using LoadBalancer IPs instead of service DNS**:
 ```yaml
 # Workaround - should be service DNS
-MLFLOW_TRACKING_URI: "http://192.168.1.207:5000"
+MLFLOW_TRACKING_URI: "http://192.168.1.203:5000"
 # Proper - but currently broken
 MLFLOW_TRACKING_URI: "http://mlflow.mlflow.svc.cluster.local:5000"
 ```

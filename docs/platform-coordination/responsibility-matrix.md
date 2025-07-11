@@ -4,9 +4,10 @@
 
 | Component | Application Team | Platform Team | Notes |
 |-----------|------------------|---------------|-------|
-| Application-level policies | ✅ Owns | 🤝 Consults | Within namespace boundaries |
-| Cross-namespace policies | 🤝 Requests | ✅ Owns | Requires coordination |
+| Application-level policies | ✅ Owns | 🤝 Provides templates | Within namespace boundaries only |
+| Cross-namespace policies | 🤝 Requests | ✅ Owns | **Platform responsibility - security boundary** |
 | Cluster-wide policies | ❌ No access | ✅ Owns | Infrastructure-level |
+| **Ingress network policies** | 🤝 Uses templates | ✅ Owns | Platform controls external access |
 | DNS egress rules | ✅ Implements | 🤝 Guides | Standard patterns |
 
 ## Secrets Management
@@ -24,7 +25,9 @@
 |-----------|------------------|---------------|-------|
 | Application services | ✅ Owns | 🤝 Reviews | LoadBalancer, ClusterIP |
 | LoadBalancer IPs | 🤝 Requests | ✅ Assigns | MetalLB pool management |
-| Ingress routes | ✅ Configures | ✅ Provides controller | Shared implementation |
+| **NGINX Ingress Controller** | ❌ No access | ✅ Owns | Cluster infrastructure, global policies |
+| **Ingress routes** | ✅ Configures | 🤝 Provides templates | App team uses platform templates |
+| **TLS certificates** | 🤝 Requests | ✅ Provides | Platform controls domain/certs |
 | Service mesh | ❌ No access | ✅ Owns | If implemented |
 
 ## Seldon Core Components
