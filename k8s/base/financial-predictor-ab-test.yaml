@@ -4,6 +4,10 @@ kind: Model
 metadata:
   name: baseline-predictor
   namespace: financial-inference
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
   requirements:
@@ -19,6 +23,10 @@ kind: Model
 metadata:
   name: enhanced-predictor
   namespace: financial-inference
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
   requirements:
@@ -34,6 +42,10 @@ kind: Experiment
 metadata:
   name: financial-ab-test-experiment
   namespace: financial-inference
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
 spec:
   default: baseline-predictor
   candidates:
