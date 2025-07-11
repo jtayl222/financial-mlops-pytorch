@@ -14,27 +14,17 @@ if [ -f ".env.live-dashboards" ]; then
     rm .env.live-dashboards
 fi
 
-# Remove requirements file (recreated by setup script)
-if [ -f "requirements-live-dashboards.txt" ]; then
-    echo "🗑️  Removing requirements-live-dashboards.txt"
-    rm requirements-live-dashboards.txt
-fi
+# Note: requirements-live-dashboards.txt is now committed in scripts/demo/ and not removed
 
 # Remove generated helper scripts (recreated by setup script)
 echo "🗑️  Removing generated helper scripts..."
 # Note: run-live-ab-dashboard.sh is now permanent and not removed
 
-if [ -f "scripts/run-live-business-dashboard.sh" ]; then
-    rm scripts/run-live-business-dashboard.sh
-fi
+# Note: run-live-business-dashboard.sh is now a committed file and not removed
 
-if [ -f "scripts/interactive-live-dashboard.py" ]; then
-    rm scripts/interactive-live-dashboard.py
-fi
+# Note: interactive-live-dashboard.py is now a committed file and not removed
 
-if [ -f "scripts/test-database-connection.py" ]; then
-    rm scripts/test-database-connection.py
-fi
+# Note: test-database-connection.py is now a committed file and not removed
 
 # Remove virtual environment (optional - takes time to recreate)
 if [ "$1" = "--full-reset" ]; then

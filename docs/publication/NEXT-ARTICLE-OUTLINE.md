@@ -84,7 +84,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 #### 3. Experiment Execution
 ```python
 # Run comprehensive A/B test
-python3 scripts/advanced-ab-demo.py --endpoint "http://seldon-mesh" \
+python3 scripts/demo/advanced-ab-demo.py --endpoint "http://seldon-mesh" \
   --scenarios 2500 --workers 5
 ```
 
@@ -289,8 +289,8 @@ A/B testing in production MLOps goes far beyond simple traffic splitting. It's a
 ## Code Examples and Demos
 
 All code examples and demonstration scripts are available in the accompanying repository:
-- `scripts/advanced-ab-demo.py`: Live A/B testing with real models
-- `scripts/simulated-ab-demo.py`: Comprehensive simulation for demonstration
+- `scripts/demo/advanced-ab-demo.py`: Live A/B testing with real models
+- `scripts/demo/simulated-ab-demo.py`: Comprehensive simulation for demonstration
 - `k8s/base/financial-predictor-ab-test.yaml`: Seldon experiment configuration
 - `docs/operations/`: Comprehensive operational documentation
 

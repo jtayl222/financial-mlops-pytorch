@@ -39,7 +39,7 @@ vim .env.live-dashboards
 # PROMETHEUS_URL=http://prometheus-server:9090
 
 # Test connections
-python3 scripts/test-database-connection.py
+python3 scripts/demo/test-database-connection.py
 ```
 
 **Success Criteria**:
@@ -54,10 +54,10 @@ python3 scripts/test-database-connection.py
 ./scripts/run-live-ab-dashboard.sh
 
 # Generate live business impact analysis
-./scripts/run-live-business-dashboard.sh
+./scripts/demo/run-live-business-dashboard.sh
 
 # Start interactive web dashboard
-python3 scripts/interactive-live-dashboard.py
+python3 scripts/demo/interactive-live-dashboard.py
 # Access at http://localhost:8050
 ```
 
@@ -321,7 +321,7 @@ python3 scripts/explainable-demo.py --comprehensive
 # Live dashboard system demonstration
 ./scripts/setup-live-dashboards.sh
 python3 scripts/live-dashboard-generator.py
-python3 scripts/interactive-live-dashboard.py
+python3 scripts/demo/interactive-live-dashboard.py
 ```
 
 #### **Article 7: "Enterprise MLOps: Lessons from Production Implementation"**
@@ -493,14 +493,14 @@ vim .env.live-dashboards
 # Update Prometheus URL
 
 # Step 3: Test connections
-python3 scripts/test-database-connection.py
+python3 scripts/demo/test-database-connection.py
 
 # Step 4: Generate live dashboards
 ./scripts/run-live-ab-dashboard.sh
-./scripts/run-live-business-dashboard.sh
+./scripts/demo/run-live-business-dashboard.sh
 
 # Step 5: Start interactive dashboard
-python3 scripts/interactive-live-dashboard.py
+python3 scripts/demo/interactive-live-dashboard.py
 ```
 
 ### **Week 1: Advanced Features Implementation**
