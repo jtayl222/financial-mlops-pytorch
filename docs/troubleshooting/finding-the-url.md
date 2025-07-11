@@ -3,9 +3,30 @@
 ## Problem
 We have working Seldon components but can't find the correct endpoint URL for our experiment. Getting 404s on standard paths.
 
-## LoadBalancer Available
-- Seldon mesh at `192.168.1.202:80` (seldon-system namespace)
-- Need to find any working endpoint to understand URL structure
+## ✅ SOLUTION: NGINX Ingress (Current Approach)
+**NGINX Ingress Controller provides unified external access** (implemented 2025-07-11):
+
+### Production-Ready External Access
+```bash
+# NGINX Ingress endpoint (no port-forwarding needed)
+curl http://ml-api.local/financial-inference/v2/models
+
+# Models accessible via ingress
+curl http://ml-api.local/financial-inference/v2/models/baseline-predictor
+curl http://ml-api.local/financial-inference/v2/models/enhanced-predictor
+curl http://ml-api.local/financial-inference/v2/models/financial-ab-test-experiment
+```
+
+### Architecture
+```
+External → NGINX Ingress (192.168.1.249) → /financial-inference/* → financial-inference namespace
+```
+
+## Legacy Methods (For Reference)
+
+### Direct LoadBalancer Access (Limited)
+- Seldon mesh at `192.168.1.202:80` (seldon-system namespace only)
+- Does **not** provide access to financial-inference namespace
 
 ## Exploration Strategy
 
@@ -91,17 +112,17 @@ curl -s http://192.168.1.202:9003/v2/models
 curl -s http://192.168.1.202:9003/health
 ```
 
-## SOLUTION FOUND ✅
+## LEGACY SOLUTION ⚠️ (Port-Forward Method)
 
-### Working Pattern Discovered
+### Working Pattern Discovered (Before NGINX Ingress)
 The issue was **namespace routing**. MetalLB provides external access, but the seldon-system LoadBalancer (192.168.1.202) only routes to seldon-system components, not our financial-inference namespace components.
 
-**Why Port-Forward is Still Needed:**
+**Why Port-Forward Was Needed:**
 - ✅ MetalLB: External IP access works (192.168.1.202)  
 - ❌ Namespace isolation: LoadBalancer doesn't cross namespaces
 - ❌ Missing cross-namespace routing configuration
 
-**Correct approach**: Access the financial-inference namespace mesh directly via port-forward:
+**Legacy approach** (still works for debugging):
 
 ```bash
 # Port forward to financial-inference mesh
@@ -110,19 +131,19 @@ kubectl port-forward -n financial-inference svc/seldon-mesh 8082:80
 # Working endpoints:
 curl http://localhost:8082/v2/models/baseline-predictor     # ✅ 200 OK
 curl http://localhost:8082/v2/models/enhanced-predictor     # ✅ 200 OK
-curl http://localhost:8082/v2/models/financial-ab-test-experiment  # ✅ Check needed
+curl http://localhost:8082/v2/models/financial-ab-test-experiment  # ✅ 200 OK
 ```
 
 ### Key Findings
 1. **Individual models work**: `baseline-predictor` and `enhanced-predictor` return model metadata
 2. **Namespace isolation**: seldon-system LoadBalancer ≠ financial-inference components
-3. **Port forwarding required**: financial-inference mesh is ClusterIP only
+3. **NGINX Ingress solves this**: Production-ready cross-namespace routing
 4. **Correct inference URL pattern**: `/v2/models/{model-name}/infer`
 
-### Next Steps
-- ✅ Test experiment endpoint
-- ✅ Update traffic generator with correct localhost:8082 endpoint  
-- ✅ Generate live traffic with working URLs
+### Current State
+- ✅ **NGINX Ingress**: Production external access (ml-api.local)
+- ✅ **Port-forward**: Still available for debugging
+- ✅ **Traffic generators**: Updated to use ingress endpoints
 
 ### After URL Resolution - Common Next Issue
 Once you find working URLs, you may encounter **500 Internal Server Error** instead of 404s. This typically indicates **payload format issues**:

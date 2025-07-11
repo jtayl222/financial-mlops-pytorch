@@ -125,3 +125,81 @@ MLFLOW_TRACKING_URI: "http://mlflow.mlflow.svc.cluster.local:5000"
 
 ### Owner
 **Platform team** - cluster DNS and networking infrastructure.
+
+## MetalLB IP Pool Configuration for NGINX Ingress
+
+### Background
+Implementing NGINX Ingress Controller for production-ready MLOps platform access (eliminating port-forwarding).
+
+### Problem
+**IP allocation conflict between NGINX Ingress and MetalLB**:
+- MetalLB pool: `192.168.1.200-192.168.1.250` 
+- NGINX Ingress needs dedicated IP: `192.168.1.249`
+- Risk of IP conflicts when MetalLB assigns this IP to other services
+
+### Root Cause
+No IP reservation mechanism in current MetalLB configuration.
+
+### Current Workaround (Technical Debt)
+**Using IP from MetalLB pool without reservation**:
+```bash
+# NGINX Ingress uses 192.168.1.249 but it's not reserved
+helm install ingress-nginx --set controller.service.loadBalancerIP=192.168.1.249
+```
+
+### Impact
+- **Service disruption risk**: MetalLB could assign same IP to another service
+- **Architecture violation**: Unmanaged IP allocation
+- **Blocks production**: Cannot safely complete ingress implementation
+
+### Platform Team Action Required
+Choose one solution:
+
+#### Option A: Create dedicated ingress pool
+```yaml
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: ingress-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.1.249/32
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: ingress-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ingress-pool
+```
+
+#### Option B: Exclude IP from main pool
+```yaml
+# Update existing homelab-pool
+spec:
+  addresses:
+  - 192.168.1.200-192.168.1.248
+  - 192.168.1.250/32
+```
+
+#### Option C: Expand range with reservation
+```yaml
+# Reserve 192.168.1.199 for ingress, expand pool
+spec:
+  addresses:
+  - 192.168.1.199/32  # Dedicated for ingress
+  - 192.168.1.200-192.168.1.250
+```
+
+### Priority
+**High** - Blocking production-ready external access implementation.
+
+### Owner
+**Platform team** - MetalLB configuration and IP pool management.
+
+### Related Files
+- `docs/architecture-decisions/nginx-ingress-for-mlops.md`
+- `k8s/base/nginx-ingress.yaml`

@@ -16,6 +16,7 @@ resources:
   - seldon-runtime.yaml
   - network-policy.yaml
   - mlserver.yaml
+  - nginx-ingress.yaml
 
 labels:
 - includeSelectors: false

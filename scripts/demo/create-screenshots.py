@@ -144,7 +144,7 @@ $ python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5
 
 🚀 Starting Advanced A/B Testing with 2500 scenarios
    Concurrent workers: 5
-   Target endpoint: http://192.168.1.202:80
+   Target endpoint: http://ml-api.local/financial-inference
    Experiment: financial-ab-test-experiment
 
    Progress: 500/2500 (347 successful)
