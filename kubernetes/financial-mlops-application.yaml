@@ -14,7 +14,7 @@ spec:
     path: k8s/base
   destination:
     server: https://kubernetes.default.svc
-    namespace: financial-ml
+    namespace: financial-inference
   syncPolicy:
     automated:
       prune: true

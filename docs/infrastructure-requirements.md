@@ -6,7 +6,7 @@ This document outlines the infrastructure requirements and secrets that must be 
 
 The infrastructure should implement **team-based namespace isolation** following industry best practices:
 
-- `financial-ml` - Financial ML models and experiments  
+- `financial-inference` - Financial ML models and experiments  
 - `financial-mlops-pytorch` - Application workloads (Argo Workflows, training jobs)
 - `seldon-system` - Seldon Mesh controller and shared infrastructure
 
@@ -18,10 +18,10 @@ This approach provides:
 
 ## Required Secrets
 
-### 1. ML Platform Secret (financial-ml namespace)
+### 1. ML Platform Secret (financial-inference namespace)
 
 **Secret Name:** `ml-platform`  
-**Namespace:** `financial-ml`  
+**Namespace:** `financial-inference`  
 **Type:** `Opaque`
 
 This secret contains S3/MinIO credentials for model storage access. Required keys:
@@ -100,11 +100,11 @@ This approach enables:
 
 # Development team extracts and applies packages
 tar xzf financial-mlops-pytorch-ml-secrets-20250704.tar.gz -C k8s/manifests/financial-mlops-pytorch
-tar xzf financial-mlops-pytorch-models-secrets-20250704.tar.gz -C k8s/manifests/financial-ml
+tar xzf financial-mlops-pytorch-models-secrets-20250704.tar.gz -C k8s/manifests/financial-inference
 
 tree k8s/manifests/
 # k8s/manifests/
-# ├── financial-ml/
+# ├── financial-inference/
 # │   └── production/
 # │       ├── kustomization.yaml
 # │       └── ml-platform-secret.yaml
@@ -114,7 +114,7 @@ tree k8s/manifests/
 #         ├── kustomization.yaml
 #         └── ml-platform-secret.yaml
 
-kubectl apply -k k8s/manifests/financial-ml/production
+kubectl apply -k k8s/manifests/financial-inference/production
 kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
 ```
 
@@ -149,8 +149,8 @@ Instead of sharing runtime components across namespaces, deploy dedicated Seldon
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-ml-runtime
-  namespace: financial-ml
+  name: financial-inference-runtime
+  namespace: financial-inference
 spec:
   config:
     agentConfig:

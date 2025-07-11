@@ -4,7 +4,7 @@
 **Infrastructure Networking** - Cluster-level connectivity issue after Flannel to Calico migration
 
 ## Issue Description
-Models in `financial-ml` namespace cannot connect to Seldon scheduler, causing deployment failures with timeout errors.
+Models in `financial-inference` namespace cannot connect to Seldon scheduler, causing deployment failures with timeout errors.
 
 ## Error Details
 ```
@@ -30,7 +30,7 @@ rpc error: code = Unavailable desc = connection error: desc = "transport: Error 
 4. **Services and pods** are running healthy
 
 ### ✅ Confirmed Working
-- All Seldon components running in both `financial-ml` and `seldon-system`
+- All Seldon components running in both `financial-inference` and `seldon-system`
 - MLServer and Triton servers operational in `seldon-system`
 - Application-level network policies applied successfully
 - LoadBalancer services available via MetalLB
@@ -44,19 +44,19 @@ rpc error: code = Unavailable desc = connection error: desc = "transport: Error 
 
 ### Model Status
 ```bash
-kubectl describe model baseline-predictor -n financial-ml
+kubectl describe model baseline-predictor -n financial-inference
 # Shows persistent "ModelProgressing" with scheduler timeout
 ```
 
 ### Network Architecture
-- **Source**: Models in `financial-ml` namespace
+- **Source**: Models in `financial-inference` namespace
 - **Target**: Seldon scheduler in same namespace (port 9004)
 - **Expected**: Direct communication within namespace
 - **Actual**: Connection timeout
 
 ### Seldon Components
 ```bash
-kubectl get pods -n financial-ml
+kubectl get pods -n financial-inference
 # hodometer, seldon-envoy, seldon-modelgateway, seldon-scheduler all running
 ```
 
@@ -64,7 +64,7 @@ kubectl get pods -n financial-ml
 
 ### 1. Cluster-Wide Network Policy Review
 Verify that Calico installation allows:
-- **Intra-namespace communication** within `financial-ml`
+- **Intra-namespace communication** within `financial-inference`
 - **DNS resolution** from application namespaces to `kube-system`
 - **Service discovery** within namespaces
 
@@ -86,20 +86,20 @@ After platform team applies fixes:
 
 1. **Test model connectivity:**
    ```bash
-   kubectl get models -n financial-ml
+   kubectl get models -n financial-inference
    # Should show Ready: True
    ```
 
 2. **Verify no timeout errors:**
    ```bash
-   kubectl describe model baseline-predictor -n financial-ml
+   kubectl describe model baseline-predictor -n financial-inference
    # Should show "ModelReady" instead of timeout
    ```
 
 3. **Confirm end-to-end functionality:**
    ```bash
    # Models should successfully schedule and become available
-   kubectl get experiments -n financial-ml
+   kubectl get experiments -n financial-inference
    ```
 
 ## Application Team Status

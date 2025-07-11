@@ -11,9 +11,9 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: financial-ml
+  name: financial-inference
   labels:
-    name: financial-ml
+    name: financial-inference
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize

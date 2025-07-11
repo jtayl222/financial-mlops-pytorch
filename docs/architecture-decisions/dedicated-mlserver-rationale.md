@@ -1,7 +1,7 @@
 # Architecture Decision: Dedicated MLServer per Namespace
 
 ## Status
-**Accepted** - Implemented in financial-ml namespace
+**Accepted** - Implemented in financial-inference namespace
 
 ## Context
 During the CNI migration from Flannel to Calico, we encountered issues with Seldon Core v2 model deployment. The question arose: should we use a shared cluster-wide MLServer or deploy dedicated MLServer instances per namespace?
@@ -37,7 +37,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mlserver
-  namespace: financial-ml  # Application-specific namespace
+  namespace: financial-inference  # Application-specific namespace
 spec:
   # ... StatefulSet configuration
   template:
@@ -60,7 +60,7 @@ spec:
 ### Network Configuration
 - **Service**: ClusterIP within namespace
 - **Network Policy**: Allow ingress from seldon-system and financial-mlops-pytorch
-- **DNS**: `mlserver.financial-ml.svc.cluster.local`
+- **DNS**: `mlserver.financial-inference.svc.cluster.local`
 
 ## Alternatives Considered
 

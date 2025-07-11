@@ -10,13 +10,13 @@ This document describes the GitOps setup for the Financial MLOps platform using 
 
 1. **`financial-mlops-infrastructure`** (Main Application)
    - **Source**: `k8s/base/` directory
-   - **Destination**: `financial-ml` namespace  
+   - **Destination**: `financial-inference` namespace  
    - **Auto-sync**: Enabled with prune and self-heal
    - **Purpose**: Manages core MLOps infrastructure
 
 2. **`seldon-deployments`** (Component Application)
    - **Source**: `kubernetes/seldon-deployments/`
-   - **Destination**: `financial-ml` namespace
+   - **Destination**: `financial-inference` namespace
    - **Purpose**: Seldon Core models and experiments
 
 3. **`argo-workflows-pipelines`** (Component Application)

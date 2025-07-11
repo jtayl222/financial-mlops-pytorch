@@ -100,16 +100,16 @@
 **Solution**:
 ```bash
 # Check stuck resources
-kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n financial-ml
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n financial-inference
 
 # Remove finalizers from stuck resources (safe with error handling)
-kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
-kubectl patch model enhanced-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
-kubectl patch experiment financial-ab-test-experiment -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
-kubectl patch server mlserver -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch model baseline-predictor -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch model enhanced-predictor -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch experiment financial-ab-test-experiment -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch server mlserver -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
 
 # Force delete namespaces if still stuck
-kubectl delete namespace financial-ml --grace-period=0 --force 2>/dev/null || true
+kubectl delete namespace financial-inference --grace-period=0 --force 2>/dev/null || true
 kubectl delete namespace financial-mlops-pytorch --grace-period=0 --force 2>/dev/null || true
 ```
 

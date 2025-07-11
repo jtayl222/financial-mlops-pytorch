@@ -3,7 +3,7 @@
 ## Current State Analysis
 
 ✅ **Completed Infrastructure:**
-- Team-based namespace isolation (`financial-ml`, `financial-mlops-pytorch`)
+- Team-based namespace isolation (`financial-inference`, `financial-mlops-pytorch`)
 - Package-based secret management with infrastructure delivery
 - Dedicated SeldonRuntime per namespace following industry best practices
 - Data ingestion pipeline and PyTorch model training with MLflow
@@ -23,8 +23,8 @@
 #### 2.1.1 Infrastructure Validation ⏳
 ```bash
 # Test current state - SeldonRuntime components ready
-kubectl get pods -n financial-ml
-kubectl get models -n financial-ml
+kubectl get pods -n financial-inference
+kubectl get models -n financial-inference
 
 # Verify model deployment with dedicated runtime
 kubectl apply -f k8s/base/financial-predictor-ab-test.yaml
@@ -47,9 +47,9 @@ kubectl apply -f k8s/base/financial-predictor-ab-test.yaml
 Execute comprehensive testing framework from `TESTING.md`:
 ```bash
 # Foundation Tests
-kubectl get seldonruntime -n financial-ml
-kubectl get secrets -n financial-ml -n financial-mlops-pytorch
-kubectl get models,experiments -n financial-ml
+kubectl get seldonruntime -n financial-inference
+kubectl get secrets -n financial-inference -n financial-mlops-pytorch
+kubectl get models,experiments -n financial-inference
 
 # Model Deployment Tests  
 curl -H "Host: financial-predictor.local" http://<CLUSTER_IP>/predict
@@ -118,7 +118,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-advanced-ab-test
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   default: baseline-predictor
   candidates:
@@ -139,7 +139,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Pipeline
 metadata:
   name: financial-contextual-routing
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   steps:
   - name: market-context-router
@@ -159,7 +159,7 @@ spec:
 ```python
 # Enhanced canary deployment with Seldon v2
 class CanaryDeploymentManager:
-    def __init__(self, namespace="financial-ml"):
+    def __init__(self, namespace="financial-inference"):
         self.namespace = namespace
         self.seldon_client = SeldonClient()
     
@@ -300,11 +300,11 @@ patchesStrategicMerge:
 - resource-limits-staging.yaml
 
 # Staging-specific configurations
-- name: financial-ml-runtime-staging
+- name: financial-inference-runtime-staging
   replicas: 1  # Reduced for staging
   
 # k8s/overlays/production/kustomization.yaml  
-- name: financial-ml-runtime-production
+- name: financial-inference-runtime-production
   replicas: 3  # HA for production
 ```
 
@@ -390,8 +390,8 @@ class ModelGovernanceLogger:
 
 ```bash
 # 1. Complete foundation testing
-kubectl get models,experiments -n financial-ml
-kubectl describe model baseline-predictor -n financial-ml
+kubectl get models,experiments -n financial-inference
+kubectl describe model baseline-predictor -n financial-inference
 
 # 2. Train enhanced model variants
 argo submit --from workflowtemplate/financial-training-pipeline-template \

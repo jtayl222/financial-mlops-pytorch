@@ -13,22 +13,22 @@
 
 ### Application Team (financial-mlops-pytorch) Responsibilities  
 - **Application-specific** network policies within our namespaces
-- **Service-to-service** communication within financial-ml/financial-mlops-pytorch
+- **Service-to-service** communication within financial-inference/financial-mlops-pytorch
 - **External service access** requirements (documented for platform approval)
 - **Pod-to-pod** communication rules within our application scope
 
 ## Current Network Architecture
 
 ### Namespaces Managed
-- `financial-ml` - Model serving and experiments (Seldon Models/Experiments)
+- `financial-inference` - Model serving and experiments (Seldon Models/Experiments)
 - `financial-mlops-pytorch` - Training workloads (Argo Workflows)
 
 ### Required Cross-Namespace Communication
-1. **financial-mlops-pytorch** → **financial-ml**
+1. **financial-mlops-pytorch** → **financial-inference**
    - Training workflows need to deploy models to serving namespace
    - MLflow artifacts sharing between training and serving
 
-2. **financial-ml** → **seldon-system**
+2. **financial-inference** → **seldon-system**
    - Model scheduling and server discovery
    - Seldon runtime communication
 
@@ -57,8 +57,8 @@
 
 ### Example Request Format
 ```
-Request: Allow financial-ml namespace to access seldon-scheduler in seldon-system
-Source: financial-ml namespace (all pods)
+Request: Allow financial-inference namespace to access seldon-scheduler in seldon-system
+Source: financial-inference namespace (all pods)
 Destination: seldon-system/seldon-scheduler:9005
 Protocol: TCP
 Justification: Model scheduling requires direct communication with Seldon scheduler

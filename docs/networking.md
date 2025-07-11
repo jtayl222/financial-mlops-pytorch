@@ -125,7 +125,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: financial-ab-test-service
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   type: NodePort  # or LoadBalancer for cloud
   selector:
@@ -144,7 +144,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: financial-mlops-ingress
-  namespace: financial-ml
+  namespace: financial-inference
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
@@ -172,7 +172,7 @@ apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: seldon-vs
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   hosts:
   - financial-predictor.local
@@ -202,7 +202,7 @@ apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
   name: default
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   mtls:
     mode: STRICT
@@ -215,8 +215,8 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: financial-ml-isolation
-  namespace: financial-ml
+  name: financial-inference-isolation
+  namespace: financial-inference
 spec:
   podSelector: {}
   policyTypes:
@@ -255,7 +255,7 @@ kubectl port-forward -n seldon-system mlserver-0 8082:8082
 curl http://localhost:8082/metrics
 
 # Kubernetes service metrics
-kubectl top pods -n financial-ml
+kubectl top pods -n financial-inference
 ```
 
 ## Troubleshooting Network Issues
@@ -264,23 +264,23 @@ kubectl top pods -n financial-ml
 
 ```bash
 # Check Istio proxy status
-kubectl exec -n financial-ml <pod-name> -c istio-proxy -- pilot-agent request GET config_dump
+kubectl exec -n financial-inference <pod-name> -c istio-proxy -- pilot-agent request GET config_dump
 
 # Verify Istio injection
-kubectl get pods -n financial-ml -o jsonpath='{.items[*].spec.containers[*].name}'
+kubectl get pods -n financial-inference -o jsonpath='{.items[*].spec.containers[*].name}'
 
 # Check Istio Gateway status
-kubectl get gateway,virtualservice -n financial-ml
+kubectl get gateway,virtualservice -n financial-inference
 ```
 
 ### Service Discovery
 
 ```bash
 # Test internal service resolution
-kubectl run debug --image=nicolaka/netshoot --rm -it -- nslookup financial-ab-test-experiment.financial-ml.svc.cluster.local
+kubectl run debug --image=nicolaka/netshoot --rm -it -- nslookup financial-ab-test-experiment.financial-inference.svc.cluster.local
 
 # Test connectivity
-kubectl run debug --image=nicolaka/netshoot --rm -it -- curl http://financial-ab-test-experiment.financial-ml:9000/v2/health/ready
+kubectl run debug --image=nicolaka/netshoot --rm -it -- curl http://financial-ab-test-experiment.financial-inference:9000/v2/health/ready
 ```
 
 ### Common Issues
@@ -288,19 +288,19 @@ kubectl run debug --image=nicolaka/netshoot --rm -it -- curl http://financial-ab
 1. **Service Not Accessible**
    ```bash
    # Check service endpoints
-   kubectl get endpoints -n financial-ml
+   kubectl get endpoints -n financial-inference
    
    # Verify pod readiness
-   kubectl get pods -n financial-ml
+   kubectl get pods -n financial-inference
    ```
 
 2. **Istio Configuration Issues**
    ```bash
    # Validate Istio configuration
-   istioctl analyze -n financial-ml
+   istioctl analyze -n financial-inference
    
    # Check proxy configuration
-   istioctl proxy-config cluster <pod-name> -n financial-ml
+   istioctl proxy-config cluster <pod-name> -n financial-inference
    ```
 
 3. **DNS Resolution**

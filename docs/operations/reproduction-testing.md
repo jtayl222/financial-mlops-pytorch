@@ -12,10 +12,10 @@ This document captures the process and lessons learned from full infrastructure 
 kubectl delete -k k8s/base
 
 # Handle stuck resources with finalizers (see troubleshooting docs)
-kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
-kubectl patch model enhanced-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
-kubectl patch experiment financial-ab-test-experiment -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
-kubectl patch server mlserver -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch model baseline-predictor -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch model enhanced-predictor -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch experiment financial-ab-test-experiment -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
+kubectl patch server mlserver -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}' 2>/dev/null || true
 ```
 
 ### 2. Infrastructure Rebuild
@@ -24,7 +24,7 @@ kubectl patch server mlserver -n financial-ml --type='merge' -p='{"metadata":{"f
 kubectl apply -k k8s/base
 
 # Apply platform-managed secrets
-kubectl apply -f infrastructure/manifests/sealed-secrets/financial-ml/seldon-rclone-sealed-secret.yaml
+kubectl apply -f infrastructure/manifests/sealed-secrets/financial-inference/seldon-rclone-sealed-secret.yaml
 ```
 
 ### 3. Pipeline Validation
@@ -145,8 +145,8 @@ This reproduction test validates that:
 ```bash
 #!/bin/bash
 # scripts/health-check.sh
-kubectl get models -n financial-ml
-kubectl get experiments -n financial-ml  
+kubectl get models -n financial-inference
+kubectl get experiments -n financial-inference  
 kubectl get workflows -n financial-mlops-pytorch
 argo list -n financial-mlops-pytorch | head -5
 ```
