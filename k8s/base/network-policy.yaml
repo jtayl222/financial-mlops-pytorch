@@ -60,6 +60,11 @@ spec:
     - namespaceSelector:
         matchLabels:
           name: financial-inference
+  - to:
+    - podSelector: {} # Selects all pods in the current namespace
+    ports:
+    - protocol: TCP
+      port: 9003
   # Allow DNS resolution
   - to:
     - namespaceSelector:
@@ -157,6 +162,12 @@ spec:
     - namespaceSelector:
         matchLabels:
           name: financial-mlops-pytorch
+  # Allow intra-namespace communication for readiness probes on port 9003
+  - to:
+    - podSelector: {} # Selects all pods in the current namespace
+    ports:
+    - protocol: TCP
+      port: 9003
   # Allow DNS resolution
   - to:
     - namespaceSelector:
