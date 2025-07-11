@@ -18,7 +18,7 @@ from collections import defaultdict
 import argparse
 
 class ABTestingDemo:
-    def __init__(self, seldon_endpoint="http://localhost:8080", experiment_name="financial-ab-test-experiment"):
+    def __init__(self, seldon_endpoint="http://ml-api.local/financial-inference", experiment_name="financial-ab-test-experiment"):
         self.seldon_endpoint = seldon_endpoint
         self.experiment_name = experiment_name
         self.results = defaultdict(list)
@@ -284,7 +284,7 @@ class ABTestingDemo:
 
 def main():
     parser = argparse.ArgumentParser(description='Financial MLOps A/B Testing Demonstration')
-    parser.add_argument('--endpoint', default='http://localhost:8080', help='Seldon mesh endpoint')
+    parser.add_argument('--endpoint', default='http://ml-api.local/financial-inference', help='Seldon mesh endpoint (via NGINX ingress)')
     parser.add_argument('--experiment', default='financial-ab-test-experiment', help='Experiment name')
     parser.add_argument('--requests', type=int, default=50, help='Number of test requests')
     parser.add_argument('--delay', type=float, default=0.1, help='Delay between requests (seconds)')

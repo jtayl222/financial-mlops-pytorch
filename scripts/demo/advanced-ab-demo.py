@@ -673,8 +673,8 @@ class AdvancedABTester:
 
 def main():
     parser = argparse.ArgumentParser(description='Advanced Financial MLOps A/B Testing')
-    parser.add_argument('--endpoint', default='http://192.168.1.202:80', 
-                       help='Seldon mesh endpoint')
+    parser.add_argument('--endpoint', default='http://ml-api.local/financial-inference', 
+                       help='Seldon mesh endpoint (via NGINX ingress)')
     parser.add_argument('--experiment', default='financial-ab-test-experiment', 
                        help='Experiment name')
     parser.add_argument('--scenarios', type=int, default=100, 
