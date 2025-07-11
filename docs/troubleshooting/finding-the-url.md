@@ -1,0 +1,172 @@
+# Finding the Correct Seldon URL
+
+## Problem
+We have working Seldon components but can't find the correct endpoint URL for our experiment. Getting 404s on standard paths.
+
+## LoadBalancer Available
+- Seldon mesh at `192.168.1.202:80` (seldon-system namespace)
+- Need to find any working endpoint to understand URL structure
+
+## Exploration Strategy
+
+### 1. Basic Health/Status Endpoints
+Try common health check and status paths:
+
+```bash
+# Basic root
+curl -s http://192.168.1.202/
+
+# Health checks
+curl -s http://192.168.1.202/health
+curl -s http://192.168.1.202/healthz
+curl -s http://192.168.1.202/ready
+curl -s http://192.168.1.202/status
+
+# Metrics
+curl -s http://192.168.1.202/metrics
+curl -s http://192.168.1.202/stats
+```
+
+### 2. API Discovery
+Try standard API discovery paths:
+
+```bash
+# OpenAPI/Swagger docs
+curl -s http://192.168.1.202/docs
+curl -s http://192.168.1.202/swagger
+curl -s http://192.168.1.202/api/docs
+curl -s http://192.168.1.202/v2/docs
+
+# API versions
+curl -s http://192.168.1.202/v1
+curl -s http://192.168.1.202/v2
+curl -s http://192.168.1.202/api
+
+# Model listing
+curl -s http://192.168.1.202/v2/models
+curl -s http://192.168.1.202/models
+```
+
+### 3. Namespace-Specific Paths
+Previously thought pattern was `/seldon/<namespace>/<model-name>/v2/docs`:
+
+```bash
+# Our specific experiment
+curl -s http://192.168.1.202/seldon/financial-inference/financial-ab-test-experiment/v2/docs
+curl -s http://192.168.1.202/seldon/financial-inference/financial-ab-test-experiment/
+curl -s http://192.168.1.202/seldon/financial-inference/
+
+# Individual models
+curl -s http://192.168.1.202/seldon/financial-inference/baseline-predictor/v2/docs
+curl -s http://192.168.1.202/seldon/financial-inference/enhanced-predictor/v2/docs
+
+# Namespace only
+curl -s http://192.168.1.202/seldon/financial-inference/
+curl -s http://192.168.1.202/seldon/
+```
+
+### 4. Alternative Patterns
+Try other common routing patterns:
+
+```bash
+# With namespace prefix
+curl -s http://192.168.1.202/financial-inference/v2/models
+curl -s http://192.168.1.202/ns/financial-inference/v2/models
+
+# With inference prefix
+curl -s http://192.168.1.202/inference/financial-ab-test-experiment
+curl -s http://192.168.1.202/predict/financial-ab-test-experiment
+
+# KServe-style paths
+curl -s http://192.168.1.202/v1/models/financial-ab-test-experiment
+curl -s http://192.168.1.202/v1/models/financial-ab-test-experiment:predict
+```
+
+### 5. Port-Specific Checks
+The seldon-mesh has multiple ports (80, 9003). Try 9003:
+
+```bash
+curl -s http://192.168.1.202:9003/
+curl -s http://192.168.1.202:9003/v2/models
+curl -s http://192.168.1.202:9003/health
+```
+
+## SOLUTION FOUND ✅
+
+### Working Pattern Discovered
+The issue was **namespace routing**. MetalLB provides external access, but the seldon-system LoadBalancer (192.168.1.202) only routes to seldon-system components, not our financial-inference namespace components.
+
+**Why Port-Forward is Still Needed:**
+- ✅ MetalLB: External IP access works (192.168.1.202)  
+- ❌ Namespace isolation: LoadBalancer doesn't cross namespaces
+- ❌ Missing cross-namespace routing configuration
+
+**Correct approach**: Access the financial-inference namespace mesh directly via port-forward:
+
+```bash
+# Port forward to financial-inference mesh
+kubectl port-forward -n financial-inference svc/seldon-mesh 8082:80
+
+# Working endpoints:
+curl http://localhost:8082/v2/models/baseline-predictor     # ✅ 200 OK
+curl http://localhost:8082/v2/models/enhanced-predictor     # ✅ 200 OK
+curl http://localhost:8082/v2/models/financial-ab-test-experiment  # ✅ Check needed
+```
+
+### Key Findings
+1. **Individual models work**: `baseline-predictor` and `enhanced-predictor` return model metadata
+2. **Namespace isolation**: seldon-system LoadBalancer ≠ financial-inference components
+3. **Port forwarding required**: financial-inference mesh is ClusterIP only
+4. **Correct inference URL pattern**: `/v2/models/{model-name}/infer`
+
+### Next Steps
+- ✅ Test experiment endpoint
+- ✅ Update traffic generator with correct localhost:8082 endpoint  
+- ✅ Generate live traffic with working URLs
+
+### After URL Resolution - Common Next Issue
+Once you find working URLs, you may encounter **500 Internal Server Error** instead of 404s. This typically indicates **payload format issues**:
+
+```bash
+# 404 = URL/routing problem (this document)
+# 500 = Payload/data format problem (separate troubleshooting)
+```
+
+Check MLServer logs for specific errors:
+```bash
+kubectl logs -n financial-inference mlserver-0 -c mlserver --tail=20
+```
+
+### Swagger Documentation Access
+The expected pattern `http://<endpoint>/seldon/<namespace>/<model-name>/v2/docs` **does not work** with our LoadBalancer setup:
+
+```bash
+# FAILED - Returns 404
+curl http://192.168.1.202/seldon/financial-inference/baseline-predictor/v2/docs
+```
+
+**Alternative approaches for API docs:**
+1. **Port-forward method** (if docs endpoint exists):
+   ```bash
+   kubectl port-forward -n financial-inference svc/seldon-mesh 8082:80
+   curl http://localhost:8082/v2/docs  # Check if available
+   ```
+
+2. **Direct model inspection** (working method):
+   ```bash
+   curl http://localhost:8082/v2/models/baseline-predictor  # Returns input/output schema
+   ```
+
+## Expected Outcomes
+
+We should find:
+- Health/status endpoints to confirm the service is running
+- API documentation or model listing endpoints
+- The correct path pattern for our experiment: `financial-ab-test-experiment`
+- Working inference endpoints for traffic generation
+
+## Current Components Status
+- ✅ Models: `baseline-predictor`, `enhanced-predictor` (Ready=True)
+- ✅ Experiment: `financial-ab-test-experiment` (Ready=True)
+- ✅ Server: `mlserver` (2 loaded models)
+- ✅ **External access**: Found working pattern via port-forward
