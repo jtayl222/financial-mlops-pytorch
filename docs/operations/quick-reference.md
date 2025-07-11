@@ -7,7 +7,7 @@
 - **Container Orchestration**: Kubernetes (k3s v1.33.1+ recommended)
 - **CNI**: Calico for network policies
 - **LoadBalancer**: MetalLB for service exposure
-- **Namespaces**: `financial-ml` (serving), `financial-mlops-pytorch` (training)
+- **Namespaces**: `financial-inference` (serving), `financial-mlops-pytorch` (training)
 - **Storage**: Persistent volumes for shared data and artifacts
 
 ## Quick Commands
@@ -21,7 +21,7 @@ kubectl get pods -n kube-system
 kubectl apply -k k8s/base
 
 # Check deployment status
-kubectl get models,experiments -n financial-ml
+kubectl get models,experiments -n financial-inference
 kubectl get workflows -n financial-mlops-pytorch
 
 # Train models
@@ -69,7 +69,7 @@ kubectl get applications -n argocd
 ## Architecture Decisions
 
 ### Dedicated MLServer
-- Run MLServer in `financial-ml` namespace for isolation
+- Run MLServer in `financial-inference` namespace for isolation
 - Use dedicated Server resource with model-specific capabilities
 - Avoids cross-namespace dependencies and improves security
 
@@ -94,8 +94,8 @@ kubectl get pods -A | grep -E "(mlflow|seldon|argo)"
 argo list -n financial-mlops-pytorch
 
 # Verify model serving
-kubectl get models -n financial-ml
-kubectl describe model baseline-predictor -n financial-ml
+kubectl get models -n financial-inference
+kubectl describe model baseline-predictor -n financial-inference
 ```
 
 ## Security Considerations

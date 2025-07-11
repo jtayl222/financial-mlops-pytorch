@@ -2,8 +2,8 @@
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-ml-runtime
-  namespace: financial-ml
+  name: financial-inference-runtime
+  namespace: financial-inference
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform

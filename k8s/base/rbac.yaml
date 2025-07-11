@@ -57,7 +57,7 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  namespace: financial-ml
+  namespace: financial-inference
   name: model-deployer
 rules:
 - apiGroups: ["mlops.seldon.io"]
@@ -71,11 +71,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: mlserver-rolebinding
-  namespace: financial-ml
+  namespace: financial-inference
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: financial-ml
+  namespace: financial-inference
 roleRef:
   kind: Role
   name: model-deployer
@@ -84,8 +84,8 @@ roleRef:
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: financial-ml-quota
-  namespace: financial-ml
+  name: financial-inference-quota
+  namespace: financial-inference
 spec:
   hard:
     requests.cpu: "50"

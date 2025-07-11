@@ -11,18 +11,18 @@ ModelReady: False - ScheduleFailed
 ### Root Causes & Solutions
 
 #### 1. Missing MLServer Pod
-**Check**: `kubectl get pods -n financial-ml | grep mlserver`
+**Check**: `kubectl get pods -n financial-inference | grep mlserver`
 **Solution**: Ensure MLServer StatefulSet is running and ready (3/3 containers)
 
 #### 2. Missing RClone Secret
-**Check**: `kubectl get secret seldon-rclone-gs-public -n financial-ml`
+**Check**: `kubectl get secret seldon-rclone-gs-public -n financial-inference`
 **Solution**: Create rclone secret with correct JSON format
 
 #### 3. Wrong RClone Secret Format
 **Symptom**: MLServer agent crashes with JSON parsing errors
 **Check**: 
 ```bash
-kubectl get secret seldon-rclone-gs-public -n financial-ml -o jsonpath='{.data.rclone\.conf}' | base64 -d
+kubectl get secret seldon-rclone-gs-public -n financial-inference -o jsonpath='{.data.rclone\.conf}' | base64 -d
 ```
 **Correct Format**:
 ```json
@@ -44,13 +44,13 @@ kubectl get secret seldon-rclone-gs-public -n financial-ml -o jsonpath='{.data.r
 **Root Cause**: Agent expects exactly 1 key in referenced secret
 **Solution**: Remove `secretName` from Model spec if using rclone config:
 ```bash
-kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"spec":{"secretName":null}}'
+kubectl patch model baseline-predictor -n financial-inference --type='merge' -p='{"spec":{"secretName":null}}'
 ```
 
 ## MLServer Container Issues
 
 ### Agent Container Crashes
-**Check Logs**: `kubectl logs mlserver-0 -n financial-ml -c agent`
+**Check Logs**: `kubectl logs mlserver-0 -n financial-inference -c agent`
 
 #### Common Error Patterns:
 1. **RClone Config Parse Error**: Fix JSON format (see above)
@@ -60,8 +60,8 @@ kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"spec
 ### MLServer Container Not Ready
 **Check**: 
 ```bash
-kubectl describe pod mlserver-0 -n financial-ml
-kubectl logs mlserver-0 -n financial-ml -c mlserver
+kubectl describe pod mlserver-0 -n financial-inference
+kubectl logs mlserver-0 -n financial-inference -c mlserver
 ```
 
 #### Common Issues:
@@ -89,26 +89,26 @@ mc ls minio/mlflow-artifacts/28/models/
 
 ### Check Model Status
 ```bash
-kubectl get models -n financial-ml
-kubectl describe model baseline-predictor -n financial-ml
+kubectl get models -n financial-inference
+kubectl describe model baseline-predictor -n financial-inference
 ```
 
 ### Monitor Model Loading
 ```bash
-kubectl logs mlserver-0 -n financial-ml -c agent -f
+kubectl logs mlserver-0 -n financial-inference -c agent -f
 ```
 
 ### Test Model Endpoints
 ```bash
 # Check if model is serving
-kubectl get svc -n financial-ml
+kubectl get svc -n financial-inference
 curl -X POST http://<model-service>/v2/models/<model-name>/infer -d '{"inputs":[...]}'
 ```
 
 ### Experiment Status
 ```bash
-kubectl get experiments -n financial-ml
-kubectl describe experiment financial-ab-test-experiment -n financial-ml
+kubectl get experiments -n financial-inference
+kubectl describe experiment financial-ab-test-experiment -n financial-inference
 ```
 
 ## Cleanup Issues
@@ -119,23 +119,23 @@ kubectl describe experiment financial-ab-test-experiment -n financial-ml
 
 #### Check Stuck Resources
 ```bash
-kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n financial-ml
+kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n financial-inference
 ```
 
 #### Remove Finalizers
 ```bash
 # Models
-kubectl patch model baseline-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
-kubectl patch model enhanced-predictor -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+kubectl patch model baseline-predictor -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}'
+kubectl patch model enhanced-predictor -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}'
 
 # Experiments  
-kubectl patch experiment financial-ab-test-experiment -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+kubectl patch experiment financial-ab-test-experiment -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}'
 
 # Servers
-kubectl patch server mlserver -n financial-ml --type='merge' -p='{"metadata":{"finalizers":null}}'
+kubectl patch server mlserver -n financial-inference --type='merge' -p='{"metadata":{"finalizers":null}}'
 ```
 
 #### Force Namespace Deletion
 ```bash
-kubectl delete namespace financial-ml --grace-period=0 --force
+kubectl delete namespace financial-inference --grace-period=0 --force
 ```

@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
   name: seldon-gateway
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   selector:
     istio: gateway
@@ -19,7 +19,7 @@ apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: seldon-vs
-  namespace: financial-ml
+  namespace: financial-inference
 spec:
   hosts:
   - financial-predictor.local

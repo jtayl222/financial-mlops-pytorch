@@ -27,7 +27,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 ./scripts/gitops-model-update.sh enhanced v1.2.0
 
 # Argo CD automatically deploys changes
-kubectl get models -n financial-ml
+kubectl get models -n financial-inference
 ```
 
 ### 3. Experiment Execution

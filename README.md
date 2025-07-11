@@ -45,7 +45,7 @@ Ensure your infrastructure provides the required secrets and namespaces as docum
 
 ```bash
 # Apply infrastructure-delivered secret packages
-kubectl apply -k k8s/manifests/financial-ml/production
+kubectl apply -k k8s/manifests/financial-inference/production
 kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
 ```
 
@@ -57,7 +57,7 @@ kubectl apply -k k8s/base
 
 # Verify deployment
 kubectl get pods -n financial-mlops-pytorch
-kubectl get models -n financial-ml
+kubectl get models -n financial-inference
 ```
 
 ### 4. Run Training Pipeline
@@ -81,7 +81,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 
 ```bash
 # Check model status
-kubectl get models,experiments -n financial-ml
+kubectl get models,experiments -n financial-inference
 
 # Test model endpoint
 curl -H "Host: financial-predictor.local" http://<CLUSTER_IP>/predict

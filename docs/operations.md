@@ -78,13 +78,13 @@ argo logs <workflow-name> -n financial-mlops-pytorch
 
 ```bash
 # Check if models are loading
-kubectl get models -n financial-ml
+kubectl get models -n financial-inference
 
 # Check experiment status  
-kubectl get experiments -n financial-ml
+kubectl get experiments -n financial-inference
 
 # Check model details
-kubectl describe model baseline-predictor -n financial-ml
+kubectl describe model baseline-predictor -n financial-inference
 ```
 
 ### Test Model Endpoints
@@ -144,11 +144,11 @@ If models are not loading or showing as "not ready":
 
 ```bash
 # 1. Check namespace configuration
-kubectl get models -n financial-ml
-kubectl describe model baseline-predictor -n financial-ml
+kubectl get models -n financial-inference
+kubectl describe model baseline-predictor -n financial-inference
 
 # 2. Verify secret exists
-kubectl get secret ml-platform -n financial-ml
+kubectl get secret ml-platform -n financial-inference
 
 # 3. Check Seldon controller logs
 kubectl logs -n seldon-system deployment/seldon-v2-controller-manager | grep baseline-predictor
@@ -225,7 +225,7 @@ After deployment, validate the system:
 kubectl get pods -n seldon-system
 
 # Check model deployment status
-kubectl get models,experiments -n financial-ml
+kubectl get models,experiments -n financial-inference
 
 # Check training workflows
 kubectl get workflows -n financial-mlops-pytorch
@@ -240,7 +240,7 @@ kubectl get pvc -n financial-mlops-pytorch
 
 ```bash
 # Route 100% traffic to stable model
-kubectl patch experiment financial-ab-test-experiment -n financial-ml --type='merge' \
+kubectl patch experiment financial-ab-test-experiment -n financial-inference --type='merge' \
   -p='{"spec":{"candidates":[{"name":"baseline-predictor","weight":100},{"name":"enhanced-predictor","weight":0}]}}'
 ```
 
