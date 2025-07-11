@@ -1,7 +1,9 @@
 # Architecture Decision: Dedicated MLServer per Namespace
 
 ## Status
-**Accepted** - Implemented in financial-inference namespace
+**DEPRECATED** - See `seldon-pattern-reconciliation.md` for corrected approach
+
+**Issue**: This decision led to distributed Seldon pattern which conflicts with our single-team setup
 
 ## Context
 During the CNI migration from Flannel to Calico, we encountered issues with Seldon Core v2 model deployment. The question arose: should we use a shared cluster-wide MLServer or deploy dedicated MLServer instances per namespace?
