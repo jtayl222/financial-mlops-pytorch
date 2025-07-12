@@ -35,6 +35,11 @@ spec:
     - namespaceSelector:
         matchLabels:
           name: financial-inference
+  # Allow traffic from NGINX Ingress for cross-namespace routing
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
   # Allow LoadBalancer ingress traffic
   - from: []
     ports:
