@@ -36,7 +36,7 @@ metadata:
   annotations:
     # NGINX specific annotations
     nginx.ingress.kubernetes.io/use-regex: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/rewrite-target: /v2/$1
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
@@ -53,7 +53,7 @@ spec:
     http:
       paths:
       # Financial inference models (Seldon Core)
-      - path: /financial-inference/(.*)
+      - path: /financial-inference(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
           service:
@@ -85,5 +85,18 @@ spec:
         backend:
           service:
             name: financial-inference-seldon  # Placeholder for now
+            port:
+              number: 80
+  
+  # Additional host for A/B testing demo (host-based routing)
+  - host: financial-predictor.local
+    http:
+      paths:
+      # Financial inference models (Seldon Core) - direct v2 API
+      - path: /v2/(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: financial-inference-seldon
             port:
               number: 80

@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
+  storageUri: s3://mlflow-artifacts/29/models/m-63118756949141cba59ab87e90e8a96a/artifacts/
   requirements:
   - mlflow
   - torch
