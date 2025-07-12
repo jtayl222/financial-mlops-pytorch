@@ -1,0 +1,18 @@
+---
+# ExternalName alias to wire financial-inference agents to central scheduler
+apiVersion: v1
+kind: Service
+metadata:
+  name: seldon-scheduler  # DNS name that the pods already use
+  namespace: financial-inference
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  type: ExternalName
+  externalName: seldon-scheduler.seldon-system.svc.cluster.local
+  ports:
+  - name: grpc
+    port: 9004
+    protocol: TCP

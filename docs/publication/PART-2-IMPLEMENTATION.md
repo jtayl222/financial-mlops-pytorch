@@ -23,7 +23,7 @@ Building on our financial forecasting example from Part 1, let's implement a com
 
 Our A/B testing infrastructure follows GitOps principles with full observability:
 
-![Production MLOps A/B testing architecture with GitOps automation](https://cdn-images-1.medium.com/max/2400/1*itlZOddC9mEHWN6MDYWgSw.png)
+![Production MLOps A/B testing architecture with GitOps automation](images/enhanced_architecture_diagram_20250712_182357.png)
 
 *Production MLOps A/B testing architecture with GitOps automation*
 
@@ -148,7 +148,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5
 ```
 
-![Live A/B testing execution with real-time metrics collection](https://cdn-images-1.medium.com/max/2400/1*afPybPzBA8jJUK7BjXaIiQ.png)
+![Live A/B testing execution with real-time metrics collection](images/terminal_metrics_view_real_20250712_180952.png)
 
 *Live A/B testing execution with real-time metrics collection*
 
@@ -408,7 +408,7 @@ This dual approach ensures we have **complete visibility** from development thro
     summary: "Traffic distribution deviates from expected 70/30 split"
 ```
 
-![Production monitoring dashboard with automated alerting and KPI tracking](https://cdn-images-1.medium.com/max/2400/1*iJ9HuYOqvekGM-Mwuw0uZQ.png)
+![Production monitoring dashboard with automated alerting and KPI tracking](images/monitoring_alerts_dashboard_real_20250712_180952.png)
 
 *Production monitoring dashboard with automated alerting and KPI tracking*
 

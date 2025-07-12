@@ -211,7 +211,3 @@ curl.sh
 # Temporary and backup files
 *.bak
 /tmp/
-EXPERT-QUESTION.md
-METALLB-MIGRATION-NOTES.md
-TECHNICAL-DEBT.md
-ARTICLE-OUTLINE.md

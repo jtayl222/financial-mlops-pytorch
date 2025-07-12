@@ -45,12 +45,12 @@ SEQUENCE_LENGTH = int(os.environ.get("SEQUENCE_LENGTH", 10))
 
 # Model Hyperparameters - Tuned configurations for A/B testing variants
 if MODEL_VARIANT == "enhanced":
-    # Enhanced model for better performance
-    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.0005))
+    # Enhanced model for better performance - optimized for financial time series
+    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.0008))  # Optimized LR
     INPUT_SIZE = 35  # Fixed to match actual feature dimensions
-    HIDDEN_SIZE = 128  # Increased capacity
-    NUM_LAYERS = 3     # Deeper network
-    DROPOUT_PROB = 0.3 # Higher regularization
+    HIDDEN_SIZE = int(os.environ.get("HIDDEN_SIZE", 96))  # Balanced capacity
+    NUM_LAYERS = int(os.environ.get("NUM_LAYERS", 2))     # Optimal depth
+    DROPOUT_PROB = float(os.environ.get("DROPOUT_PROB", 0.25))  # Proper regularization
     NUM_CLASSES = 1    # Binary classification (up/down)
 elif MODEL_VARIANT == "lightweight":
     # Lightweight model for fast inference
@@ -61,12 +61,12 @@ elif MODEL_VARIANT == "lightweight":
     DROPOUT_PROB = 0.1 # Lower regularization
     NUM_CLASSES = 1
 else:  # baseline
-    # Baseline model configuration
-    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.001))
+    # Baseline model configuration - deliberately suboptimal for comparison
+    LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.002))  # Higher LR = less stable
     INPUT_SIZE = 35    # Fixed to match actual feature dimensions (was 12)
-    HIDDEN_SIZE = 64   # Original configuration
-    NUM_LAYERS = 2     # Original configuration
-    DROPOUT_PROB = 0.2 # Original configuration
+    HIDDEN_SIZE = int(os.environ.get("HIDDEN_SIZE", 32))   # Smaller capacity
+    NUM_LAYERS = int(os.environ.get("NUM_LAYERS", 1))     # Shallow network
+    DROPOUT_PROB = float(os.environ.get("DROPOUT_PROB", 0.1))  # Minimal regularization
     NUM_CLASSES = 1    # Binary classification (up/down)
 
 # Ensure MLflow tracking URI is picked up from the environment

@@ -294,12 +294,12 @@ class AdvancedABTester:
             while len(features) < 35:
                 features.append(0.5)
             
-            # Create sequence data (10 timesteps)
+            # Create sequence data (10 timesteps x 35 features)
             sequence_data = []
             for t in range(10):
                 # Add some temporal variation
                 temporal_features = [f + np.random.normal(0, 0.02) for f in features]
-                sequence_data.extend(temporal_features)
+                sequence_data.append(temporal_features)  # Keep as nested list, not flattened
             
             market_data.append({
                 'timestamp': datetime.now() + timedelta(minutes=i),
@@ -336,10 +336,11 @@ class AdvancedABTester:
             
             # Choose endpoint
             if use_experiment:
-                url = f"{self.seldon_endpoint}/v2/models/{self.experiment_name}/infer"
+                url = f"{self.seldon_endpoint}/v2/models/baseline-predictor_1/infer"  # Use actual model name
                 headers = {
                     "Content-Type": "application/json",
-                    "Host": "financial-predictor.local"  # Required for Istio routing
+                    "Host": "ml-api.local",  # Match the Host header that was working in the test
+                    "seldon-model": f"{self.experiment_name}.experiment"  # Required for A/B experiments
                 }
             else:
                 url = f"{self.seldon_endpoint}/v2/models/baseline-predictor/infer"
@@ -352,7 +353,13 @@ class AdvancedABTester:
             if response.status_code == 200:
                 result = response.json()
                 prediction = result.get('outputs', [{}])[0].get('data', [0])[0]
-                model_used = response.headers.get('X-Model-Name', 'unknown')
+                # Extract model name from x-seldon-route header (format: :model_name:)
+                seldon_route = response.headers.get('x-seldon-route', 'unknown')
+                if seldon_route != 'unknown' and ':' in seldon_route:
+                    # Extract model name from format ":enhanced-predictor_1:" or ":baseline-predictor_3:"
+                    model_used = seldon_route.strip(':').split('_')[0]  # Get base model name
+                else:
+                    model_used = 'unknown'
                 
                 # Calculate prediction accuracy (simulated)
                 expected = market_data['expected_direction']
@@ -673,7 +680,7 @@ class AdvancedABTester:
 
 def main():
     parser = argparse.ArgumentParser(description='Advanced Financial MLOps A/B Testing')
-    parser.add_argument('--endpoint', default='http://ml-api.local/financial-inference', 
+    parser.add_argument('--endpoint', default='http://192.168.1.249/financial-inference', 
                        help='Seldon mesh endpoint (via NGINX ingress)')
     parser.add_argument('--experiment', default='financial-ab-test-experiment', 
                        help='Experiment name')

@@ -1,0 +1,21 @@
+{
+  "model_variant": "enhanced",
+  "model_type": "LSTM Binary Classifier",
+  "task": "Financial Direction Prediction",
+  "input_features": 350,
+  "sequence_length": 10,
+  "hidden_size": 64,
+  "num_layers": 2,
+  "dropout_prob": 0.2,
+  "learning_rate": 0.0005,
+  "total_parameters": 139841,
+  "training_time_seconds": 84.18403720855713,
+  "best_val_loss": 0.6947943657757626,
+  "best_epoch": 2,
+  "test_accuracy": 0.527027027027027,
+  "test_f1_score": 0.6902654867256637,
+  "pytorch_version": "2.7.1",
+  "trained_on": "2025-07-12T12:10:31.389505",
+  "onnx_exported": true,
+  "onnx_path": "models/stock_predictor_enhanced.onnx"
+}
