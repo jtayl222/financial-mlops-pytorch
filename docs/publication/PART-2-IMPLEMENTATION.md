@@ -27,6 +27,18 @@ Our A/B testing infrastructure follows GitOps principles with full observability
 
 *Production MLOps A/B testing architecture with GitOps automation*
 
+The architecture may look complex, but it represents a robust, automated, and observable system. Let's break down the key components:
+
+*   **Git & ArgoCD (The GitOps Engine):** At the top, the Git repository is the single source of truth for all configurations. ArgoCD automatically applies any changes from Git to the live Kubernetes cluster, ensuring our infrastructure is defined as code. This is how we deploy models and infrastructure changes safely and repeatably.
+
+*   **Seldon Core v2 (The MLOps Brain):** In the center, Seldon Core orchestrates the A/B test. It receives incoming requests and uses an `Experiment` configuration to split traffic between our two models: 70% to the `baseline-predictor` and 30% to the `enhanced-predictor`. It's the component that makes intelligent, production-safe traffic routing possible.
+
+*   **MLServer (The Inference Workhorse):** Each model (`baseline` and `enhanced`) is run by its own `MLServer` instance. This is a high-performance server optimized for running machine learning models in production.
+
+*   **Prometheus & Grafana (The Eyes and Ears):** On the right, our observability stack is crucial. Prometheus collects detailed metrics from every part of the system—request rates, error rates, response times, and custom business metrics. Grafana provides a live dashboard to visualize the A/B test's performance, allowing us to see which model is performing better in real-time.
+
+*   **The Complete Flow:** A request flows from the user, through the ingress, to the Seldon router. Seldon sends it to one of the models, the model makes a prediction, and all the while, Prometheus is collecting data. This data is then used to make a final decision on the experiment, completing the feedback loop.
+
 ## Foundation: Seldon Core v2 Setup
 
 ### Production Cluster Configuration
@@ -82,9 +94,9 @@ ab_test_requests_total{model_name="enhanced-predictor",status="success"} 649
 ab_test_response_time_seconds_bucket{model_name="baseline-predictor",le="0.05"} 1245
 ab_test_response_time_seconds_bucket{model_name="enhanced-predictor",le="0.05"} 523
 
-# Model accuracy
-ab_test_model_accuracy{model_name="baseline-predictor"} 78.5
-ab_test_model_accuracy{model_name="enhanced-predictor"} 82.1
+# Model accuracy (real production results)
+ab_test_model_accuracy{model_name="baseline-predictor"} 48.2
+ab_test_model_accuracy{model_name="enhanced-predictor"} 44.2
 
 # Business impact
 ab_test_business_impact{model_name="enhanced-predictor",metric_type="net_business_value"} 3.3
@@ -518,7 +530,7 @@ In **Part 3** of this series, we'll dive into the business impact:
 - **Risk Assessment**: Quantifying and mitigating deployment risks
 - **Stakeholder Communication**: Building business cases for ML A/B testing
 
-We'll analyze real results showing **1,143% ROI** and **$658K annual value** from our A/B testing system.
+We'll analyze real business impact calculations and ROI frameworks that justify A/B testing infrastructure investment.
 
 ---
 
