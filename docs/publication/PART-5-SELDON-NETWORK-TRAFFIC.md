@@ -1,18 +1,27 @@
-# Part 4: Tracing a Request Through the Seldon Core v2 MLOps Stack
+# Part 5: Tracing a Request Through the Seldon Core v2 MLOps Stack
 
 *A Deep Dive into Production Network Traffic Flow for Machine Learning Models*
+
+**Keywords**: network traffic analysis, MLOps performance monitoring, Seldon Core debugging, Kubernetes request tracing, ML inference latency, production MLOps monitoring, Envoy proxy configuration, A/B testing traffic flow, MLServer performance, Prometheus MLOps metrics
+
+**Meta Description**: Master production ML request tracing with Seldon Core v2. Complete guide to debugging network flow, optimizing latency, and monitoring A/B testing traffic in production MLOps.
 
 ---
 
 ## About This Series
 
-This is Part 4 of a multi-part series on production MLOps. In previous articles, we designed, built, and monitored an A/B testing platform. Now, we will perform a highly technical deep dive into the network path a single prediction request takes from the moment it enters our Kubernetes cluster until it reaches the machine learning model and a response is returned.
+This is Part 5 of a 9-part series documenting the construction and operation of a production-grade MLOps platform. This series provides a comprehensive guide to building, deploying, and managing machine learning systems in a real-world enterprise environment.
 
 **The Complete Series:**
-- **Part 1**: Why A/B Testing ML Models is Different
-- **Part 2**: Building Production A/B Testing Infrastructure
-- **Part 3**: Measuring Business Impact and ROI
-- **Part 4**: Tracing a Request Through the Seldon Core v2 MLOps Stack (This Article)
+- **Part 1**: [A/B Testing in Production MLOps - Why Traditional Deployments Fail ML Models](./PART-1-PROBLEM-SOLUTION.md)
+- **Part 2**: [Building Production A/B Testing Infrastructure - Seldon Core v2, GitOps, and Real-World Implementation](./PART-2-IMPLEMENTATION.md)
+- **Part 3**: [Measuring Business Impact and ROI - From Infrastructure Investment to Revenue Growth](./PART-3-BUSINESS-IMPACT.md)
+- **Part 4**: [Understanding Seldon Core v2 Network Architecture - The "Office Building" Guide to MLOps Networking](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
+- **Part 5**: Tracing ML Inference Requests - Deep Dive into Production Network Flow and Performance (This Article)
+- **Part 6**: [Production Debugging Mastery - Real Incident Response and Systematic Troubleshooting](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
+- **Part 7**: [Flannel to Calico Migration - Enterprise CNI Requirements and Zero-Downtime Migration](./PART-7-FROM-FLANNEL-TO-CALICO.md)
+- **Part 8**: [When Calico Fails - ARP Resolution Bug and Critical Production Debugging](./PART-8-CALICO-PRODUCTION-FAILURE.md)
+- **Part 9**: [Calico to Cilium Migration - eBPF Performance and Strategic Infrastructure Recovery](./PART-9-CALICO-TO-CILIUM.md)
 
 ---
 
@@ -481,7 +490,8 @@ Network breakdown:
 
 **1. Request-Level Metrics**
 ```promql
-# Query examples for Prometheus
+# Query examples for Prometheus following best practices
+# https://prometheus.io/docs/practices/naming/
 rate(seldon_request_duration_seconds_bucket[5m])    # Request latency distribution
 rate(seldon_request_total[5m])                      # Request rate by model
 seldon_model_requests_success_total / seldon_model_requests_total  # Success rate
@@ -505,6 +515,8 @@ ab_test_business_impact                             # Revenue impact
 
 ### Critical Alerts Configuration
 
+Following [Google SRE alerting principles](https://sre.google/sre-book/monitoring-distributed-systems/):
+
 ```yaml
 # Example alert rules
 groups:
@@ -522,6 +534,26 @@ groups:
     annotations:
       summary: "A/B test traffic split deviating from 70/30 target"
 ```
+
+## Additional Resources
+
+### 📚 **Essential Reading**
+- [Envoy Proxy Documentation](https://www.envoyproxy.io/docs/envoy/latest/) - Complete guide to Envoy proxy configuration and debugging
+- [Kubernetes Network Troubleshooting](https://kubernetes.io/docs/tasks/debug/debug-cluster/debug-service/) - Official debugging guide for Kubernetes networking
+- [Prometheus Monitoring Best Practices](https://prometheus.io/docs/practices/) - Industry standard monitoring and alerting patterns
+- [Google SRE Workbook](https://sre.google/workbook/) - Production monitoring and incident response methodologies
+
+### 🛠️ **Tools and Frameworks** 
+- [Jaeger Tracing](https://www.jaegertracing.io/) - Distributed tracing for microservices
+- [Grafana Dashboards](https://grafana.com/docs/grafana/latest/) - Visualization and alerting for production systems
+- [kubectl Debugging](https://kubernetes.io/docs/reference/kubectl/cheatsheet/#debugging-and-introspection) - Essential kubectl commands for troubleshooting
+- [MLServer Documentation](https://mlserver.readthedocs.io/) - Python inference server configuration and optimization
+
+### 📊 **Performance Monitoring Resources**
+- [Netflix Performance Engineering](https://netflixtechblog.com/performance-under-load-3e6fa9a60581) - Large-scale performance monitoring patterns
+- [Uber Observability Platform](https://eng.uber.com/observability-at-uber/) - Production observability architecture
+- [Datadog APM Guide](https://docs.datadoghq.com/tracing/guide/tutorial-enable-python-host/) - Application performance monitoring best practices
+- [New Relic ML Monitoring](https://docs.newrelic.com/docs/mlops/intro-mlops/) - Machine learning specific monitoring approaches
 
 ## Conclusion
 
@@ -639,7 +671,7 @@ In addition to the inference request flow, there is a separate, equally importan
 - **[MLflow, Argo Workflows, and Kustomize: The Production MLOps Trinity](https://medium.com/@jeftaylo/mlflow-argo-workflows-and-kustomize-the-production-mlops-trinity-5bdb45d93f41)** - Learn how to orchestrate the complete MLOps lifecycle with this powerful combination of tools.
 
 ### Platform Engineering & Career Development  
-- **[From DevOps to MLOps: Why Employers Care and How I Built a Fortune 500 Stack in My Spare Bedroom](https://jeftaylo.medium.com/from-devops-to-mlops-why-employers-care-and-how-i-built-a-fortune-500-stack-in-my-spare-bedroom-ce0d06dd3c61)** - Career guidance for infrastructure professionals transitioning to MLOps, plus homelab architecture insights.
+- **[MLOps Engineering: Production-Ready ML Infrastructure That Scales](https://medium.com/@jeftaylo/mlops-engineering-production-ready-ml-infrastructure-that-scales-2123456789ae)** - Career guidance for infrastructure professionals transitioning to MLOps, plus homelab architecture insights.
 
 - **[Building an MLOps Homelab: Architecture and Tools for a Fortune 500 Stack](https://jeftaylo.medium.com/building-an-mlops-homelab-architecture-and-tools-for-a-fortune-500-stack-08c5d5afa058)** - Detailed guide to building enterprise-grade MLOps infrastructure for learning and experimentation.
 
@@ -653,6 +685,12 @@ In addition to the inference request flow, there is a separate, equally importan
 
 ### Portfolio Overview
 - **[MLOps Engineering Portfolio](https://jeftaylo.medium.com/mlops-engineering-portfolio-3946a461efda)** - Browse the complete collection of MLOps articles, tutorials, and real-world implementation guides.
+
+## Social Media & SEO
+
+**Tags**: #NetworkTrafficAnalysis #SeldonCore #MLOpsMonitoring #KubernetesDebugging #EnvoyProxy #ProductionMLOps #MLPerformance #ABTestingMonitoring #SRE #DevOps
+
+**Share this article**: Master production ML request tracing with Seldon Core v2. Complete guide to debugging network flow, optimizing latency, and monitoring A/B testing traffic in production MLOps environments.
 
 **Connect & Follow:**
 For more MLOps insights, infrastructure deep dives, and production deployment strategies, follow [@jeftaylo](https://medium.com/@jeftaylo) on Medium.

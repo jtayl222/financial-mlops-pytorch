@@ -2,10 +2,6 @@
 
 *The Problem and Solution Framework*
 
-**Keywords**: MLOps A/B testing, machine learning deployment, Seldon Core, Kubernetes ML, production ML models, model serving, GitOps ML, ML infrastructure, A/B testing framework, ML model comparison
-
-**Meta Description**: Learn why traditional deployment strategies fail for ML models and how to implement production-grade A/B testing with Seldon Core v2, Kubernetes, and GitOps automation.
-
 ---
 
 ## About This Series
@@ -14,14 +10,14 @@ This is Part 1 of a 9-part series documenting the construction and operation of 
 
 **The Complete Series:**
 - **Part 1**: A/B Testing in Production MLOps - Why Traditional Deployments Fail ML Models (This Article)
-- **Part 2**: [Building Production A/B Testing Infrastructure - Seldon Core v2, GitOps, and Real-World Implementation](./PART-2-IMPLEMENTATION.md)
-- **Part 3**: [Measuring Business Impact and ROI - From Infrastructure Investment to Revenue Growth](./PART-3-BUSINESS-IMPACT.md)
-- **Part 4**: [Understanding Seldon Core v2 Network Architecture - The "Office Building" Guide to MLOps Networking](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
-- **Part 5**: [Tracing ML Inference Requests - Deep Dive into Production Network Flow and Performance](./PART-5-SELDON-NETWORK-TRAFFIC.md)
-- **Part 6**: [Production Debugging Mastery - Real Incident Response and Systematic Troubleshooting](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
-- **Part 7**: [Flannel to Calico Migration - Enterprise CNI Requirements and Zero-Downtime Migration](./PART-7-FROM-FLANNEL-TO-CALICO.md)
-- **Part 8**: [When Calico Fails - ARP Resolution Bug and Critical Production Debugging](./PART-8-CALICO-PRODUCTION-FAILURE.md)
-- **Part 9**: [Calico to Cilium Migration - eBPF Performance and Strategic Infrastructure Recovery](./PART-9-CALICO-TO-CILIUM.md)
+- **Part 2**: [Building Production A/B Testing Infrastructure for ML Models](./PART-2-IMPLEMENTATION.md)
+- **Part 3**: [Measuring Business Impact and ROI of ML A/B Testing Infrastructure](./PART-3-BUSINESS-IMPACT.md)
+- **Part 4**: [Understanding Seldon Core v2 Network Architecture](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
+- **Part 5**: [Tracing a Request Through the Seldon Core v2 MLOps Stack](./PART-5-SELDON-NETWORK-TRAFFIC.md)
+- **Part 6**: [Production Seldon Core v2: Debugging and Real-World Challenges](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
+- **Part 7**: [From Flannel to Calico - Infrastructure Modernization Requirements](./PART-7-FROM-FLANNEL-TO-CALICO.md)
+- **Part 8**: [When Calico Fails - Debugging Production CNI Issues](./PART-8-CALICO-PRODUCTION-FAILURE.md)
+- **Part 9**: [Calico to Cilium - Learning from Infrastructure Mistakes](./PART-9-CALICO-TO-CILIUM.md)
 
 ---
 
@@ -31,11 +27,11 @@ You've spent months training a new machine learning model. It shows 3.6% better 
 
 Traditional software deployment strategies fall short for ML models:
 
-- **[Blue-green deployments](https://martinfowler.com/bliki/BlueGreenDeployment.html)** are all-or-nothing: you risk everything on untested production behavior
-- **[Canary releases](https://kubernetes.io/docs/concepts/cluster-administration/manage-deployment/#canary-deployments)** help with infrastructure, but don't measure model-specific performance
+- **Blue-green deployments** are all-or-nothing: you risk everything on untested production behavior
+- **Canary releases** help with infrastructure, but don't measure model-specific performance
 - **Shadow testing** validates infrastructure but doesn't capture business impact
 
-This is where **A/B testing for ML models** becomes essential. Unlike traditional [A/B testing frameworks](https://www.optimizely.com/optimization-glossary/ab-testing/), ML models require specialized infrastructure that can handle model-specific metrics and real-time performance evaluation.
+This is where **A/B testing for ML models** becomes essential.
 
 ## Why A/B Testing is Different for ML Models
 
@@ -92,13 +88,13 @@ Financial models require special considerations:
 
 Let's demonstrate these challenges with a concrete example using a financial forecasting platform built with:
 
-- **[Kubernetes](https://kubernetes.io/docs/home/)** for orchestration and container management
-- **[Seldon Core v2](https://docs.seldon.io/projects/seldon-core/en/latest/)** for model serving and A/B testing experiments
-- **[Prometheus](https://prometheus.io/docs/introduction/overview/)** for comprehensive metrics collection and monitoring
-- **[Grafana](https://grafana.com/docs/)** for advanced visualization and real-time dashboards
-- **[Argo Workflows](https://argoproj.github.io/argo-workflows/)** for automated training pipelines and ML workflow orchestration
+- **Kubernetes** for orchestration
+- **Seldon Core v2** for model serving and experiments
+- **Prometheus** for metrics collection
+- **Grafana** for visualization
+- **Argo Workflows** for training pipelines
 
-![Production MLOps A/B testing architecture with GitOps automation](images/enhanced_architecture_diagram_20250712_182357.png)
+![Production MLOps A/B testing architecture with GitOps automation](https://cdn-images-1.medium.com/max/2400/1*itlZOddC9mEHWN6MDYWgSw.png)
 
 *Production MLOps A/B testing architecture with GitOps automation*
 
@@ -304,36 +300,7 @@ In **Part 3**, we'll explore the business impact:
 
 ---
 
-## Additional Resources
-
-### 📚 **Essential Reading**
-- **[MLOps Principles](https://ml-ops.org/content/mlops-principles)** - Foundational concepts for ML in production
-- **[Google's Rules of Machine Learning](https://developers.google.com/machine-learning/guides/rules-of-ml)** - Best practices for ML engineering
-- **[The Machine Learning Engineering Book](https://www.mlebook.com/)** - Comprehensive guide to production ML systems
-- **[Kubernetes Documentation](https://kubernetes.io/docs/home/)** - Essential for MLOps infrastructure
-
-### 🛠️ **Tools and Frameworks**
-- **[Seldon Core](https://docs.seldon.io/)** - Advanced ML model serving and A/B testing
-- **[MLflow](https://mlflow.org/docs/latest/index.html)** - ML lifecycle management platform
-- **[Kubeflow](https://www.kubeflow.org/docs/)** - ML workflows on Kubernetes
-- **[Weights & Biases](https://docs.wandb.ai/)** - Experiment tracking and model management
-
-### 📊 **A/B Testing Resources**
-- **[Optimizely's A/B Testing Guide](https://www.optimizely.com/optimization-glossary/ab-testing/)** - Statistical fundamentals
-- **[Netflix Tech Blog](https://netflixtechblog.com/its-all-a-bout-testing-the-netflix-experimentation-platform-4e1ca458c15)** - Large-scale experimentation platform
-- **[Uber's Experimentation Platform](https://eng.uber.com/experimentation-platform/)** - Real-world ML A/B testing at scale
-
----
-
 **Ready to build your own ML A/B testing system?** Continue with Part 2 where we'll implement the complete technical infrastructure.
-
----
-
-## Social Media & SEO
-
-**Tags**: #MLOps #MachineLearning #ABTesting #Kubernetes #SeldonCore #GitOps #ProductionML #MLEngineering #DataScience #DevOps
-
-**Share this article**: Help other ML engineers discover production-grade A/B testing strategies!
 
 ---
 
@@ -342,4 +309,4 @@ In **Part 3**, we'll explore the business impact:
 - **Platform**: [github.com/jtayl222/ml-platform](https://github.com/jtayl222/ml-platform)
 - **Application**: [github.com/jtayl222/financial-mlops-pytorch](https://github.com/jtayl222/financial-mlops-pytorch)
 
-*Follow [@jeftaylo](https://medium.com/@jeftaylo) for more enterprise MLOps content and practical implementation guides.*
+*Follow me for more enterprise MLOps content and practical implementation guides.*

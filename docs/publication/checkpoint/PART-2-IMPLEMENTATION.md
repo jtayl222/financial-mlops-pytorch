@@ -2,10 +2,6 @@
 
 *Technical Implementation with Seldon Core v2*
 
-**Keywords**: Seldon Core v2, MLOps A/B testing, Kubernetes ML deployment, GitOps machine learning, production ML infrastructure, ML model serving, Prometheus MLOps monitoring, Seldon Experiment configuration, ML pipeline automation, enterprise MLOps
-
-**Meta Description**: Build production-ready A/B testing infrastructure for ML models with Seldon Core v2, GitOps automation, and comprehensive monitoring. Real-world implementation guide.
-
 ---
 
 ## About This Series
@@ -14,14 +10,14 @@ This is Part 2 of a 9-part series documenting the construction and operation of 
 
 **The Complete Series:**
 - **Part 1**: [A/B Testing in Production MLOps - Why Traditional Deployments Fail ML Models](./PART-1-PROBLEM-SOLUTION.md)
-- **Part 2**: Building Production A/B Testing Infrastructure - Seldon Core v2, GitOps, and Real-World Implementation (This Article)
-- **Part 3**: [Measuring Business Impact and ROI - From Infrastructure Investment to Revenue Growth](./PART-3-BUSINESS-IMPACT.md)
-- **Part 4**: [Understanding Seldon Core v2 Network Architecture - The "Office Building" Guide to MLOps Networking](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
-- **Part 5**: [Tracing ML Inference Requests - Deep Dive into Production Network Flow and Performance](./PART-5-SELDON-NETWORK-TRAFFIC.md)
-- **Part 6**: [Production Debugging Mastery - Real Incident Response and Systematic Troubleshooting](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
-- **Part 7**: [Flannel to Calico Migration - Enterprise CNI Requirements and Zero-Downtime Migration](./PART-7-FROM-FLANNEL-TO-CALICO.md)
-- **Part 8**: [When Calico Fails - ARP Resolution Bug and Critical Production Debugging](./PART-8-CALICO-PRODUCTION-FAILURE.md)
-- **Part 9**: [Calico to Cilium Migration - eBPF Performance and Strategic Infrastructure Recovery](./PART-9-CALICO-TO-CILIUM.md)
+- **Part 2**: Building Production A/B Testing Infrastructure for ML Models (This Article)
+- **Part 3**: [Measuring Business Impact and ROI of ML A/B Testing Infrastructure](./PART-3-BUSINESS-IMPACT.md)
+- **Part 4**: [Understanding Seldon Core v2 Network Architecture](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
+- **Part 5**: [Tracing a Request Through the Seldon Core v2 MLOps Stack](./PART-5-SELDON-NETWORK-TRAFFIC.md)
+- **Part 6**: [Production Seldon Core v2: Debugging and Real-World Challenges](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
+- **Part 7**: [From Flannel to Calico - Infrastructure Modernization Requirements](./PART-7-FROM-FLANNEL-TO-CALICO.md)
+- **Part 8**: [When Calico Fails - Debugging Production CNI Issues](./PART-8-CALICO-PRODUCTION-FAILURE.md)
+- **Part 9**: [Calico to Cilium - Learning from Infrastructure Mistakes](./PART-9-CALICO-TO-CILIUM.md)
 
 ---
 
@@ -53,7 +49,7 @@ The architecture may look complex, but it represents a robust, automated, and ob
 
 ### Production Cluster Configuration
 
-Our production cluster runs the following [Seldon Core v2](https://docs.seldon.io/projects/seldon-core/en/latest/) components:
+Our production cluster runs the following Seldon Core v2 components:
 
 | Release Name              | Namespace      | Status    | Chart Version         | App Version |
 |-------------------------- |---------------|-----------|----------------------|-------------|
@@ -64,7 +60,7 @@ Our production cluster runs the following [Seldon Core v2](https://docs.seldon.i
 
 ### Seldon Core v2 Experiment Configuration
 
-The heart of our A/B testing is a [Seldon Experiment resource](https://docs.seldon.io/projects/seldon-core/en/latest/contents/experiments/experiments.html):
+The heart of our A/B testing is a Seldon Experiment resource:
 
 ```yaml
 apiVersion: mlops.seldon.io/v1alpha1
@@ -93,7 +89,7 @@ spec:
 
 ### Prometheus Integration
 
-We collect comprehensive metrics for both models using [Prometheus](https://prometheus.io/docs/introduction/overview/) for MLOps monitoring:
+We collect comprehensive metrics for both models:
 
 ```python
 # Request metrics
@@ -114,7 +110,7 @@ ab_test_business_impact{model_name="enhanced-predictor",metric_type="net_busines
 
 ### Custom Metrics Implementation
 
-Here's how we implement custom business metrics using the [Prometheus Python client](https://prometheus.io/docs/instrumenting/clientlibs/):
+Here's how we implement custom business metrics:
 
 ```python
 from prometheus_client import Counter, Histogram, Gauge
@@ -158,10 +154,8 @@ class ABTestMetrics:
 
 ### The A/B Testing Pipeline
 
-Our implementation follows [GitOps principles](https://opengitops.dev/principles/) for ML deployment:
-
 ```bash
-# 1. Train models using Argo Workflows
+# 1. Train models
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=enhanced -p data-version=v2.3.0
 
@@ -533,26 +527,6 @@ rollout_plan = {
 - Test failover mechanisms regularly
 - Monitor monitoring systems
 
-## Additional Resources
-
-### 📚 **Essential Reading**
-- [Seldon Core v2 Documentation](https://docs.seldon.io/projects/seldon-core/en/latest/) - Complete guide to Seldon Core implementation
-- [GitOps Principles](https://opengitops.dev/principles/) - OpenGitOps working group best practices
-- [MLOps Maturity Model](https://ml-ops.org/content/mlops-principles) - MLOps.org community guidelines
-- [Google ML Engineering Best Practices](https://developers.google.com/machine-learning/guides/rules-of-ml) - Google's production ML guidelines
-
-### 🛠️ **Tools and Frameworks** 
-- [Prometheus Documentation](https://prometheus.io/docs/) - Monitoring and alerting toolkit
-- [Argo Workflows](https://argoproj.github.io/argo-workflows/) - Kubernetes-native workflow engine
-- [MLServer](https://mlserver.readthedocs.io/) - Python inference server for ML models
-- [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) - External access to cluster services
-
-### 📊 **A/B Testing Resources**
-- [Netflix A/B Testing Platform](https://netflixtechblog.com/its-all-a-bout-testing-the-netflix-experimentation-platform-4e1ca458c15) - Production A/B testing at scale
-- [Uber's Experimentation Platform](https://eng.uber.com/experimentation-platform/) - Large-scale experimentation architecture
-- [Continuous Delivery for Machine Learning](https://martinfowler.com/articles/cd4ml.html) - Martin Fowler's CD4ML principles
-- [Statistical Significance in A/B Testing](https://blog.optimizely.com/2015/01/20/statistics-for-the-internet-age-the-story-behind-optimizelys-new-stats-engine/) - Optimizely's statistical approach
-
 ## What's Next
 
 In **Part 3** of this series, we'll dive into the business impact:
@@ -576,12 +550,6 @@ We'll analyze real business impact calculations and ROI frameworks that justify 
 ---
 
 **Ready to measure the business impact?** Continue with Part 3 where we'll calculate ROI and build the business case for ML A/B testing.
-
-## Social Media & SEO
-
-**Tags**: #MLOps #SeldonCore #KubernetesMLOps #ABTesting #GitOps #Prometheus #MachineLearning #ProductionML #MLInfrastructure #DevOps
-
-**Share this article**: Learn how to build production-ready A/B testing infrastructure for ML models with Seldon Core v2, GitOps automation, and enterprise-grade monitoring. Perfect for platform engineers building reliable MLOps systems.
 
 ---
 
