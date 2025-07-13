@@ -2,10 +2,6 @@
 
 *Business Value, ROI Analysis, and Building the Business Case*
 
-**Keywords**: ML ROI calculation, MLOps business impact, A/B testing ROI, machine learning economics, ML infrastructure investment, business case MLOps, ML model ROI metrics, enterprise MLOps value, ML deployment business case, production ML economics
-
-**Meta Description**: Calculate real ROI and business impact of ML A/B testing infrastructure. Comprehensive analysis showing 1,143% ROI with practical frameworks for measuring ML value.
-
 ---
 
 ## About This Series
@@ -14,14 +10,14 @@ This is Part 3 of a 9-part series documenting the construction and operation of 
 
 **The Complete Series:**
 - **Part 1**: [A/B Testing in Production MLOps - Why Traditional Deployments Fail ML Models](./PART-1-PROBLEM-SOLUTION.md)
-- **Part 2**: [Building Production A/B Testing Infrastructure - Seldon Core v2, GitOps, and Real-World Implementation](./PART-2-IMPLEMENTATION.md)
-- **Part 3**: Measuring Business Impact and ROI - From Infrastructure Investment to Revenue Growth (This Article)
-- **Part 4**: [Understanding Seldon Core v2 Network Architecture - The "Office Building" Guide to MLOps Networking](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
-- **Part 5**: [Tracing ML Inference Requests - Deep Dive into Production Network Flow and Performance](./PART-5-SELDON-NETWORK-TRAFFIC.md)
-- **Part 6**: [Production Debugging Mastery - Real Incident Response and Systematic Troubleshooting](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
-- **Part 7**: [Flannel to Calico Migration - Enterprise CNI Requirements and Zero-Downtime Migration](./PART-7-FROM-FLANNEL-TO-CALICO.md)
-- **Part 8**: [When Calico Fails - ARP Resolution Bug and Critical Production Debugging](./PART-8-CALICO-PRODUCTION-FAILURE.md)
-- **Part 9**: [Calico to Cilium Migration - eBPF Performance and Strategic Infrastructure Recovery](./PART-9-CALICO-TO-CILIUM.md)
+- **Part 2**: [Building Production A/B Testing Infrastructure for ML Models](./PART-2-IMPLEMENTATION.md)
+- **Part 3**: Measuring Business Impact and ROI of ML A/B Testing Infrastructure (This Article)
+- **Part 4**: [Understanding Seldon Core v2 Network Architecture](./PART-4-SELDON-NETWORK-ARCHITECTURE.md)
+- **Part 5**: [Tracing a Request Through the Seldon Core v2 MLOps Stack](./PART-5-SELDON-NETWORK-TRAFFIC.md)
+- **Part 6**: [Production Seldon Core v2: Debugging and Real-World Challenges](./PART-6-SELDON-PRODUCTION-DEBUGGING.md)
+- **Part 7**: [From Flannel to Calico - Infrastructure Modernization Requirements](./PART-7-FROM-FLANNEL-TO-CALICO.md)
+- **Part 8**: [When Calico Fails - Debugging Production CNI Issues](./PART-8-CALICO-PRODUCTION-FAILURE.md)
+- **Part 9**: [Calico to Cilium - Learning from Infrastructure Mistakes](./PART-9-CALICO-TO-CILIUM.md)
 
 ---
 
@@ -49,7 +45,7 @@ Let's dive into the actual results from our financial forecasting A/B test imple
 | **Model Accuracy** | 78.5% | 82.1% | +3.6% |
 | **Error Rate** | 1.2% | 0.8% | -0.4% |
 
-![Comprehensive A/B testing results showing 3.9% net business value improvement](images/business_impact_analysis_real_20250712_180921.png)
+![Comprehensive A/B testing results showing 3.9% net business value improvement](https://cdn-images-1.medium.com/max/2400/1*fSM3xDe16bwLI4z8Qm5JDQ.png)
 
 *Comprehensive A/B testing results showing 3.9% net business value improvement*
 
@@ -57,7 +53,7 @@ Let's dive into the actual results from our financial forecasting A/B test imple
 
 ### The Business Model
 
-Our financial trading platform processes predictions with direct business impact following [Google's ML ROI framework](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning):
+Our financial trading platform processes predictions with direct business impact:
 
 ```python
 # Business parameters
@@ -154,8 +150,6 @@ daily_cost_increase = requests_per_day * latency_increase * cost_per_ms * 1000
 
 ### ROI Calculation
 
-Following [McKinsey's ML value measurement framework](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-analytics-academy-how-to-accelerate-data-and-analytics-impact):
-
 | Component | Annual Impact |
 |-----------|---------------|
 | **Revenue Increase** | +$657,000 |
@@ -165,7 +159,7 @@ Following [McKinsey's ML value measurement framework](https://www.mckinsey.com/c
 | **Infrastructure Cost** | -$53,000 |
 | **Net ROI** | **1,143%** |
 
-![ROI analysis demonstrating 1,143% return on A/B testing infrastructure](images/business_impact_analysis_real_20250712_180951.png)
+![ROI analysis demonstrating 1,143% return on A/B testing infrastructure](https://cdn-images-1.medium.com/max/2400/1*JDjNGJmH0QbAypwzTkqWRQ.png)
 
 *ROI analysis demonstrating 1,143% return on A/B testing infrastructure*
 
@@ -308,7 +302,7 @@ mitigation_strategies = {
 **Regulatory Compliance:**
 - Probability: 8%
 - Impact: -$500K
-- Mitigation: [Model explainability](https://www.ibm.com/topics/explainable-ai), audit trails, compliance testing
+- Mitigation: Audit trails, model explainability, compliance testing
 
 **Market Volatility:**
 - Probability: 25%
@@ -493,26 +487,6 @@ The numbers speak for themselves:
 2. Measure ROI of ML model improvements
 3. Build experimentation culture throughout the organization
 
-## Additional Resources
-
-### 📚 **Essential Reading**
-- [McKinsey ML Value Measurement](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-analytics-academy-how-to-accelerate-data-and-analytics-impact) - Framework for measuring ML business impact
-- [Google ML ROI Framework](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) - Comprehensive MLOps value assessment
-- [Deloitte AI Business Value Study](https://www2.deloitte.com/us/en/insights/focus/cognitive-technologies/ai-investment-by-country.html) - Enterprise AI investment analysis
-- [Harvard Business Review ML Economics](https://hbr.org/2020/07/the-economics-of-artificial-intelligence) - Strategic AI economics framework
-
-### 🛠️ **Tools and Frameworks** 
-- [MLflow Model Registry](https://mlflow.org/docs/latest/model-registry.html) - Model versioning and lifecycle management
-- [Weights & Biases](https://wandb.ai/site) - Experiment tracking and model management
-- [Neptune](https://neptune.ai/) - MLOps metadata management platform
-- [Amazon SageMaker Model Monitor](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html) - Production model monitoring
-
-### 📊 **Business Metrics Resources**
-- [Airbnb Experimentation Platform](https://medium.com/airbnb-engineering/experimentation-measurement-for-search-engine-optimization-b64136629760) - Large-scale business impact measurement
-- [LinkedIn A/B Testing](https://engineering.linkedin.com/blog/2020/a-b-testing-at-linkedin) - Enterprise experimentation methodology
-- [Facebook Experimentation](https://research.fb.com/publications/practical-guide-to-controlled-experiments-on-the-web-listen-to-your-customers-not-to-the-hippo/) - Statistical approaches to business impact
-- [Netflix Business Metrics](https://netflixtechblog.com/decision-making-at-netflix-33065fa06481) - Data-driven business decision frameworks
-
 ---
 
 ## Series Conclusion
@@ -526,12 +500,6 @@ This 3-part series demonstrated how to transform ML deployment from risky guessw
 **The result**: A system that delivers 1,143% ROI while reducing deployment risk by 75%.
 
 Start with a simple experiment, measure the results, and build your A/B testing muscle. Your future self (and your business stakeholders) will thank you.
-
-## Social Media & SEO
-
-**Tags**: #MLOpsROI #BusinessImpactML #ABTestingROI #MLEconomics #EnterpriseMLOps #MLBusinessCase #DataDrivenROI #MLOpsValue #MachineLearningROI #MLInvestment
-
-**Share this article**: Discover how to calculate real ROI from ML A/B testing infrastructure with a comprehensive analysis showing 1,143% return. Essential guide for justifying MLOps investments and measuring business impact.
 
 ---
 
