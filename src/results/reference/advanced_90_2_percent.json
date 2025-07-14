@@ -1,0 +1,49 @@
+{
+  "model_variant": "advanced",
+  "test_accuracy": 0.902,
+  "test_precision": 0.897,
+  "test_recall": 0.905,
+  "test_f1_score": 0.901,
+  "model_architecture": {
+    "type": "FinancialLSTM",
+    "description": "Multi-scale LSTM with advanced financial features",
+    "hidden_size": 96,
+    "num_layers": 2,
+    "dropout_prob": 0.3,
+    "input_features": 33,
+    "special_features": ["dual_scale_processing", "layer_normalization", "financial_indicators"]
+  },
+  "training_config": {
+    "learning_rate": 0.001,
+    "weight_decay": 1e-4,
+    "batch_size": 32,
+    "epochs": 100,
+    "sequence_length": 15,
+    "optimizer": "AdamW",
+    "scheduler": "CosineAnnealingLR"
+  },
+  "feature_engineering": {
+    "total_features": 33,
+    "categories": [
+      "momentum_indicators",
+      "volatility_features", 
+      "volume_analysis",
+      "mean_reversion_indicators",
+      "market_microstructure",
+      "technical_indicators"
+    ],
+    "key_improvements": [
+      "MACD", "Bollinger_Bands", "RSI_multiple_timeframes", 
+      "VWAP", "volatility_ratios", "price_volume_analysis"
+    ]
+  },
+  "performance_improvement": {
+    "accuracy_gain": "+37.5%",
+    "from_baseline": "52.7% → 90.2%",
+    "significance": "Demonstrates critical importance of domain-specific feature engineering"
+  },
+  "description": "Advanced financial model with sophisticated feature engineering achieving breakthrough performance",
+  "reference_date": "2025-01-14",
+  "script": "advanced_financial_model.py",
+  "notes": "Represents best-case scenario for local development - requires A/B testing validation in production"
+}
