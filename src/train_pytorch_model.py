@@ -73,6 +73,8 @@ else:  # baseline
 if os.environ.get("MLFLOW_TRACKING_URI"):
     mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 
+# Device will be configured after logging is set up
+
 
 # --- Functions ---
 def load_processed_data(data_dir: str):
@@ -147,8 +149,8 @@ def evaluate_test_set(model, test_features, test_targets, sequence_length, batch
     
     with torch.no_grad():
         for batch_idx, (features, targets) in enumerate(test_dataloader):
-            features = features.to('cpu')
-            targets = targets.to('cpu').float().unsqueeze(1)
+            features = features.to(DEVICE)
+            targets = targets.to(DEVICE).float().unsqueeze(1)
             
             # Check for NaN in test data
             if torch.isnan(features).any() or torch.isnan(targets).any():
@@ -251,7 +253,7 @@ def train_model(
     # Compute class weights for imbalanced dataset handling
     unique_classes = np.unique(train_targets)
     class_weights = compute_class_weight('balanced', classes=unique_classes, y=train_targets)
-    class_weight_tensor = torch.FloatTensor([class_weights[1]]).to('cpu')  # Weight for positive class
+    class_weight_tensor = torch.FloatTensor([class_weights[1]]).to(DEVICE)  # Weight for positive class
     
     # Update criterion with class weights
     criterion = nn.BCEWithLogitsLoss(pos_weight=class_weight_tensor)
@@ -282,8 +284,8 @@ def train_model(
         
         for batch_idx, (features, targets) in enumerate(train_dataloader):
             # Ensure proper tensor shapes and types
-            features = features.to('cpu')
-            targets = targets.to('cpu').float().unsqueeze(1)
+            features = features.to(DEVICE)
+            targets = targets.to(DEVICE).float().unsqueeze(1)
 
             # Check for NaN in input data
             if torch.isnan(features).any() or torch.isnan(targets).any():
@@ -343,8 +345,8 @@ def train_model(
 
         with torch.no_grad():
             for batch_idx, (features, targets) in enumerate(val_dataloader):
-                features = features.to('cpu')
-                targets = targets.to('cpu').float().unsqueeze(1)
+                features = features.to(DEVICE)
+                targets = targets.to(DEVICE).float().unsqueeze(1)
                 
                 # Check for NaN in validation data
                 if torch.isnan(features).any() or torch.isnan(targets).any():
@@ -466,6 +468,10 @@ def run_training_pipeline():
     experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"financial-mlops-pytorch-{MODEL_VARIANT}")
     mlflow.set_experiment(experiment_name)
     
+    # Configure device after logging is set up
+    from device_utils import get_device
+    DEVICE = get_device()
+    
     # Start an MLflow run
     run_name = f"pytorch_stock_predictor_{MODEL_VARIANT}_{start_time.strftime('%Y%m%d_%H%M%S')}"
     with mlflow.start_run(run_name=run_name):
@@ -480,7 +486,7 @@ def run_training_pipeline():
         mlflow.log_param("dropout_prob", DROPOUT_PROB)
         mlflow.log_param("num_classes", NUM_CLASSES)
         mlflow.log_param("sequence_length", SEQUENCE_LENGTH)
-        mlflow.log_param("device", "cpu")
+        mlflow.log_param("device", str(DEVICE))
         mlflow.log_param("start_time", start_time.isoformat())
 
         # 1. Load processed data
@@ -529,9 +535,9 @@ def run_training_pipeline():
             num_layers=NUM_LAYERS,
             num_classes=NUM_CLASSES,
             dropout_prob=DROPOUT_PROB
-        ).to('cpu')
+        ).to(DEVICE)
 
-        # Initialize model weights properly
+        # Initialize model weights properly with MPS compatibility
         def init_weights(m):
             if isinstance(m, nn.Linear):
                 torch.nn.init.xavier_uniform_(m.weight)
@@ -542,7 +548,15 @@ def run_training_pipeline():
                     if 'weight_ih' in name:
                         torch.nn.init.xavier_uniform_(param.data)
                     elif 'weight_hh' in name:
-                        torch.nn.init.orthogonal_(param.data)
+                        # Use Xavier uniform instead of orthogonal for MPS compatibility
+                        if DEVICE.type == 'mps':
+                            torch.nn.init.xavier_uniform_(param.data)
+                        else:
+                            try:
+                                torch.nn.init.orthogonal_(param.data)
+                            except NotImplementedError:
+                                # Fallback to Xavier uniform if orthogonal fails
+                                torch.nn.init.xavier_uniform_(param.data)
                     elif 'bias' in name:
                         torch.nn.init.constant_(param.data, 0)
 
@@ -593,7 +607,7 @@ def run_training_pipeline():
 
         # 7. Export ONNX model for Seldon Core serving
         logging.info("Step 7: Exporting ONNX model for serving...")
-        sample_input = torch.randn(1, SEQUENCE_LENGTH, INPUT_SIZE)
+        sample_input = torch.randn(1, SEQUENCE_LENGTH, INPUT_SIZE).to(DEVICE)
         onnx_path = export_onnx_model(trained_model, sample_input, MODEL_SAVE_DIR, MODEL_VARIANT)
 
         # 8. Log model to MLflow with proper documentation
@@ -628,15 +642,21 @@ def run_training_pipeline():
                 json.dump(model_info, f, indent=2)
             mlflow.log_artifact(model_info_path)
             
-            # Log the model with signature and example
+            # Log the model with signature and example (move to CPU for MLflow)
+            sample_input_cpu = sample_input.cpu()
+            trained_model_cpu = trained_model.cpu()
+            
+            # Get absolute path to models.py for MLflow
+            models_py_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models.py")
+            
             registered_model_name = f"FinancialDirectionPredictor_{MODEL_VARIANT.title()}"
             mlflow.pytorch.log_model(
-                pytorch_model=trained_model,
+                pytorch_model=trained_model_cpu,
                 name=f"stock_predictor_{MODEL_VARIANT}_model",
                 registered_model_name=registered_model_name,
-                code_paths=["src/models.py"],
-                input_example=sample_input.numpy(),
-                signature=mlflow.models.infer_signature(sample_input.numpy(), trained_model(sample_input).detach().numpy())
+                code_paths=[models_py_path] if os.path.exists(models_py_path) else None,
+                input_example=sample_input_cpu.numpy(),
+                signature=mlflow.models.infer_signature(sample_input_cpu.numpy(), trained_model_cpu(sample_input_cpu).detach().numpy())
             )
             
             logging.info(f"✅ PyTorch model ({MODEL_VARIANT}) successfully logged and registered with MLflow.")

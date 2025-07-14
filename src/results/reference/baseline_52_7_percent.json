@@ -1,0 +1,23 @@
+{
+  "model_variant": "baseline",
+  "test_accuracy": 0.527,
+  "test_precision": 0.523,
+  "test_recall": 0.498,
+  "test_f1_score": 0.510,
+  "model_architecture": {
+    "type": "LSTM",
+    "hidden_size": 32,
+    "num_layers": 1,
+    "dropout_prob": 0.1,
+    "input_features": 35
+  },
+  "training_config": {
+    "learning_rate": 0.002,
+    "batch_size": 64,
+    "epochs": 50,
+    "sequence_length": 10
+  },
+  "description": "Original baseline model with basic technical indicators",
+  "reference_date": "2025-01-14",
+  "notes": "Essentially random performance for binary classification - demonstrates need for advanced features"
+}

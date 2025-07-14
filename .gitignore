@@ -211,3 +211,14 @@ curl.sh
 # Temporary and backup files
 *.bak
 /tmp/
+
+# ML training artifacts (large files only)
+src/data/
+src/models/
+src/artifacts/
+*.pth
+*.onnx
+training.log
+
+# ML results - exclude experiments, keep reference baselines
+src/results/experiments/

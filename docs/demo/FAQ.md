@@ -58,6 +58,75 @@ Example:
 = $205K net annual value
 ```
 
+### Q: Why do we need A/B testing when we can achieve 90.2% accuracy locally in the src directory?
+
+**A:** This question hits the core of production ML reality - **lab results don't guarantee production performance**:
+
+**The Local vs Production Gap:**
+```
+Local Development (src/ directory):
+✅ advanced_financial_model.py: 90.2% accuracy
+✅ Perfect feature engineering with 33 indicators
+✅ Controlled data splits and validation
+✅ Optimal hyperparameters and architecture
+
+Production Reality:
+❓ Same 90.2% accuracy? (Unknown until A/B tested)
+❓ Real-time data quality matches training data?
+❓ Market regime changes affect performance?
+❓ Infrastructure latency impacts predictions?
+```
+
+**Why Production Can Differ:**
+
+**1. Data Distribution Drift**
+- **Training Data**: 2018-2023 historical patterns
+- **Production Data**: Live market conditions may have shifted
+- **Feature Quality**: Real-time indicators may have different noise characteristics
+- **Market Regime**: Bull market training vs bear market deployment
+
+**2. Infrastructure Reality**
+- **Latency Constraints**: Sub-second requirements may limit feature computation
+- **Data Pipeline**: Live data feeds vs clean historical datasets
+- **Model Serving**: ONNX conversion and MLServer may introduce numerical differences
+- **Concurrent Load**: High throughput may affect prediction quality
+
+**3. Temporal Dependencies**
+- **Look-ahead Bias**: Training may inadvertently use future information
+- **Market Impact**: Model deployment itself can affect market patterns
+- **Seasonality**: Models trained on historical cycles may miss new patterns
+- **Volatility Regimes**: 2023 market conditions differ from 2018-2022 training period
+
+**Real Example from Our Platform:**
+```python
+# Local development results (src/advanced_financial_model.py)
+Local Training: 90.2% accuracy on test set
+Feature Engineering: 33 sophisticated indicators
+Architecture: Multi-scale LSTM with attention
+
+# Production A/B test results (actual deployment)
+Baseline Model: 48.2% accuracy (production validated)
+Enhanced Model: 47.8% accuracy (surprisingly worse!)
+Advanced Model: NOT YET DEPLOYED (waiting for A/B validation)
+```
+
+**The $2M Question:**
+*What if the 90.2% local accuracy drops to 45% in production due to data pipeline differences?*
+
+**A/B Testing Prevents:**
+- **False Confidence**: Assuming lab results transfer to production
+- **Silent Failures**: Models degrading without detection
+- **Full Deployment Risk**: Losing 100% of traffic vs 30% during validation
+- **Business Impact**: Better to discover issues early than after full rollout
+
+**Recommended Workflow:**
+1. **Develop locally**: Use `src/advanced_financial_model.py` to achieve best possible accuracy
+2. **Deploy safely**: A/B test the advanced model against production baseline
+3. **Validate performance**: Ensure 90.2% lab accuracy translates to production gains
+4. **Scale gradually**: Increase traffic allocation as confidence builds
+
+**Key Insight**: The sophistication of `src/advanced_financial_model.py` makes A/B testing *more* critical, not less - the bigger the claimed improvement, the more important it is to validate in real conditions before full deployment.
+
 ### Q: Why do some models show similar or lower accuracy? Isn't the enhanced model supposed to be better?
 
 **A:** This demonstrates the core value of A/B testing - real-world validation often contradicts lab results:
