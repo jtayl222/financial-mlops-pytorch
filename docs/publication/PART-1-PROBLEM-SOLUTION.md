@@ -21,8 +21,8 @@ You've spent months training a new machine learning model. It shows impressive a
 
 Traditional software deployment strategies fall short for ML models:
 
-- **Blue-green deployments** are all-or-nothing: you risk everything on untested production behavior
-- **Canary releases** help with infrastructure, but don't measure model-specific performance
+- **[Blue-green deployments](https://martinfowler.com/bliki/BlueGreenDeployment.html)** are all-or-nothing: you risk everything on untested production behavior
+- **[Canary releases](https://kubernetes.io/docs/concepts/cluster-administration/manage-deployment/#canary-deployments)** help with infrastructure, but don't measure model-specific performance
 - **Shadow testing** validates infrastructure but doesn't capture business impact
 
 This is where **A/B testing for ML models** becomes essential.
@@ -82,11 +82,11 @@ Financial models require special considerations:
 
 Let's demonstrate these challenges with a concrete example using a financial forecasting platform built with:
 
-- **Kubernetes** for orchestration
-- **Seldon Core v2** for model serving and experiments
-- **Prometheus** for metrics collection
-- **Grafana** for visualization
-- **Argo Workflows** for training pipelines
+- **[Kubernetes](https://kubernetes.io/docs/home/)** for orchestration
+- **[Seldon Core v2](https://docs.seldon.io/projects/seldon-core/en/latest/)** for model serving and experiments
+- **[Prometheus](https://prometheus.io/docs/introduction/overview/)** for metrics collection
+- **[Grafana](https://grafana.com/docs/)** for visualization
+- **[Argo Workflows](https://argoproj.github.io/argo-workflows/)** for training pipelines
 
 ![Production MLOps A/B testing architecture with GitOps automation](https://cdn-images-1.medium.com/max/2400/1*itlZOddC9mEHWN6MDYWgSw.png)
 
@@ -316,5 +316,24 @@ In **Part 3**, we'll explore the business impact:
 
 - **Platform**: [github.com/jtayl222/ml-platform](https://github.com/jtayl222/ml-platform)
 - **Application**: [github.com/jtayl222/financial-mlops-pytorch](https://github.com/jtayl222/financial-mlops-pytorch)
+
+---
+
+## Additional Resources
+
+### 📚 **Essential Reading**
+- **[MLOps Principles](https://ml-ops.org/content/mlops-principles)** - Foundational concepts for ML in production
+- **[Google's Rules of Machine Learning](https://developers.google.com/machine-learning/guides/rules-of-ml)** - Best practices for ML engineering
+- **[The Machine Learning Engineering Book](https://www.mlebook.com/)** - Comprehensive guide to production ML systems
+
+### 🛠️ **Tools and Frameworks**
+- **[Seldon Core](https://docs.seldon.io/)** - Advanced ML model serving and A/B testing
+- **[MLflow](https://mlflow.org/docs/latest/index.html)** - ML lifecycle management platform
+- **[Kubeflow](https://www.kubeflow.org/docs/)** - ML workflows on Kubernetes
+
+### 📊 **A/B Testing Resources**
+- **[Optimizely's A/B Testing Guide](https://www.optimizely.com/optimization-glossary/ab-testing/)** - Statistical fundamentals
+- **[Netflix Tech Blog](https://netflixtechblog.com/its-all-a-bout-testing-the-netflix-experimentation-platform-4e1ca458c15)** - Large-scale experimentation platform
+- **[Uber's Experimentation Platform](https://eng.uber.com/experimentation-platform/)** - Real-world ML A/B testing at scale
 
 *Follow me for more enterprise MLOps content and practical implementation guides.*
