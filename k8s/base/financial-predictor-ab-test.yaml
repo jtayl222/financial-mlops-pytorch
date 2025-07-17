@@ -14,7 +14,7 @@ spec:
   - mlflow
   - torch
   - numpy
-  - scikit-learn
+  - sklearn
   server: mlserver
 
 ---
@@ -33,7 +33,7 @@ spec:
   - mlflow
   - torch
   - numpy
-  - scikit-learn
+  - sklearn
   server: mlserver
 
 ---
