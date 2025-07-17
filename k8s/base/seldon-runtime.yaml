@@ -20,6 +20,11 @@ spec:
     replicas: 1
   - name: seldon-scheduler
     replicas: 0
+    podSpec:
+      containers:
+      - name: scheduler
+        image: 192.168.1.210/library/seldon-scheduler:verbose-logging-working
+        imagePullPolicy: Always
   - name: seldon-envoy
     replicas: 1
   - name: seldon-dataflow-engine
@@ -30,9 +35,4 @@ spec:
     replicas: 0
   - name: mlserver
     replicas: 1
-    env:
-    - name: SELDON_SCHEDULER_HOST
-      value: seldon-system-scheduler
-    - name: SELDON_SCHEDULER_PORT
-      value: "9004"
   seldonConfig: default
