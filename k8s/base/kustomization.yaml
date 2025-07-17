@@ -14,6 +14,7 @@ resources:
   - shared-data-pvc.yaml
   - financial-predictor-vs.yaml
   - seldon-runtime.yaml
+  - server-config-centralized.yaml
   - network-policy.yaml
   - mlserver.yaml
   - nginx-ingress.yaml

@@ -25,7 +25,7 @@ warnings.filterwarnings('ignore')
 
 # Prometheus metrics integration
 try:
-    from prometheus_client import Counter, Histogram, Gauge, start_http_server
+    from prometheus_client import Counter, Histogram, Gauge, start_http_server, push_to_gateway, CollectorRegistry
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
@@ -57,9 +57,10 @@ class ModelMetrics:
 
 class AdvancedABTester:
     def __init__(self, seldon_endpoint: str, experiment_name: str = "financial-ab-test-experiment", 
-                 enable_metrics: bool = True, metrics_port: int = 8002):
+                 enable_metrics: bool = True, metrics_port: int = 8002, pushgateway_url: str = None):
         self.seldon_endpoint = seldon_endpoint
         self.experiment_name = experiment_name
+        self.pushgateway_url = pushgateway_url
         self.results = []
         self.model_metrics = {
             'baseline-predictor': ModelMetrics('baseline-predictor'),
@@ -218,6 +219,32 @@ class AdvancedABTester:
                 
         except Exception as e:
             print(f"❌ Error updating business impact metrics: {e}")
+    
+    def push_metrics_to_gateway(self):
+        """Push all metrics to Prometheus Pushgateway for persistence"""
+        if not self.enable_metrics or not self.pushgateway_url:
+            return
+            
+        try:
+            from prometheus_client import push_to_gateway, REGISTRY
+            
+            # Push all metrics to gateway using the default registry
+            # This pushes the actual metrics we've been updating throughout the test
+            push_to_gateway(
+                gateway=self.pushgateway_url,
+                job='financial_ab_test',
+                registry=REGISTRY,
+                grouping_key={'instance': 'demo', 'experiment': self.experiment_name}
+            )
+            
+            print(f"✅ Metrics pushed to Pushgateway: {self.pushgateway_url}")
+            print(f"   Job: financial_ab_test")
+            print(f"   Grouping: instance=demo, experiment={self.experiment_name}")
+            
+        except Exception as e:
+            print(f"❌ Failed to push metrics to Pushgateway: {e}")
+            import traceback
+            traceback.print_exc()
         
     def generate_realistic_market_data(self, n_samples: int = 200) -> List[Dict]:
         """Generate realistic financial market scenarios for testing"""
@@ -680,7 +707,7 @@ class AdvancedABTester:
 
 def main():
     parser = argparse.ArgumentParser(description='Advanced Financial MLOps A/B Testing')
-    parser.add_argument('--endpoint', default='http://192.168.1.249/financial-inference', 
+    parser.add_argument('--endpoint', default='http://ml-api.local/financial-inference', 
                        help='Seldon mesh endpoint (via NGINX ingress)')
     parser.add_argument('--experiment', default='financial-ab-test-experiment', 
                        help='Experiment name')
@@ -694,6 +721,8 @@ def main():
                        help='Port for Prometheus metrics server')
     parser.add_argument('--no-metrics', action='store_true',
                        help='Disable Prometheus metrics collection')
+    parser.add_argument('--pushgateway', type=str,
+                       help='Prometheus Pushgateway URL for persistent metrics')
     
     args = parser.parse_args()
     
@@ -703,7 +732,8 @@ def main():
     # Initialize tester
     tester = AdvancedABTester(args.endpoint, args.experiment, 
                              enable_metrics=not args.no_metrics,
-                             metrics_port=args.metrics_port)
+                             metrics_port=args.metrics_port,
+                             pushgateway_url=args.pushgateway)
     
     # Generate realistic market scenarios
     print("📊 Generating realistic market scenarios...")
@@ -723,6 +753,11 @@ def main():
         # Create visualizations
         if not args.no_viz:
             tester.create_comprehensive_visualizations(results, analysis)
+        
+        # Push metrics to Pushgateway if configured
+        if args.pushgateway:
+            print("\n📤 Pushing metrics to Pushgateway...")
+            tester.push_metrics_to_gateway()
     
     print("🎉 Advanced A/B Testing Complete!")
     print("\n💡 Key Insights:")

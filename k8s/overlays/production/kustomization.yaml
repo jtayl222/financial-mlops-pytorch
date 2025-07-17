@@ -1,0 +1,12 @@
+resources:
+  - ../../base
+  - mlserver-hpa.yaml
+
+patches:
+  - path: increase-capacity-patch.yaml
+    target:
+      group: mlops.seldon.io
+      version: v1alpha1
+      kind: SeldonRuntime
+      name: financial-inference-runtime
+      namespace: financial-inference

@@ -1,0 +1,473 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Financial MLOps A/B Testing Dashboard",
+    "description": "Comprehensive A/B testing dashboard with real production data",
+    "tags": ["mlops", "a/b-testing", "seldon", "financial"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h", 
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Traffic Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "ab_test_requests_total",
+            "legendFormat": "{{model_name}}",
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 0
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "pieType": "pie",
+          "tooltip": {
+            "mode": "single"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Model Accuracy Comparison",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "ab_test_model_accuracy",
+            "legendFormat": "{{model_name}}",
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 0
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow", 
+                  "value": 40
+                },
+                {
+                  "color": "green",
+                  "value": 60
+                }
+              ]
+            },
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Traffic Distribution %",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "ab_test_traffic_percentage",
+            "legendFormat": "{{model_name}}",
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 0
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 30
+                },
+                {
+                  "color": "orange",
+                  "value": 70
+                }
+              ]
+            },
+            "unit": "percent",
+            "displayName": "Traffic %"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Request Counts Over Time",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "ab_test_requests_total",
+            "legendFormat": "{{model_name}} Total Requests",
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "options": {
+          "tooltip": {
+            "mode": "multi"
+          },
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "max"]
+          }
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear", 
+              "lineWidth": 2,
+              "fillOpacity": 0.1,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "insertNulls": false,
+              "showPoints": "auto",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Model Performance Summary",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ab_test_requests_total",
+            "legendFormat": "",
+            "refId": "A", 
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "ab_test_model_accuracy",
+            "legendFormat": "",
+            "refId": "B",
+            "datasource": {
+              "type": "prometheus", 
+              "uid": "prometheus"
+            },
+            "format": "table",
+            "instant": true
+          },
+          {
+            "expr": "ab_test_traffic_percentage",
+            "legendFormat": "",
+            "refId": "C",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus" 
+            },
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "options": {
+          "showHeader": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red", 
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "model_name"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Model"
+                }
+              ]
+            }
+          ]
+        },
+        "transformations": [
+          {
+            "id": "merge",
+            "options": {}
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "__name__": true,
+                "Time": true,
+                "container": true,
+                "endpoint": true,
+                "experiment": true,
+                "instance": true,
+                "job": true,
+                "namespace": true,
+                "pod": true,
+                "service": true,
+                "status": true
+              },
+              "indexByName": {},
+              "renameByName": {
+                "Value #A": "Requests",
+                "Value #B": "Accuracy (%)", 
+                "Value #C": "Traffic (%)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Experiment Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(ab_test_requests_total > 0)",
+            "legendFormat": "Active Models",
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 16
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "green",
+                  "value": 2
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Total Successful Requests",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(ab_test_requests_total)",
+            "legendFormat": "Total",
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 16
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                },
+                {
+                  "color": "green",
+                  "value": 50
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Experiment Configuration",
+        "type": "text",
+        "gridPos": {
+          "h": 4,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "options": {
+          "mode": "markdown",
+          "content": "**A/B Test Configuration:**\n\n- **Experiment**: financial-ab-test-experiment\n- **Models**: baseline-predictor, enhanced-predictor\n- **Data Source**: Pushgateway (192.168.1.209:9091)\n- **Status**: ✅ Active with real data\n- **Infrastructure**: Production-ready MLOps pipeline"
+        }
+      }
+    ]
+  }
+}

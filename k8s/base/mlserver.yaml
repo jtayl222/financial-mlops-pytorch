@@ -9,5 +9,5 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
 spec:
   serverConfig: mlserver
-  capabilities: ["mlflow", "torch", "scikit-learn", "numpy"]
+  capabilities: ["mlserver", "alibi-detect", "alibi-explain", "huggingface", "lightgbm", "mlflow", "python", "sklearn", "spark-mlib", "xgboost", "torch", "numpy"]
   replicas: 1

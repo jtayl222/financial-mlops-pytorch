@@ -1,0 +1,67 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: financial-mlops-ab-testing
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus-stack
+spec:
+  groups:
+  - name: financial-mlops-ab-testing
+    rules:
+    
+    # Model Accuracy Degradation Alert
+    - alert: ModelAccuracyDegraded
+      expr: ab_test_model_accuracy < 55
+      for: 5m
+      labels:
+        severity: critical
+        component: model-performance
+      annotations:
+        summary: "Model accuracy degraded for {{ $labels.model_name }}"
+        description: "Model {{ $labels.model_name }} accuracy dropped to {{ $value }}% which is below the 55% threshold"
+        
+    # High Response Time Alert
+    - alert: HighResponseTime
+      expr: histogram_quantile(0.95, rate(ab_test_response_time_seconds_bucket[5m])) > 0.200
+      for: 3m
+      labels:
+        severity: warning
+        component: model-performance
+      annotations:
+        summary: "High response time detected for {{ $labels.model_name }}"
+        description: "P95 response time for {{ $labels.model_name }} is {{ $value }}s which exceeds 200ms threshold"
+        
+    # Traffic Imbalance Alert
+    - alert: TrafficImbalanceDetected
+      expr: abs(rate(ab_test_requests_total{model_name="baseline-predictor"}[5m]) - rate(ab_test_requests_total{model_name="advanced-predictor"}[5m]) * 2.33) > 0.1
+      for: 10m
+      labels:
+        severity: warning
+        component: traffic-routing
+      annotations:
+        summary: "Traffic distribution deviates from expected 70/30 split"
+        description: "A/B test traffic distribution is not following the expected 70/30 split pattern"
+        
+    # Business Impact Alert
+    - alert: NegativeBusinessImpact
+      expr: ab_test_business_impact{metric_type="net_business_value"} < -20
+      for: 15m
+      labels:
+        severity: critical
+        component: business-metrics
+      annotations:
+        summary: "Negative business impact detected for {{ $labels.model_name }}"
+        description: "Model {{ $labels.model_name }} showing negative business impact of {{ $value }}% for 15+ minutes"
+        
+    # Model Error Rate Alert
+    - alert: HighModelErrorRate
+      expr: rate(ab_test_requests_total{status="error"}[5m]) / rate(ab_test_requests_total[5m]) > 0.05
+      for: 5m
+      labels:
+        severity: warning
+        component: model-reliability
+      annotations:
+        summary: "High error rate for {{ $labels.model_name }}"
+        description: "Error rate for {{ $labels.model_name }} is {{ $value | humanizePercentage }} which exceeds 5% threshold"

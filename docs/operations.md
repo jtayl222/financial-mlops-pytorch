@@ -118,6 +118,9 @@ docker build -t <REGISTRY>/<USERNAME>/financial-predictor-jupyter:latest -f jupy
 # Set up MinIO client
 mc alias set minio http://<MINIO_HOST>:<PORT> <ACCESS_KEY> <SECRET_KEY>
 
+# OR
+mc alias set minio $MINIO_ENDPOINT $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+
 # List model artifacts
 mc ls minio/mlflow-artifacts/28/
 mc ls minio/mlflow-artifacts/29/
