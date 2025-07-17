@@ -1,0 +1,49 @@
+---
+apiVersion: mlops.seldon.io/v1alpha1
+kind: ServerConfig
+metadata:
+  name: centralized-scheduler-config
+  namespace: financial-inference
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  podSpec:
+    containers:
+    - name: agent
+      env:
+      - name: SELDON_SCHEDULER_HOST
+        value: "seldon-scheduler.seldon-system.svc.cluster.local"
+      - name: SELDON_SCHEDULER_PORT
+        value: "9005"
+      - name: SELDON_SCHEDULER_TLS_PORT
+        value: "9055"
+      resources:
+        requests:
+          cpu: 200m
+          memory: 1Gi
+        limits:
+          cpu: 500m
+          memory: 2Gi
+    - name: mlserver
+      env:
+      - name: MLSERVER_PARALLEL_WORKERS
+        value: "4"
+      - name: MLSERVER_MAX_GRPC_WORKERS
+        value: "10"
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: 1000m
+          memory: 4Gi
+  volumeClaimTemplates:
+  - name: mlserver-models
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

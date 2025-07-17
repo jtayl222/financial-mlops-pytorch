@@ -13,6 +13,12 @@ spec:
   type: ExternalName
   externalName: seldon-scheduler.seldon-system.svc.cluster.local
   ports:
-  - name: grpc
+  - name: xds
+    port: 9002
+    protocol: TCP
+  - name: scheduler
     port: 9004
+    protocol: TCP
+  - name: agent
+    port: 9005
     protocol: TCP

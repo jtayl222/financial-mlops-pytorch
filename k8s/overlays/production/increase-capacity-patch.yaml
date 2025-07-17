@@ -1,0 +1,10 @@
+# Patch to increase model serving capacity for production workloads
+- op: replace
+  path: /spec/overrides/5/replicas  # mlserver replicas (array index 5, after scheduler at 1)
+  value: 3
+- op: replace
+  path: /spec/overrides/2/replicas  # seldon-envoy replicas (array index 2)
+  value: 2
+- op: replace
+  path: /spec/overrides/3/replicas  # seldon-modelgateway replicas (array index 3)
+  value: 2
