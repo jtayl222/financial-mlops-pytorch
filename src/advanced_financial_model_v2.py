@@ -220,7 +220,7 @@ def train_advanced_model():
     # Advanced training configuration
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='max', factor=0.5, patience=10, verbose=True
+        optimizer, mode='max', factor=0.5, patience=10
     )
     
     # Class imbalance handling
