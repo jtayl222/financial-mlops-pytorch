@@ -9,7 +9,7 @@ This platform showcases comprehensive MLOps infrastructure engineering with mult
 This platform demonstrates enterprise-grade MLOps infrastructure with production-ready capabilities:
 
 ### **Core Infrastructure Components**
-- **Multi-Namespace Kubernetes**: Separation of training (`financial-mlops-pytorch`) and serving (`financial-inference`) environments
+- **Multi-Namespace Kubernetes**: Separation of training (`financial-mlops-pytorch`) and serving (`financial-mlops-pytorch`) environments
 - **GitOps Automation**: ArgoCD-based deployment with Kustomize configuration management
 - **Comprehensive Monitoring**: Prometheus/Grafana stack with business and technical metrics
 - **Security Controls**: RBAC, network policies, and secure secret management
@@ -67,7 +67,7 @@ Ensure your infrastructure provides the required secrets and namespaces as docum
 
 ```bash
 # Apply infrastructure-delivered secret packages
-kubectl apply -k k8s/manifests/financial-inference/production
+kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
 kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
 ```
 
@@ -79,7 +79,7 @@ kubectl apply -k k8s/base
 
 # Verify deployment
 kubectl get pods -n financial-mlops-pytorch
-kubectl get models -n financial-inference
+kubectl get models -n financial-mlops-pytorch
 ```
 
 ### 4. Run Training Pipeline
@@ -103,7 +103,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 
 ```bash
 # Check model status
-kubectl get models,experiments -n financial-inference
+kubectl get models,experiments -n financial-mlops-pytorch
 
 # Test model endpoint
 curl -H "Host: financial-predictor.local" http://<CLUSTER_IP>/predict
