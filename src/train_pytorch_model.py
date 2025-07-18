@@ -36,6 +36,7 @@ os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
 # Model variant configuration - can be set via environment variables for A/B testing
 MODEL_VARIANT = os.environ.get("MODEL_VARIANT", "baseline")  # baseline, enhanced, lightweight
 logging.info(f"DEBUG: MODEL_VARIANT env: {os.environ.get('MODEL_VARIANT')}, variable: {MODEL_VARIANT}")
+logging.info(f"DEBUG: Data configuration - N_TICKERS: {N_TICKERS}, EXPECTED_INPUT_SIZE: {EXPECTED_INPUT_SIZE}")
 
 # Training Hyperparameters (configurable via environment variables)
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 64))
@@ -43,11 +44,16 @@ EPOCHS = int(os.environ.get("EPOCHS", 50))  # Increased for better convergence
 RANDOM_SEED = 42
 SEQUENCE_LENGTH = int(os.environ.get("SEQUENCE_LENGTH", 10))
 
+# Data Configuration
+N_TICKERS = int(os.environ.get("N_TICKERS", 11))  # Number of tickers in dataset (updated for 11-ticker dataset)
+FEATURES_PER_TICKER = 35  # Standard technical indicators per ticker
+EXPECTED_INPUT_SIZE = N_TICKERS * FEATURES_PER_TICKER  # Total expected features (11 × 35 = 385)
+
 # Model Hyperparameters - Tuned configurations for A/B testing variants
 if MODEL_VARIANT == "enhanced":
     # Enhanced model for better performance - optimized for financial time series
     LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.0008))  # Optimized LR
-    INPUT_SIZE = 35  # Fixed to match actual feature dimensions
+    INPUT_SIZE = EXPECTED_INPUT_SIZE  # Multi-ticker feature dimensions
     HIDDEN_SIZE = int(os.environ.get("HIDDEN_SIZE", 96))  # Balanced capacity
     NUM_LAYERS = int(os.environ.get("NUM_LAYERS", 2))     # Optimal depth
     DROPOUT_PROB = float(os.environ.get("DROPOUT_PROB", 0.25))  # Proper regularization
@@ -55,7 +61,7 @@ if MODEL_VARIANT == "enhanced":
 elif MODEL_VARIANT == "lightweight":
     # Lightweight model for fast inference
     LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.001))
-    INPUT_SIZE = 35
+    INPUT_SIZE = EXPECTED_INPUT_SIZE  # Multi-ticker feature dimensions
     HIDDEN_SIZE = 32   # Reduced capacity
     NUM_LAYERS = 1     # Shallow network
     DROPOUT_PROB = 0.1 # Lower regularization
@@ -63,7 +69,7 @@ elif MODEL_VARIANT == "lightweight":
 else:  # baseline
     # Baseline model configuration - deliberately suboptimal for comparison
     LEARNING_RATE = float(os.environ.get("LEARNING_RATE", 0.002))  # Higher LR = less stable
-    INPUT_SIZE = 35    # Fixed to match actual feature dimensions (was 12)
+    INPUT_SIZE = EXPECTED_INPUT_SIZE    # Multi-ticker feature dimensions
     HIDDEN_SIZE = int(os.environ.get("HIDDEN_SIZE", 32))   # Smaller capacity
     NUM_LAYERS = int(os.environ.get("NUM_LAYERS", 1))     # Shallow network
     DROPOUT_PROB = float(os.environ.get("DROPOUT_PROB", 0.1))  # Minimal regularization
