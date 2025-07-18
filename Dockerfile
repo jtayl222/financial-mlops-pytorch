@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye
+FROM pytorch/pytorch:2.0.1-cpu-py39
 
 WORKDIR /app
 
@@ -6,8 +6,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-optimized.txt .
+RUN pip install --no-cache-dir -r requirements-optimized.txt
 
 # Copy your source code
 COPY src ./src

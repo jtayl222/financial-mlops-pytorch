@@ -1,0 +1,24 @@
+# Core packages not included in PyTorch base image
+pandas
+scikit-learn
+mlflow
+
+# For YAML processing
+pyyaml
+
+# For downloading stock data
+yfinance
+
+# For logging
+loguru
+
+# Cloud storage
+boto3
+
+# Model export
+onnx
+
+# Testing (optional for runtime, but included for completeness)
+pytest
+pytest-mock
+jupyter
