@@ -40,11 +40,21 @@ This implementation showcases enterprise-grade data science practices while main
 
 ## 📊 Performance Overview
 
-| Model Variant | Accuracy | Description |
-|--------------|----------|-------------|
-| Original Baseline | 52.7% | Basic LSTM with simple features |
-| Simple Improvements | 53.2% | Better architecture, same features |
-| **Targeted Improvements** | **90.2%** | Advanced features + optimized architecture |
+| Model Variant | Lab Accuracy | Production Reality | Description |
+|--------------|-------------|-------------------|-------------|
+| Original Baseline | 52.7% | ~52.7% | Basic LSTM with simple features - near random |
+| Enhanced Model | 85.2% | Degrades significantly | Advanced architecture - lab conditions only |
+| **Advanced Features** | **90.2%** | Market dependent | Sophisticated features + optimized architecture |
+
+### Reality Check Results (Post-Deployment Testing)
+
+| Test Scenario | Accuracy | Returns | Notes |
+|--------------|----------|---------|-------|
+| **COVID Crash (Mar 2020)** | 57.1% | -68.6% | Significant degradation during market stress |
+| **Biotech Winter (2022)** | 52.9% | +1.25% | Near-random performance, market returned +9.17% |
+| **Transaction Costs Impact** | N/A | -161% | High-frequency predictions destroyed by realistic costs |
+
+**Key Finding:** Even models with excellent lab performance (85-90%) fail catastrophically in production without proper A/B testing infrastructure to detect and mitigate degradation.
 
 ## 🚀 Quick Start
 
