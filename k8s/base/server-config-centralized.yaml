@@ -2,8 +2,8 @@
 apiVersion: mlops.seldon.io/v1alpha1
 kind: ServerConfig
 metadata:
-  name: centralized-scheduler-config
-  namespace: financial-inference
+  name: mlserver-config
+  namespace: financial-mlops-pytorch
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform
@@ -12,13 +12,6 @@ spec:
   podSpec:
     containers:
     - name: agent
-      env:
-      - name: SELDON_SCHEDULER_HOST
-        value: "seldon-scheduler.seldon-system.svc.cluster.local"
-      - name: SELDON_SCHEDULER_PORT
-        value: "9005"
-      - name: SELDON_SCHEDULER_TLS_PORT
-        value: "9055"
       resources:
         requests:
           cpu: 200m

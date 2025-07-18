@@ -2,12 +2,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Server
 metadata:
   name: mlserver
-  namespace: financial-inference
+  namespace: financial-mlops-pytorch
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  serverConfig: mlserver
+  serverConfig: mlserver-config
   capabilities: ["mlserver", "alibi-detect", "alibi-explain", "huggingface", "lightgbm", "mlflow", "python", "sklearn", "spark-mlib", "xgboost", "torch", "numpy"]
   replicas: 1

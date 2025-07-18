@@ -1,0 +1,217 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: docker-build-pipeline-template
+  namespace: financial-mlops-pytorch
+spec:
+  entrypoint: build-and-push-image
+  serviceAccountName: argo-workflow-sa
+  
+  arguments:
+    parameters:
+    - name: git-repo
+      value: "https://github.com/jtayl222/financial-mlops-pytorch.git"
+    - name: git-branch
+      value: "July-17"
+    - name: image-name
+      value: "harbor.test/library/financial-predictor"
+    - name: image-tag
+      value: "latest"
+    - name: dockerfile-path
+      value: "."
+    - name: build-context
+      value: "."
+  
+  podSpecPatch: |
+    initContainers:
+    - name: init
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    containers:
+    - name: wait
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: docker-config
+    secret:
+      secretName: docker-config
+      optional: true
+
+  templates:
+  - name: build-and-push-image
+    inputs:
+      parameters:
+      - name: git-repo
+        value: "{{workflow.parameters.git-repo}}"
+      - name: git-branch
+        value: "{{workflow.parameters.git-branch}}"
+      - name: image-name
+        value: "{{workflow.parameters.image-name}}"
+      - name: image-tag
+        value: "{{workflow.parameters.image-tag}}"
+      - name: dockerfile-path
+        value: "{{workflow.parameters.dockerfile-path}}"
+      - name: build-context
+        value: "{{workflow.parameters.build-context}}"
+    container:
+      image: docker:24-dind
+      command: ["/bin/sh"]
+      args:
+      - -c
+      - |
+        set -e
+        
+        echo "🔧 Starting Docker build pipeline..."
+        echo "Repository: {{inputs.parameters.git-repo}}"
+        echo "Branch: {{inputs.parameters.git-branch}}"
+        echo "Image: {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}}"
+        
+        # Start Docker daemon
+        echo "🐳 Starting Docker daemon..."
+        dockerd-entrypoint.sh &
+        
+        # Wait for Docker to be ready
+        until docker info > /dev/null 2>&1; do
+          echo "⏳ Waiting for Docker daemon..."
+          sleep 2
+        done
+        
+        echo "✅ Docker daemon ready"
+        
+        # Install git
+        echo "📦 Installing git..."
+        apk add --no-cache git
+        
+        # Clone repository
+        echo "📥 Cloning repository..."
+        git clone --depth 1 --branch {{inputs.parameters.git-branch}} {{inputs.parameters.git-repo}} /workspace
+        cd /workspace
+        
+        # Show recent commits
+        echo "📋 Recent commits:"
+        git log --oneline -5
+        
+        # Build Docker image
+        echo "🏗️ Building Docker image..."
+        docker build -t {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}} {{inputs.parameters.dockerfile-path}}
+        
+        # Show image info
+        echo "📊 Image information:"
+        docker images {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}}
+        
+        # Test image (basic validation)
+        echo "🧪 Testing image..."
+        docker run --rm {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}} python --version
+        docker run --rm {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}} ls -la /app/src/
+        
+        # Login to Harbor (using environment variables)
+        echo "🔐 Logging in to Harbor..."
+        echo "$HARBOR_PASSWORD" | docker login harbor.test -u "$HARBOR_USERNAME" --password-stdin
+        
+        # Push image
+        echo "🚀 Pushing image to Harbor..."
+        docker push {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}}
+        
+        # Cleanup
+        echo "🧹 Cleaning up..."
+        docker image prune -f
+        
+        echo "✅ Docker build and push completed successfully!"
+        echo "🎯 Image: {{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}}"
+        
+      env:
+      - name: HARBOR_USERNAME
+        value: "admin"
+      - name: HARBOR_PASSWORD
+        value: "Harbor12345"
+      - name: DOCKER_TLS_CERTDIR
+        value: ""
+      - name: DOCKER_HOST
+        value: "unix:///var/run/docker.sock"
+      volumeMounts:
+      - name: docker-sock
+        mountPath: /var/run/docker.sock
+      - name: docker-config
+        mountPath: /root/.docker
+        readOnly: true
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
+          memory: "4Gi"
+          cpu: "2"
+      securityContext:
+        privileged: true
+  
+  # Quick build template (for faster iterations)
+  - name: quick-build
+    inputs:
+      parameters:
+      - name: image-tag
+        value: "latest"
+    container:
+      image: docker:24-dind
+      command: ["/bin/sh"]
+      args:
+      - -c
+      - |
+        set -e
+        
+        echo "⚡ Quick Docker build (using existing context)..."
+        
+        # Start Docker daemon
+        dockerd-entrypoint.sh &
+        until docker info > /dev/null 2>&1; do
+          echo "⏳ Waiting for Docker daemon..."
+          sleep 2
+        done
+        
+        # Install git
+        apk add --no-cache git
+        
+        # Clone and build
+        git clone --depth 1 --branch July-17 https://github.com/jtayl222/financial-mlops-pytorch.git /workspace
+        cd /workspace
+        
+        # Quick build
+        docker build -t harbor.test/library/financial-predictor:{{inputs.parameters.image-tag}} .
+        
+        # Push
+        echo "Harbor12345" | docker login harbor.test -u admin --password-stdin
+        docker push harbor.test/library/financial-predictor:{{inputs.parameters.image-tag}}
+        
+        echo "✅ Quick build completed!"
+        
+      env:
+      - name: DOCKER_TLS_CERTDIR
+        value: ""
+      - name: DOCKER_HOST
+        value: "unix:///var/run/docker.sock"
+      volumeMounts:
+      - name: docker-sock
+        mountPath: /var/run/docker.sock
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
+          memory: "4Gi"
+          cpu: "2"
+      securityContext:
+        privileged: true

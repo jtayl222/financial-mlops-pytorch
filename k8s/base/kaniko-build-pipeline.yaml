@@ -1,0 +1,211 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: kaniko-build-pipeline-template
+  namespace: financial-mlops-pytorch
+spec:
+  entrypoint: build-and-push-image
+  serviceAccountName: argo-workflow-sa
+  
+  arguments:
+    parameters:
+    - name: git-repo
+      value: "https://github.com/jtayl222/financial-mlops-pytorch.git"
+    - name: git-branch
+      value: "July-17"
+    - name: image-name
+      value: "harbor.test/library/financial-predictor"
+    - name: image-tag
+      value: "latest"
+    - name: dockerfile-path
+      value: "./Dockerfile"
+    - name: build-context
+      value: "."
+  
+  podSpecPatch: |
+    initContainers:
+    - name: init
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    containers:
+    - name: wait
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+  volumes:
+  - name: kaniko-secret
+    secret:
+      secretName: kaniko-secret
+      optional: true
+
+  templates:
+  - name: build-and-push-image
+    inputs:
+      parameters:
+      - name: git-repo
+        value: "{{workflow.parameters.git-repo}}"
+      - name: git-branch
+        value: "{{workflow.parameters.git-branch}}"
+      - name: image-name
+        value: "{{workflow.parameters.image-name}}"
+      - name: image-tag
+        value: "{{workflow.parameters.image-tag}}"
+      - name: dockerfile-path
+        value: "{{workflow.parameters.dockerfile-path}}"
+      - name: build-context
+        value: "{{workflow.parameters.build-context}}"
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      command: ["/kaniko/executor"]
+      args:
+      - --context={{inputs.parameters.git-repo}}#{{inputs.parameters.git-branch}}
+      - --dockerfile={{inputs.parameters.dockerfile-path}}
+      - --destination={{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}}
+      - --registry-certificate=harbor.test=/kaniko/ssl/certs/harbor.crt
+      - --skip-tls-verify-registry=harbor.test
+      - --verbosity=info
+      - --cache=true
+      - --cache-ttl=24h
+      env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: /kaniko/secret/kaniko-secret.json
+      - name: KANIKO_SECRET
+        value: /kaniko/secret/kaniko-secret.json
+      volumeMounts:
+      - name: kaniko-secret
+        mountPath: /kaniko/secret
+        readOnly: true
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+  
+  # Alternative: Simple git clone + kaniko build
+  - name: git-clone-build
+    inputs:
+      parameters:
+      - name: git-repo
+        value: "{{workflow.parameters.git-repo}}"
+      - name: git-branch
+        value: "{{workflow.parameters.git-branch}}"
+      - name: image-name
+        value: "{{workflow.parameters.image-name}}"
+      - name: image-tag
+        value: "{{workflow.parameters.image-tag}}"
+    dag:
+      tasks:
+      - name: clone-repo
+        template: git-clone
+        arguments:
+          parameters:
+          - name: git-repo
+            value: "{{inputs.parameters.git-repo}}"
+          - name: git-branch
+            value: "{{inputs.parameters.git-branch}}"
+      - name: build-image
+        template: kaniko-build
+        arguments:
+          parameters:
+          - name: image-name
+            value: "{{inputs.parameters.image-name}}"
+          - name: image-tag
+            value: "{{inputs.parameters.image-tag}}"
+        depends: clone-repo
+  
+  - name: git-clone
+    inputs:
+      parameters:
+      - name: git-repo
+      - name: git-branch
+    container:
+      image: alpine/git:latest
+      command: ["/bin/sh"]
+      args:
+      - -c
+      - |
+        echo "📥 Cloning repository..."
+        git clone --depth 1 --branch {{inputs.parameters.git-branch}} {{inputs.parameters.git-repo}} /workspace
+        cd /workspace
+        echo "📋 Repository cloned successfully"
+        echo "Recent commits:"
+        git log --oneline -3
+        echo "Files in src/:"
+        ls -la src/
+        echo "✅ Clone completed"
+      volumeMounts:
+      - name: shared-workspace
+        mountPath: /workspace
+      resources:
+        requests:
+          memory: "256Mi"
+          cpu: "200m"
+        limits:
+          memory: "512Mi"
+          cpu: "500m"
+  
+  - name: kaniko-build
+    inputs:
+      parameters:
+      - name: image-name
+      - name: image-tag
+    hostAliases:
+    - ip: "10.43.56.145"  # Harbor ClusterIP
+      hostnames:
+      - "harbor.test"
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      command: ["/kaniko/executor"]
+      args:
+      - --context=/workspace
+      - --dockerfile=/workspace/Dockerfile
+      - --destination={{inputs.parameters.image-name}}:{{inputs.parameters.image-tag}}
+      - --skip-tls-verify-registry=harbor.test
+      - --insecure-registry=harbor.test
+      - --skip-tls-verify
+      - --verbosity=info
+      - --cache=true
+      - --cache-ttl=24h
+      env:
+      - name: DOCKER_CONFIG
+        value: /kaniko/.docker
+      volumeMounts:
+      - name: shared-workspace
+        mountPath: /workspace
+      - name: docker-config
+        mountPath: /kaniko/.docker
+        readOnly: true
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: shared-workspace
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 2Gi
+  
+  volumes:
+  - name: docker-config
+    secret:
+      secretName: docker-config
+      optional: true

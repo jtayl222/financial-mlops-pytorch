@@ -1,5 +1,5 @@
 ---
-# Cross-namespace service reference for financial-inference
+# Cross-namespace service reference for financial-mlops-pytorch
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,7 +7,7 @@ metadata:
   namespace: ingress-nginx
 spec:
   type: ExternalName
-  externalName: seldon-mesh.financial-inference.svc.cluster.local
+  externalName: seldon-mesh.financial-mlops-pytorch.svc.cluster.local
   ports:
   - port: 80
     targetPort: 80

@@ -2,8 +2,8 @@
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: financial-mlops-runtime
+  namespace: financial-mlops-pytorch
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform
@@ -11,7 +11,10 @@ metadata:
 spec:
   config:
     agentConfig:
-      rclone: {}
+      rclone:
+        config_secrets:
+        - seldon-rclone-gs-public
+        - ml-platform
     kafkaConfig: {}
     serviceConfig: {}
     tracingConfig: {}

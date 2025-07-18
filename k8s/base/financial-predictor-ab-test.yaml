@@ -3,7 +3,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: financial-inference
+  namespace: financial-mlops-pytorch
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform
@@ -22,7 +22,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: enhanced-predictor
-  namespace: financial-inference
+  namespace: financial-mlops-pytorch
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform
@@ -41,7 +41,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: financial-mlops-pytorch
   labels:
     app.kubernetes.io/name: financial-mlops-pytorch
     app.kubernetes.io/part-of: ml-platform

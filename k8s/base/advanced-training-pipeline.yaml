@@ -45,7 +45,8 @@ spec:
       - name: model-variant
         value: advanced  # Default value for advanced model
     container:
-      image: harbor.test/library/financial-predictor:latest
+      image: harbor.test/library/financial-predictor:advanced-v2
+      imagePullPolicy: Always
       command: ["python", "src/advanced_financial_model_v2.py"]
       env:
       - name: MODEL_VARIANT
