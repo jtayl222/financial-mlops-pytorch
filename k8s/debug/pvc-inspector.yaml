@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-inspector
+  namespace: financial-mlops-pytorch
+  labels:
+    app: pvc-inspector
+spec:
+  restartPolicy: Never
+  containers:
+  - name: inspector
+    image: busybox
+    command: ["/bin/sh"]
+    args:
+    - -c
+    - |
+      echo "=== Financial Historical Data PVC Contents ==="
+      ls -la /mnt/financial-data/
+      echo ""
+      echo "=== Raw Data Directory ==="
+      ls -la /mnt/financial-data/raw/ 2>/dev/null || echo "Raw directory not found"
+      echo ""
+      echo "=== Processed Data Directory ==="
+      ls -la /mnt/financial-data/processed/ 2>/dev/null || echo "Processed directory not found"
+      echo ""
+      echo "=== Financial Features PVC Contents ==="
+      ls -la /mnt/financial-features/
+      echo ""
+      echo "=== Scalers Directory ==="
+      ls -la /mnt/financial-features/scalers/ 2>/dev/null || echo "Scalers directory not found"
+      echo ""
+      echo "=== Count CSV files ==="
+      find /mnt/financial-data -name "*.csv" | wc -l
+      echo ""
+      echo "=== List CSV files ==="
+      find /mnt/financial-data -name "*.csv" | sort
+      echo ""
+      echo "=== Sample file content (first CSV file, first 5 lines) ==="
+      find /mnt/financial-data -name "*.csv" | head -1 | xargs head -5 2>/dev/null || echo "No CSV files found"
+      echo ""
+      echo "=== Storage usage ==="
+      df -h /mnt/financial-data /mnt/financial-features
+      echo ""
+      echo "Inspection complete. Pod will remain running for manual inspection."
+      sleep 3600
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    volumeMounts:
+    - name: financial-data
+      mountPath: /mnt/financial-data
+    - name: financial-features
+      mountPath: /mnt/financial-features
+  volumes:
+  - name: financial-data
+    persistentVolumeClaim:
+      claimName: financial-historical-data-pvc
+  - name: financial-features
+    persistentVolumeClaim:
+      claimName: financial-features-pvc

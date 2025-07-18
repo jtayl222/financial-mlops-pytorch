@@ -1,0 +1,36 @@
+---
+# Persistent Volume Claim for storing historical financial data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: financial-historical-data-pvc
+  namespace: financial-mlops-pytorch
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/component: data-storage
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods can read/write
+  resources:
+    requests:
+      storage: 20Gi  # Sufficient for historical data + features
+  storageClassName: nfs-shared  # Use existing NFS storage class
+---
+# Persistent Volume Claim for processed features and artifacts
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: financial-features-pvc
+  namespace: financial-mlops-pytorch
+  labels:
+    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/part-of: ml-platform
+    app.kubernetes.io/component: feature-storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi  # For processed features, scalers, etc.
+  storageClassName: nfs-shared

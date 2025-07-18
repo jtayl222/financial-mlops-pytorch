@@ -88,10 +88,12 @@ metadata:
   namespace: financial-inference
 spec:
   hard:
-    requests.cpu: "50"
-    requests.memory: 100Gi
-    limits.memory: 200Gi
+    requests.cpu: "10"
+    requests.memory: 50Gi
+    limits.cpu: "20"
+    limits.memory: 100Gi
     count/models.mlops.seldon.io: "50"
+    count/pods: "50"
 ---
 apiVersion: v1
 kind: ResourceQuota
@@ -100,7 +102,9 @@ metadata:
   namespace: financial-mlops-pytorch
 spec:
   hard:
-    requests.cpu: "50"
-    requests.memory: 100Gi
-    limits.memory: 200Gi
+    requests.cpu: "10"
+    requests.memory: 50Gi
+    limits.cpu: "20" 
+    limits.memory: 100Gi
     count/workflows.argoproj.io: "50"
+    count/pods: "50"

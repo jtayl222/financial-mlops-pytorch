@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  storageUri: s3://mlflow-artifacts/29/models/m-63118756949141cba59ab87e90e8a96a/artifacts/
+  storageUri: s3://mlflow-artifacts/28/models/m-f6272d43441b471dac3db28a69f6e66a/artifacts/
   requirements:
   - mlflow
   - torch
@@ -28,7 +28,7 @@ metadata:
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  storageUri: s3://mlflow-artifacts/29/models/m-c33f0084469e4473a1ba9d428657299f/artifacts/
+  storageUri: s3://mlflow-artifacts/29/models/m-d6a79ecaa7f848b8945753a47bbe5b86/artifacts/
   requirements:
   - mlflow
   - torch

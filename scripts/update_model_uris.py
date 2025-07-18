@@ -127,6 +127,8 @@ def main():
     parser.add_argument('--mlflow-endpoint', 
                        default='http://mlflow.local:30800',
                        help='MLflow endpoint URL')
+    parser.add_argument('--experiment-id',
+                       help='MLflow experiment ID (overrides experiment name lookup)')
     
     args = parser.parse_args()
     
@@ -135,10 +137,13 @@ def main():
     print(f"   MLflow endpoint: {args.mlflow_endpoint}")
     
     # Get experiment ID
-    experiment_id = get_experiment_id(args.mlflow_endpoint, args.experiment)
-    if not experiment_id:
-        print(f"❌ Experiment '{args.experiment}' not found")
-        sys.exit(1)
+    if args.experiment_id:
+        experiment_id = args.experiment_id
+    else:
+        experiment_id = get_experiment_id(args.mlflow_endpoint, args.experiment)
+        if not experiment_id:
+            print(f"❌ Experiment '{args.experiment}' not found")
+            sys.exit(1)
     
     print(f"   Experiment ID: {experiment_id}")
     
