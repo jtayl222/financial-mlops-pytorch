@@ -65,11 +65,8 @@ class AdvancedFinancialLSTM(torch.nn.Module):
     def init_weights(self):
         """Initialize weights using Xavier initialization"""
         for name, param in self.named_parameters():
-            if 'weight' in name:
-                if 'lstm' in name:
-                    torch.nn.init.xavier_uniform_(param.data)
-                else:
-                    torch.nn.init.xavier_uniform_(param.data)
+            if 'weight' in name and param.data.dim() > 1:
+                torch.nn.init.xavier_uniform_(param.data)
             elif 'bias' in name:
                 torch.nn.init.constant_(param.data, 0)
     
@@ -250,8 +247,10 @@ def train_advanced_model():
         mlflow.log_param("pos_weight", pos_weight.item())
         mlflow.log_param("optimizer", "AdamW")
         mlflow.log_param("scheduler", "ReduceLROnPlateau")
-        mlflow.log_param("n_tickers", len(metadata['ticker_names']))
-        mlflow.log_param("ticker_names", ",".join(metadata['ticker_names']))
+        # Log ticker information if available
+        ticker_names = metadata.get('ticker_names', ['unknown'])
+        mlflow.log_param("n_tickers", len(ticker_names))
+        mlflow.log_param("ticker_names", ",".join(ticker_names))
         
         # Training loop
         best_val_acc = 0.0
@@ -386,8 +385,8 @@ def train_advanced_model():
             'model_params': sum(p.numel() for p in model.parameters()),
             'n_features': input_size,
             'sequence_length': sequence_length,
-            'n_tickers': len(metadata['ticker_names']),
-            'ticker_names': metadata['ticker_names'],
+            'n_tickers': len(ticker_names),
+            'ticker_names': ticker_names,
             'timestamp': datetime.now().isoformat()
         }
         
