@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.9-slim-buster
 
 WORKDIR /app
 
@@ -6,8 +6,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements-optimized.txt .
-RUN pip install --no-cache-dir -r requirements-optimized.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy your source code
 COPY src ./src
