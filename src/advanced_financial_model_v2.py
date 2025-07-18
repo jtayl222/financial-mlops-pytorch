@@ -108,30 +108,44 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
         return self.sequences[idx], self.targets[idx]
 
 def load_processed_datasets(processed_data_dir):
-    """Load the processed datasets from CSV files"""
+    """Load the processed datasets - use same approach as regular training"""
     
-    logging.info(f"Loading processed datasets from {processed_data_dir}")
+    logging.info(f"Loading processed data from {processed_data_dir}")
     
-    # Load CSV files (compatible with existing data pipeline)
-    train_df = pd.read_csv(os.path.join(processed_data_dir, 'train_split.csv'))
-    val_df = pd.read_csv(os.path.join(processed_data_dir, 'validation_split.csv'))
-    test_df = pd.read_csv(os.path.join(processed_data_dir, 'test_split.csv'))
+    # Load the combined CSV file that regular training creates
+    combined_csv_path = os.path.join(processed_data_dir, 'combined_features.csv')
+    if not os.path.exists(combined_csv_path):
+        raise FileNotFoundError(f"Combined features file not found: {combined_csv_path}")
     
-    logging.info(f"Dataset sizes - Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
-    logging.info(f"Train columns: {list(train_df.columns)}")
+    df = pd.read_csv(combined_csv_path, index_col='Date', parse_dates=True)
+    logging.info(f"Loaded combined data: {len(df)} rows, {len(df.columns)} columns")
+    logging.info(f"Columns: {list(df.columns)}")
     
-    # Create datasets from CSV data
-    sequence_length = 10  # Standard sequence length
+    # Use financial ML splits (same as regular training)
+    from financial_ml_splits import create_financial_splits
+    
+    # Create proper financial splits
+    train_df, val_df, test_df = create_financial_splits(
+        df, 
+        train_ratio=0.7,
+        val_ratio=0.15,
+        purge_period=30  # 30-day purge gap
+    )
+    
+    logging.info(f"Split sizes - Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
+    
+    # Create datasets
+    sequence_length = 10
     train_dataset = FinancialTimeSeriesDataset(train_df, sequence_length)
     val_dataset = FinancialTimeSeriesDataset(val_df, sequence_length)
     test_dataset = FinancialTimeSeriesDataset(test_df, sequence_length)
     
-    # Create metadata from the dataset
-    feature_cols = [col for col in train_df.columns if not col.startswith('Target_')]
+    # Create metadata
+    feature_cols = [col for col in df.columns if not col.startswith('Target_')]
     metadata = {
         'n_features': len(feature_cols),
         'sequence_length': sequence_length,
-        'ticker_names': [col.split('_')[-1] for col in feature_cols if '_' in col],
+        'ticker_names': list(set([col.split('_')[-1] for col in feature_cols if '_' in col])),
         'feature_names': feature_cols
     }
     
