@@ -73,65 +73,73 @@ def calculate_macd(prices, fast=12, slow=26, signal=9):
 def process_ticker_data(file_path):
     """Process individual ticker data with comprehensive feature engineering"""
     
-    ticker_name = os.path.basename(file_path).replace('.csv', '')
+    ticker_name = os.path.basename(file_path).replace('.csv', '').replace('_raw_2018-01-01_2024-12-31', '')
     logging.info(f"Processing ticker: {ticker_name}")
     
     try:
         # Load data
         df = pd.read_csv(file_path, index_col=0, parse_dates=True)
         
-        # Ensure we have the required columns
-        required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+        # Ensure we have the required columns with ticker-specific names
+        required_columns = [f'Open_{ticker_name}', f'High_{ticker_name}', f'Low_{ticker_name}', f'Close_{ticker_name}', f'Volume_{ticker_name}']
         if not all(col in df.columns for col in required_columns):
-            logging.error(f"Missing required columns in {file_path}")
+            logging.error(f"Missing required columns in {file_path}. Expected: {required_columns}")
+            logging.error(f"Found columns: {list(df.columns)}")
             return pd.DataFrame()
         
         # Sort by date to ensure chronological order
         df = df.sort_index()
         
+        # Get ticker-specific column names
+        close_col = f'Close_{ticker_name}'
+        high_col = f'High_{ticker_name}'
+        low_col = f'Low_{ticker_name}'
+        open_col = f'Open_{ticker_name}'
+        volume_col = f'Volume_{ticker_name}'
+        
         # Calculate returns
-        df['Returns'] = df['Close'].pct_change()
-        df['Log_Returns'] = np.log(df['Close'] / df['Close'].shift(1))
+        df[f'Returns_{ticker_name}'] = df[close_col].pct_change()
+        df[f'Log_Returns_{ticker_name}'] = np.log(df[close_col] / df[close_col].shift(1))
         
         # Price-based features
-        df['Price_Range'] = (df['High'] - df['Low']) / df['Close']
-        df['Price_Change'] = (df['Close'] - df['Open']) / df['Open']
+        df[f'Price_Range_{ticker_name}'] = (df[high_col] - df[low_col]) / df[close_col]
+        df[f'Price_Change_{ticker_name}'] = (df[close_col] - df[open_col]) / df[open_col]
         
         # Volume features
-        df['Volume_SMA_10'] = df['Volume'].rolling(window=10).mean()
-        df['Volume_Ratio'] = df['Volume'] / df['Volume_SMA_10']
+        df[f'Volume_SMA_10_{ticker_name}'] = df[volume_col].rolling(window=10).mean()
+        df[f'Volume_Ratio_{ticker_name}'] = df[volume_col] / df[f'Volume_SMA_10_{ticker_name}']
         
         # Technical indicators
         for window in SMA_WINDOWS:
-            df[f'SMA_{window}'] = df['Close'].rolling(window=window).mean()
-            df[f'Price_to_SMA_{window}'] = df['Close'] / df[f'SMA_{window}']
+            df[f'SMA_{window}_{ticker_name}'] = df[close_col].rolling(window=window).mean()
+            df[f'Price_to_SMA_{window}_{ticker_name}'] = df[close_col] / df[f'SMA_{window}_{ticker_name}']
         
         for window in RSI_WINDOWS:
-            df[f'RSI_{window}'] = calculate_rsi(df['Close'], window)
+            df[f'RSI_{window}_{ticker_name}'] = calculate_rsi(df[close_col], window)
         
         # Bollinger Bands
-        bb_upper, bb_lower = calculate_bollinger_bands(df['Close'])
-        df['BB_Upper'] = bb_upper
-        df['BB_Lower'] = bb_lower
-        df['BB_Width'] = (bb_upper - bb_lower) / df['Close']
-        df['BB_Position'] = (df['Close'] - bb_lower) / (bb_upper - bb_lower)
+        bb_upper, bb_lower = calculate_bollinger_bands(df[close_col])
+        df[f'BB_Upper_{ticker_name}'] = bb_upper
+        df[f'BB_Lower_{ticker_name}'] = bb_lower
+        df[f'BB_Width_{ticker_name}'] = (bb_upper - bb_lower) / df[close_col]
+        df[f'BB_Position_{ticker_name}'] = (df[close_col] - bb_lower) / (bb_upper - bb_lower)
         
         # MACD
-        macd, signal, histogram = calculate_macd(df['Close'])
-        df['MACD'] = macd
-        df['MACD_Signal'] = signal
-        df['MACD_Histogram'] = histogram
+        macd, signal, histogram = calculate_macd(df[close_col])
+        df[f'MACD_{ticker_name}'] = macd
+        df[f'MACD_Signal_{ticker_name}'] = signal
+        df[f'MACD_Histogram_{ticker_name}'] = histogram
         
         # Volatility features
-        df['Volatility_10'] = df['Returns'].rolling(window=10).std()
-        df['Volatility_20'] = df['Returns'].rolling(window=20).std()
+        df[f'Volatility_10_{ticker_name}'] = df[f'Returns_{ticker_name}'].rolling(window=10).std()
+        df[f'Volatility_20_{ticker_name}'] = df[f'Returns_{ticker_name}'].rolling(window=20).std()
         
         # Momentum features
         for period in [3, 5, 10, 20]:
-            df[f'Momentum_{period}'] = df['Close'] / df['Close'].shift(period) - 1
+            df[f'Momentum_{period}_{ticker_name}'] = df[close_col] / df[close_col].shift(period) - 1
         
-        # Target: Next day's return direction
-        df['Target'] = (df['Close'].shift(-PREDICTION_HORIZON) > df['Close']).astype(int)
+        # Target: Next day's return direction (use primary ticker for target)
+        df[f'Target_{ticker_name}'] = (df[close_col].shift(-PREDICTION_HORIZON) > df[close_col]).astype(int)
         
         # Add ticker identifier
         df['ticker'] = ticker_name
@@ -254,9 +262,18 @@ def main():
             logging.info(f"Processing {split_name} split: {len(split_df)} samples")
             
             # Separate features and targets
-            feature_cols = [col for col in split_df.columns if col not in ['Target', 'ticker']]
+            target_cols = [col for col in split_df.columns if col.startswith('Target_')]
+            feature_cols = [col for col in split_df.columns if col not in target_cols + ['ticker']]
             features_df = split_df[feature_cols + ['ticker']].copy()
-            target_series = split_df['Target'].copy()
+            
+            # Use IBB as primary target for prediction (biotech-focused model)
+            if 'Target_IBB' in split_df.columns:
+                target_series = split_df['Target_IBB'].copy()
+                logging.info(f"Using IBB as primary target for {split_name} split")
+            else:
+                # Fall back to first available target
+                target_series = split_df[target_cols[0]].copy()
+                logging.info(f"Using {target_cols[0]} as primary target for {split_name} split")
             
             # Scale features (fit scaler only on training data)
             if split_name == 'train':
