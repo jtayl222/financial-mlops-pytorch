@@ -126,6 +126,32 @@ def load_processed_datasets(processed_data_dir):
         logging.info(f"Validation data shape: Features {val_features.shape}, Targets {val_targets.shape}")
         logging.info(f"Test data shape: Features {test_features.shape}, Targets {test_targets.shape}")
         
+        # Handle different data shapes
+        if len(train_features.shape) == 3:
+            # 3D shape: (batch, sequence, features)
+            n_features = train_features.shape[2]
+            sequence_length = train_features.shape[1]
+        elif len(train_features.shape) == 2:
+            # 2D shape: (batch, features) - needs reshaping for LSTM
+            n_features = train_features.shape[1]
+            sequence_length = 10  # Default sequence length
+            # Reshape for LSTM: (batch, sequence, features)
+            batch_size = train_features.shape[0] // sequence_length
+            train_features = train_features[:batch_size*sequence_length].reshape(batch_size, sequence_length, n_features)
+            train_targets = train_targets[:batch_size*sequence_length:sequence_length]  # Take every 10th target
+            
+            val_batch_size = val_features.shape[0] // sequence_length
+            val_features = val_features[:val_batch_size*sequence_length].reshape(val_batch_size, sequence_length, n_features)
+            val_targets = val_targets[:val_batch_size*sequence_length:sequence_length]
+            
+            test_batch_size = test_features.shape[0] // sequence_length
+            test_features = test_features[:test_batch_size*sequence_length].reshape(test_batch_size, sequence_length, n_features)
+            test_targets = test_targets[:test_batch_size*sequence_length:sequence_length]
+            
+            logging.info(f"Reshaped to 3D: Train {train_features.shape}, Val {val_features.shape}, Test {test_features.shape}")
+        else:
+            raise ValueError(f"Unexpected data shape: {train_features.shape}")
+        
         # Convert to torch tensors and create simple datasets
         train_dataset = torch.utils.data.TensorDataset(
             torch.FloatTensor(train_features), 
@@ -142,8 +168,8 @@ def load_processed_datasets(processed_data_dir):
         
         # Create metadata from the data shapes
         metadata = {
-            'n_features': train_features.shape[2],  # (batch, sequence, features)
-            'sequence_length': train_features.shape[1],
+            'n_features': n_features,
+            'sequence_length': sequence_length,
             'n_samples': {
                 'train': len(train_features),
                 'val': len(val_features), 
