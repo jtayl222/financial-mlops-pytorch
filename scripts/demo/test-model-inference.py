@@ -16,12 +16,12 @@ def test_model_inference(endpoint_url="http://localhost:8082", models=None):
     if models is None:
         models = ['baseline-predictor', 'enhanced-predictor']
     
-    # Generate test data with correct shape (1, 10, 385) - matching 11-ticker processed data
-    test_data = np.random.rand(1, 10, 385).astype(np.float32)
+    # Generate test data with correct shape (1, 10, 52) - matching current retrained models (3 tickers)
+    test_data = np.random.rand(1, 10, 52).astype(np.float32)
     payload = {
         'inputs': [{
             'name': 'input-0',
-            'shape': [1, 10, 385],
+            'shape': [1, 10, 52],
             'datatype': 'FP32',
             'data': test_data.tolist()
         }]

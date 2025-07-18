@@ -11,18 +11,20 @@ loglevel = os.environ.get("LOGLEVEL", "INFO").upper()
 logging.basicConfig(level=getattr(logging, loglevel), format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuration ---
-# List of ticker symbols to download
+# List of ticker symbols to download - IBB + Healthcare + Market Context (12 assets)
 TICKERS = [
-    "AAPL",  # Apple Inc.
-    "MSFT",  # Microsoft Corp.
-    "GOOG",  # Alphabet Inc. (Class C)
-    "AMZN",  # Amazon.com Inc.
-    "JPM",   # JPMorgan Chase & Co.
-    "TSLA",  # Tesla Inc.
-    "NVDA",  # NVIDIA Corp.
-    "XOM",   # Exxon Mobil Corp.
-    "JNJ",   # Johnson & Johnson
-    "V",     # Visa Inc. (Class A)
+    "IBB",   # iShares Biotech ETF (Primary target)
+    "XBI",   # SPDR Biotech ETF (Alternative biotech)
+    "JNJ",   # Johnson & Johnson (Healthcare mega-cap anchor)
+    "SPY",   # S&P 500 (Broad market benchmark)
+    "QQQ",   # Nasdaq 100 (Tech-heavy market exposure)
+    "XLV",   # Health Care Select Sector (Healthcare sector)
+    "AMGN",  # Amgen (Biotech leader)
+    "PFE",   # Pfizer (Big pharma)
+    "VTI",   # Total Stock Market (Broad market exposure)
+    "XLRE",  # Real Estate Select Sector (Different sector correlation)
+    "MRNA",  # Moderna (Individual biotech stock)
+    "TMO",   # Thermo Fisher Scientific (Life sciences tools)
 ]
 
 # Define the start and end dates for data ingestion
@@ -34,7 +36,7 @@ END_DATE = datetime.date.today().strftime("%Y-%m-%d") # Current date
 RAW_DATA_DIR = os.getenv("RAW_DATA_DIR", "data/raw")
 START_DATE = os.getenv("INGESTION_START_DATE", "2018-01-01")
 END_DATE = os.getenv("INGESTION_END_DATE", "2023-12-31")
-TICKERS = os.getenv("TICKERS", "AAPL,MSFT").split(',') # Example comma-separated list
+TICKERS = os.getenv("TICKERS", "IBB,XBI,JNJ,SPY,QQQ,XLV,AMGN,PFE,VTI,XLRE,MRNA,TMO").split(',') # 12-asset biotech/healthcare ecosystem
 
 # Output directory for raw data
 os.makedirs(RAW_DATA_DIR, exist_ok=True)

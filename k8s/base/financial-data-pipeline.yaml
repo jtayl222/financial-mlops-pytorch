@@ -41,20 +41,13 @@ spec:
           memory: 4Gi
   
   volumes:
-  - name: shared-data-pvc
+  - name: financial-historical-data-pvc
     persistentVolumeClaim:
-      claimName: shared-data-pvc  # Reference the pre-created PVC
-  - name: shared-artifacts-pvc
+      claimName: financial-historical-data-pvc  # New dedicated financial data PVC
+  - name: financial-features-pvc
     persistentVolumeClaim:
-      claimName: shared-artifacts-pvc
-  - metadata:
-      name: shared-artifacts-pvc
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: nfs-shared # Use default storage class or specify your NFS storage class
-      resources:
-        requests:
-          storage: 1Gi
+      claimName: financial-features-pvc  # New dedicated features PVC
+  # Dynamic volume creation removed - using pre-created PVCs
 
   templates:
   - name: data-ingestion-and-feature-engineering
@@ -68,7 +61,7 @@ spec:
 
   - name: ingest-stock-data
     container:
-      image: jtayl22/financial-predictor:latest
+      image: harbor.test/library/financial-predictor:latest
       command: ["python", "src/data_ingestion.py"]
       envFrom:
         - secretRef:
@@ -77,18 +70,18 @@ spec:
       - name: LOGLEVEL
         value: "INFO"
       - name: RAW_DATA_DIR
-        value: "/mnt/shared-data/raw"
+        value: "/mnt/financial-data/raw"
       - name: INGESTION_START_DATE
         value: "2018-01-01"
       - name: INGESTION_END_DATE
-        value: "2023-12-31"
+        value: "2024-12-31"
       - name: TICKERS
-        value: "AAPL,MSFT"
+        value: "IBB,XBI,JNJ,SPY,QQQ,XLV,AMGN,PFE,VTI,XLRE,MRNA,TMO"
       volumeMounts:
-        - name: shared-data-pvc
-          mountPath: /mnt/shared-data
-        - name: shared-artifacts-pvc
-          mountPath: /mnt/shared-artifacts
+        - name: financial-historical-data-pvc
+          mountPath: /mnt/financial-data
+        - name: financial-features-pvc
+          mountPath: /mnt/financial-features
       resources:
         requests:
           memory: "2Gi"  # Fix 2: Reduced memory requests
@@ -103,8 +96,8 @@ spec:
 
   - name: process-and-engineer-features
     container:
-      image: jtayl22/financial-predictor:latest
-      command: ["python", "src/feature_engineering_pytorch.py"]
+      image: harbor.test/library/financial-predictor:latest
+      command: ["python", "src/feature_engineering_pytorch_fixed.py"]
       envFrom:
         - secretRef:
             name: ml-platform
@@ -112,18 +105,20 @@ spec:
       - name: MLFLOW_TRACKING_URI
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
       - name: RAW_DATA_DIR
-        value: "/mnt/shared-data/raw"
+        value: "/mnt/financial-data/raw"
       - name: PROCESSED_DATA_DIR
-        value: "/mnt/shared-data/processed"
+        value: "/mnt/financial-data/processed"
       - name: SCALER_DIR
-        value: "/mnt/shared-artifacts/scalers"
+        value: "/mnt/financial-features/scalers"
       - name: SEQUENCE_LENGTH
         value: "10"
+      - name: N_TICKERS
+        value: "12"
       volumeMounts:
-        - name: shared-data-pvc
-          mountPath: /mnt/shared-data
-        - name: shared-artifacts-pvc
-          mountPath: /mnt/shared-artifacts
+        - name: financial-historical-data-pvc
+          mountPath: /mnt/financial-data
+        - name: financial-features-pvc
+          mountPath: /mnt/financial-features
       resources:
         requests:
           memory: "2Gi"

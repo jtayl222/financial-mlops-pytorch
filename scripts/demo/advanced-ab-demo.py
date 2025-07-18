@@ -312,16 +312,16 @@ class AdvancedABTester:
                 1 if scenario["name"] == "Bull Market" else 0,
                 1 if scenario["name"] == "Bear Market" else 0,
                 1 if scenario["name"] == "High Volatility" else 0,
-                # Additional features (padding to 35)
-                *[np.random.normal(0.5, 0.1) for _ in range(16)]
+                # Additional features (expand to 52 total)
+                *[np.random.normal(0.5, 0.1) for _ in range(33)]
             ])
             
-            # Ensure exactly 35 features
-            features = features[:35]
-            while len(features) < 35:
+            # Ensure exactly 52 features (to match model training)
+            features = features[:52]
+            while len(features) < 52:
                 features.append(0.5)
             
-            # Create sequence data (10 timesteps x 35 features)
+            # Create sequence data (10 timesteps x 52 features)
             sequence_data = []
             for t in range(10):
                 # Add some temporal variation
@@ -354,9 +354,9 @@ class AdvancedABTester:
                 "inputs": [
                     {
                         "name": "input_data",
-                        "shape": [1, 10, 35],
+                        "shape": [1, 10, 52],
                         "datatype": "FP32",
-                        "data": np.array(market_data['features']).reshape(1, 10, 35).tolist()
+                        "data": np.array(market_data['features']).reshape(1, 10, 52).tolist()
                     }
                 ]
             }
@@ -450,7 +450,26 @@ class AdvancedABTester:
                 
                 if completed % 20 == 0:
                     success_count = sum(1 for r in results if r.get('success', False))
-                    print(f"   Progress: {completed}/{len(market_data)} ({success_count} successful)")
+                    error_count = sum(1 for r in results if not r.get('success', False))
+                    success_rate = (success_count / completed * 100) if completed > 0 else 0
+                    
+                    # Count errors by type
+                    error_types = {}
+                    for r in results:
+                        if not r.get('success', False) and 'error' in r:
+                            error_type = r['error'][:50] + "..." if len(r['error']) > 50 else r['error']
+                            error_types[error_type] = error_types.get(error_type, 0) + 1
+                    
+                    # Calculate average response time for successful requests
+                    successful_times = [r.get('response_time', 0) for r in results if r.get('success', False)]
+                    avg_time = sum(successful_times) / len(successful_times) if successful_times else 0
+                    
+                    print(f"   Progress: {completed}/{len(market_data)} | ✅ {success_count} ({success_rate:.1f}%) | ❌ {error_count} | ⏱️  {avg_time:.3f}s avg")
+                    
+                    # Show most common error if any
+                    if error_types:
+                        most_common_error = max(error_types.items(), key=lambda x: x[1])
+                        print(f"   Most common error ({most_common_error[1]}x): {most_common_error[0]}")
         
         return results
     
@@ -723,6 +742,8 @@ def main():
                        help='Disable Prometheus metrics collection')
     parser.add_argument('--pushgateway', type=str,
                        help='Prometheus Pushgateway URL for persistent metrics')
+    parser.add_argument('--verify', action='store_true',
+                       help='Send single request with detailed output for debugging')
     
     args = parser.parse_args()
     
@@ -734,6 +755,109 @@ def main():
                              enable_metrics=not args.no_metrics,
                              metrics_port=args.metrics_port,
                              pushgateway_url=args.pushgateway)
+    
+    # Verify mode: single request with detailed output
+    if args.verify:
+        print("🔍 Verification Mode - Single Request Analysis")
+        print("="*50)
+        
+        # Generate single market scenario
+        market_data = tester.generate_realistic_market_data(1)
+        scenario = market_data[0]
+        
+        print(f"📊 Test scenario: {scenario['scenario']}")
+        print(f"   Market condition: {scenario['scenario']}")
+        input_data = np.array(scenario['features'])
+        # Add batch dimension: (10, 52) -> (1, 10, 52)
+        input_data = np.expand_dims(input_data, axis=0)
+        print(f"   Input shape: {input_data.shape}")
+        
+        # Test direct endpoint
+        import requests
+        import json
+        
+        # Prepare request data
+        payload = {
+            "inputs": [{
+                "name": "input_data",
+                "shape": list(input_data.shape),
+                "datatype": "FP32",
+                "data": input_data.flatten().tolist()
+            }]
+        }
+        
+        # Test both models directly
+        models = ['baseline-predictor', 'enhanced-predictor']
+        for model in models:
+            print(f"\n🧪 Testing {model}:")
+            url = f"{args.endpoint}/v2/models/{model}/infer"
+            print(f"   URL: {url}")
+            
+            try:
+                headers = {'Content-Type': 'application/json'}
+                print(f"   Headers: {headers}")
+                print(f"   Payload size: {len(json.dumps(payload))} bytes")
+                
+                response = requests.post(url, 
+                                       headers=headers,
+                                       json=payload,
+                                       timeout=30)
+                
+                print(f"   Status Code: {response.status_code}")
+                print(f"   Response Headers: {dict(response.headers)}")
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    outputs = result.get('outputs', [])
+                    if outputs:
+                        prediction = outputs[0]['data'][0]
+                        print(f"   ✅ Prediction: {prediction:.4f}")
+                        print(f"   Response time: {response.elapsed.total_seconds():.3f}s")
+                    else:
+                        print(f"   ❌ No outputs in response: {result}")
+                else:
+                    print(f"   ❌ Error response: {response.text}")
+                    
+            except Exception as e:
+                print(f"   ❌ Request failed: {str(e)}")
+        
+        # Test experiment endpoint
+        print(f"\n🧪 Testing experiment endpoint:")
+        exp_url = f"{args.endpoint}/v2/models/{args.experiment}.experiment/infer"
+        print(f"   URL: {exp_url}")
+        
+        try:
+            headers = {
+                'Content-Type': 'application/json',
+                'seldon-model': f'{args.experiment}.experiment'
+            }
+            print(f"   Headers: {headers}")
+            
+            response = requests.post(exp_url,
+                                   headers=headers, 
+                                   json=payload,
+                                   timeout=30)
+            
+            print(f"   Status Code: {response.status_code}")
+            print(f"   Response Headers: {dict(response.headers)}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                outputs = result.get('outputs', [])
+                if outputs:
+                    prediction = outputs[0]['data'][0]
+                    print(f"   ✅ Prediction: {prediction:.4f}")
+                    print(f"   Response time: {response.elapsed.total_seconds():.3f}s")
+                else:
+                    print(f"   ❌ No outputs in response: {result}")
+            else:
+                print(f"   ❌ Error response: {response.text}")
+                
+        except Exception as e:
+            print(f"   ❌ Request failed: {str(e)}")
+        
+        print("\n🏁 Verification complete!")
+        return
     
     # Generate realistic market scenarios
     print("📊 Generating realistic market scenarios...")
@@ -758,6 +882,52 @@ def main():
         if args.pushgateway:
             print("\n📤 Pushing metrics to Pushgateway...")
             tester.push_metrics_to_gateway()
+    
+    # Final summary statistics
+    print("\n📊 Test Summary")
+    print("="*50)
+    total_requests = len(results)
+    successful_requests = sum(1 for r in results if r.get('success', False))
+    failed_requests = total_requests - successful_requests
+    success_rate = (successful_requests / total_requests * 100) if total_requests > 0 else 0
+    
+    print(f"   Total Requests: {total_requests}")
+    print(f"   ✅ Successful: {successful_requests} ({success_rate:.1f}%)")
+    print(f"   ❌ Failed: {failed_requests} ({100-success_rate:.1f}%)")
+    
+    if successful_requests > 0:
+        # Response time statistics
+        successful_times = [r.get('response_time', 0) for r in results if r.get('success', False)]
+        avg_time = sum(successful_times) / len(successful_times)
+        min_time = min(successful_times)
+        max_time = max(successful_times)
+        print(f"   ⏱️  Response Times: avg={avg_time:.3f}s, min={min_time:.3f}s, max={max_time:.3f}s")
+        
+        # Model distribution for successful requests
+        model_counts = {}
+        for r in results:
+            if r.get('success', False) and 'model_used' in r:
+                model = r['model_used']
+                model_counts[model] = model_counts.get(model, 0) + 1
+        
+        if model_counts:
+            print(f"   🎯 Model Distribution:")
+            for model, count in model_counts.items():
+                percentage = (count / successful_requests * 100)
+                print(f"      {model}: {count} ({percentage:.1f}%)")
+    
+    if failed_requests > 0:
+        # Error summary
+        error_types = {}
+        for r in results:
+            if not r.get('success', False) and 'error' in r:
+                error_key = r['error'][:100] + "..." if len(r['error']) > 100 else r['error']
+                error_types[error_key] = error_types.get(error_key, 0) + 1
+        
+        print(f"   🚨 Error Summary:")
+        for error, count in sorted(error_types.items(), key=lambda x: x[1], reverse=True)[:3]:
+            percentage = (count / failed_requests * 100)
+            print(f"      {count}x ({percentage:.1f}%): {error}")
     
     print("🎉 Advanced A/B Testing Complete!")
     print("\n💡 Key Insights:")

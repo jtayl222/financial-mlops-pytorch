@@ -30,21 +30,42 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 
 # Update model URIs after training
 python3 scripts/update_model_uris.py
+
+# Update specific model from specific experiment (after extracting experiment ID from Argo logs)
+python3 scripts/update_model_uris.py --experiment-id 28 --model-variant baseline
 ```
 
 ## GitOps with Argo CD
 
-- **Auto-sync**: Changes to git automatically deploy to cluster
-- **Main Application**: `financial-mlops-infrastructure` manages all resources
-- **Model Deployment**: Automated via GitOps workflows
+### Architecture
+- **Main Application**: `financial-mlops-infrastructure` (k8s/base/ → financial-inference namespace)
+- **Auto-sync**: Enabled with prune and self-heal
+- **Status Ignoring**: Models/experiments have dynamic status fields ignored during sync
 
+### Access
+- **Web UI**: http://192.168.1.85:30080
+- **CLI**: `kubectl port-forward svc/argocd-server -n argocd 8080:443`
+
+### Commands
 ```bash
-# Automated model deployment
+# Automated model deployment with GitOps
 ./scripts/gitops-model-update.sh enhanced
 
-# Check GitOps status
+# Check GitOps applications
 kubectl get applications -n argocd
+
+# Manual sync if needed
+kubectl patch application financial-mlops-infrastructure -n argocd -p '{"operation":{"sync":{}}}' --type=merge
+
+# View sync history
+argocd app history financial-mlops-infrastructure
 ```
+
+### GitOps Workflow
+1. Update manifests in k8s/base/
+2. Commit and push to git
+3. Argo CD auto-detects changes (within 3 minutes)
+4. Applies necessary changes to cluster
 
 ## Model Deployment Troubleshooting
 

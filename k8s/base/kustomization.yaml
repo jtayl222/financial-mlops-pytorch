@@ -12,6 +12,7 @@ resources:
   - rbac.yaml
   - shared-artifacts-pvc.yaml
   - shared-data-pvc.yaml
+  - financial-data-pvc.yaml  # New dedicated financial data PVCs
   - financial-predictor-vs.yaml
   - seldon-runtime.yaml
   - server-config-centralized.yaml
