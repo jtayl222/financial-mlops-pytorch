@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: advanced-training-pipeline-template
+  namespace: financial-mlops-pytorch
+spec:
+  entrypoint: train-advanced-model
+  serviceAccountName: argo-workflow-sa
+  
+  podSpecPatch: |
+    initContainers:
+    - name: init
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    containers:
+    - name: wait
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+  volumes:
+  - name: financial-historical-data-pvc
+    persistentVolumeClaim:
+      claimName: financial-historical-data-pvc
+  - name: financial-features-pvc
+    persistentVolumeClaim:
+      claimName: financial-features-pvc
+  - name: shared-artifacts-pvc
+    persistentVolumeClaim:
+      claimName: shared-artifacts-pvc
+
+  templates:
+  - name: train-advanced-model
+    inputs:
+      parameters:
+      - name: model-variant
+        value: advanced  # Default value for advanced model
+    container:
+      image: harbor.test/library/financial-predictor:latest
+      command: ["python", "src/advanced_financial_model_v2.py"]
+      env:
+      - name: MODEL_VARIANT
+        value: "{{inputs.parameters.model-variant}}"
+      - name: MLFLOW_TRACKING_URI
+        value: "http://mlflow.mlflow.svc.cluster.local:5000"
+      - name: PROCESSED_DATA_DIR
+        value: "/mnt/financial-data/processed"
+      - name: SCALER_DIR
+        value: "/mnt/financial-features/scalers"
+      - name: MODEL_SAVE_DIR
+        value: "/mnt/shared-artifacts/models"
+      - name: EPOCHS
+        value: "100"
+      - name: BATCH_SIZE
+        value: "32"
+      - name: LEARNING_RATE
+        value: "0.001"
+      - name: HIDDEN_SIZE
+        value: "128"
+      - name: NUM_LAYERS
+        value: "3"
+      - name: DROPOUT_PROB
+        value: "0.3"
+      - name: LOGLEVEL
+        value: "INFO"
+      envFrom:
+        - secretRef:
+            name: ml-platform
+      volumeMounts:
+        - name: financial-historical-data-pvc
+          mountPath: /mnt/financial-data
+        - name: financial-features-pvc
+          mountPath: /mnt/financial-features
+        - name: shared-artifacts-pvc
+          mountPath: /mnt/shared-artifacts
+      resources:
+        requests:
+          memory: "8Gi"
+          cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
+  
+  # imagePullSecrets:
+  # - name: ghcr
