@@ -234,6 +234,11 @@ def train_advanced_model():
     logging.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     logging.info(f"Positive weight: {pos_weight.item():.3f}")
     
+    # Set experiment name for better organization with variant tracking
+    MODEL_VARIANT = os.environ.get("MODEL_VARIANT", "advanced")
+    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"financial-mlops-pytorch-{MODEL_VARIANT}")
+    mlflow.set_experiment(experiment_name)
+    
     # Start MLflow run
     with mlflow.start_run(run_name="advanced_financial_model_v2"):
         # Log parameters
