@@ -108,22 +108,34 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
         return self.sequences[idx], self.targets[idx]
 
 def load_processed_datasets(processed_data_dir):
-    """Load the processed datasets with ticker-specific features"""
+    """Load the processed datasets from CSV files"""
     
     logging.info(f"Loading processed datasets from {processed_data_dir}")
     
-    # Load the PyTorch datasets
-    train_dataset = torch.load(os.path.join(processed_data_dir, 'train_dataset.pt'))
-    val_dataset = torch.load(os.path.join(processed_data_dir, 'validation_dataset.pt'))
-    test_dataset = torch.load(os.path.join(processed_data_dir, 'test_dataset.pt'))
+    # Load CSV files (compatible with existing data pipeline)
+    train_df = pd.read_csv(os.path.join(processed_data_dir, 'train_split.csv'))
+    val_df = pd.read_csv(os.path.join(processed_data_dir, 'validation_split.csv'))
+    test_df = pd.read_csv(os.path.join(processed_data_dir, 'test_split.csv'))
     
-    # Load metadata
-    with open(os.path.join(processed_data_dir, 'metadata.pkl'), 'rb') as f:
-        metadata = pickle.load(f)
+    logging.info(f"Dataset sizes - Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
+    logging.info(f"Train columns: {list(train_df.columns)}")
     
-    logging.info(f"Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
+    # Create datasets from CSV data
+    sequence_length = 10  # Standard sequence length
+    train_dataset = FinancialTimeSeriesDataset(train_df, sequence_length)
+    val_dataset = FinancialTimeSeriesDataset(val_df, sequence_length)
+    test_dataset = FinancialTimeSeriesDataset(test_df, sequence_length)
+    
+    # Create metadata from the dataset
+    feature_cols = [col for col in train_df.columns if not col.startswith('Target_')]
+    metadata = {
+        'n_features': len(feature_cols),
+        'sequence_length': sequence_length,
+        'ticker_names': [col.split('_')[-1] for col in feature_cols if '_' in col],
+        'feature_names': feature_cols
+    }
+    
     logging.info(f"Features: {metadata['n_features']}, Sequence length: {metadata['sequence_length']}")
-    logging.info(f"Tickers: {metadata['ticker_names']}")
     
     return train_dataset, val_dataset, test_dataset, metadata
 
