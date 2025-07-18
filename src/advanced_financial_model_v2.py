@@ -108,50 +108,56 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
         return self.sequences[idx], self.targets[idx]
 
 def load_processed_datasets(processed_data_dir):
-    """Load the processed datasets - use same approach as regular training"""
+    """Load the processed datasets - use same format as regular training"""
     
     logging.info(f"Loading processed data from {processed_data_dir}")
     
-    # Load the combined CSV file that regular training creates
-    combined_csv_path = os.path.join(processed_data_dir, 'combined_features.csv')
-    if not os.path.exists(combined_csv_path):
-        raise FileNotFoundError(f"Combined features file not found: {combined_csv_path}")
-    
-    df = pd.read_csv(combined_csv_path, index_col='Date', parse_dates=True)
-    logging.info(f"Loaded combined data: {len(df)} rows, {len(df.columns)} columns")
-    logging.info(f"Columns: {list(df.columns)}")
-    
-    # Use financial ML splits (same as regular training)
-    from financial_ml_splits import create_financial_splits
-    
-    # Create proper financial splits
-    train_df, val_df, test_df = create_financial_splits(
-        df, 
-        train_ratio=0.7,
-        val_ratio=0.15,
-        purge_period=30  # 30-day purge gap
-    )
-    
-    logging.info(f"Split sizes - Train: {len(train_df)}, Val: {len(val_df)}, Test: {len(test_df)}")
-    
-    # Create datasets
-    sequence_length = 10
-    train_dataset = FinancialTimeSeriesDataset(train_df, sequence_length)
-    val_dataset = FinancialTimeSeriesDataset(val_df, sequence_length)
-    test_dataset = FinancialTimeSeriesDataset(test_df, sequence_length)
-    
-    # Create metadata
-    feature_cols = [col for col in df.columns if not col.startswith('Target_')]
-    metadata = {
-        'n_features': len(feature_cols),
-        'sequence_length': sequence_length,
-        'ticker_names': list(set([col.split('_')[-1] for col in feature_cols if '_' in col])),
-        'feature_names': feature_cols
-    }
-    
-    logging.info(f"Features: {metadata['n_features']}, Sequence length: {metadata['sequence_length']}")
-    
-    return train_dataset, val_dataset, test_dataset, metadata
+    try:
+        # Load numpy arrays (same as regular training)
+        train_features = np.load(os.path.join(processed_data_dir, 'train_features.npy'))
+        train_targets = np.load(os.path.join(processed_data_dir, 'train_targets.npy'))
+        val_features = np.load(os.path.join(processed_data_dir, 'val_features.npy'))
+        val_targets = np.load(os.path.join(processed_data_dir, 'val_targets.npy'))
+        test_features = np.load(os.path.join(processed_data_dir, 'test_features.npy'))
+        test_targets = np.load(os.path.join(processed_data_dir, 'test_targets.npy'))
+        
+        logging.info("Successfully loaded processed data.")
+        logging.info(f"Training data shape: Features {train_features.shape}, Targets {train_targets.shape}")
+        logging.info(f"Validation data shape: Features {val_features.shape}, Targets {val_targets.shape}")
+        logging.info(f"Test data shape: Features {test_features.shape}, Targets {test_targets.shape}")
+        
+        # Convert to torch tensors and create simple datasets
+        train_dataset = torch.utils.data.TensorDataset(
+            torch.FloatTensor(train_features), 
+            torch.LongTensor(train_targets)
+        )
+        val_dataset = torch.utils.data.TensorDataset(
+            torch.FloatTensor(val_features), 
+            torch.LongTensor(val_targets)
+        )
+        test_dataset = torch.utils.data.TensorDataset(
+            torch.FloatTensor(test_features), 
+            torch.LongTensor(test_targets)
+        )
+        
+        # Create metadata from the data shapes
+        metadata = {
+            'n_features': train_features.shape[2],  # (batch, sequence, features)
+            'sequence_length': train_features.shape[1],
+            'n_samples': {
+                'train': len(train_features),
+                'val': len(val_features), 
+                'test': len(test_features)
+            }
+        }
+        
+        logging.info(f"Features: {metadata['n_features']}, Sequence length: {metadata['sequence_length']}")
+        
+        return train_dataset, val_dataset, test_dataset, metadata
+        
+    except FileNotFoundError as e:
+        logging.error(f"Missing processed data files in {processed_data_dir}. Error: {e}")
+        raise
 
 def train_advanced_model():
     """Train the advanced model with enhanced features"""
