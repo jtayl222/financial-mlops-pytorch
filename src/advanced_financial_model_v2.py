@@ -271,7 +271,7 @@ def train_advanced_model():
                 train_total += batch_y.size(0)
                 train_correct += (predicted == batch_y).sum().item()
             
-            train_acc = train_correct / train_total
+            train_acc = train_correct / train_total if train_total > 0 else 0.0
             
             # Validation
             model.eval()
@@ -307,7 +307,7 @@ def train_advanced_model():
                     val_total += batch_y.size(0)
                     val_correct += (predicted == batch_y).sum().item()
             
-            val_acc = val_correct / val_total
+            val_acc = val_correct / val_total if val_total > 0 else 0.0
             
             # Learning rate scheduling
             scheduler.step(val_acc)
@@ -356,7 +356,7 @@ def train_advanced_model():
                 all_predictions.extend(predicted.cpu().numpy())
                 all_targets.extend(batch_y.cpu().numpy())
         
-        test_acc = test_correct / test_total
+        test_acc = test_correct / test_total if test_total > 0 else 0.0
         
         # Calculate additional metrics for multiclass
         precision = precision_score(all_targets, all_predictions, average='weighted', zero_division=0)
