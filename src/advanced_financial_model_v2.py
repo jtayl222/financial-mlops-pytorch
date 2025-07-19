@@ -11,6 +11,7 @@ import pandas as pd
 from datetime import datetime
 import logging
 import json
+import math
 import mlflow
 import mlflow.pytorch
 import pickle
@@ -19,6 +20,19 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def safe_log_metric(metric_name: str, value: float, step: int):
+    """
+    Safely log a metric to MLflow, handling NaN values and potential duplicates.
+    """
+    if math.isnan(value) or math.isinf(value):
+        logging.warning(f"Skipping logging of {metric_name} at step {step} due to NaN/Inf value: {value}")
+        return
+    
+    try:
+        mlflow.log_metric(metric_name, value, step=step)
+    except Exception as e:
+        logging.warning(f"Failed to log metric {metric_name}={value} at step {step}: {e}")
 
 class AdvancedFinancialLSTM(torch.nn.Module):
     """Advanced LSTM for financial time series with enhanced architecture"""
@@ -223,12 +237,29 @@ def train_advanced_model():
             train_correct = 0
             train_total = 0
             
-            for batch_x, batch_y in train_loader:
+            for batch_idx, (batch_x, batch_y) in enumerate(train_loader):
                 batch_x, batch_y = batch_x.to(device), batch_y.to(device).float()
+                
+                # Check for NaN in input data
+                if torch.isnan(batch_x).any() or torch.isnan(batch_y).any():
+                    logging.warning(f"NaN detected in batch {batch_idx} of epoch {epoch}. Skipping batch.")
+                    continue
                 
                 optimizer.zero_grad()
                 outputs = model(batch_x).squeeze()
+                
+                # Check for NaN in model outputs
+                if torch.isnan(outputs).any():
+                    logging.warning(f"NaN detected in model outputs at batch {batch_idx} of epoch {epoch}. Skipping batch.")
+                    continue
+                
                 loss = criterion(outputs, batch_y)
+                
+                # Check for NaN in loss
+                if torch.isnan(loss):
+                    logging.warning(f"NaN loss detected at batch {batch_idx} of epoch {epoch}. Skipping batch.")
+                    continue
+                
                 loss.backward()
                 
                 # Gradient clipping
@@ -249,10 +280,27 @@ def train_advanced_model():
             val_total = 0
             
             with torch.no_grad():
-                for batch_x, batch_y in val_loader:
+                for batch_idx, (batch_x, batch_y) in enumerate(val_loader):
                     batch_x, batch_y = batch_x.to(device), batch_y.to(device).float()
+                    
+                    # Check for NaN in validation data
+                    if torch.isnan(batch_x).any() or torch.isnan(batch_y).any():
+                        logging.warning(f"NaN detected in validation batch {batch_idx}. Skipping batch.")
+                        continue
+                    
                     outputs = model(batch_x).squeeze()
+                    
+                    # Check for NaN in validation outputs
+                    if torch.isnan(outputs).any():
+                        logging.warning(f"NaN detected in validation model outputs for batch {batch_idx}. Skipping batch.")
+                        continue
+                    
                     loss = criterion(outputs, batch_y)
+                    
+                    # Check for NaN in validation loss
+                    if torch.isnan(loss):
+                        logging.warning(f"NaN validation loss detected for batch {batch_idx}. Skipping batch.")
+                        continue
                     
                     val_loss += loss.item()
                     predicted = (torch.sigmoid(outputs) > 0.5).float()
@@ -280,12 +328,12 @@ def train_advanced_model():
             if epoch % 5 == 0:
                 logging.info(f"Epoch {epoch}: Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, LR: {optimizer.param_groups[0]['lr']:.6f}")
             
-            # Log metrics to MLflow
-            mlflow.log_metric("train_loss", train_loss / len(train_loader), step=epoch)
-            mlflow.log_metric("train_accuracy", train_acc, step=epoch)
-            mlflow.log_metric("val_loss", val_loss / len(val_loader), step=epoch)
-            mlflow.log_metric("val_accuracy", val_acc, step=epoch)
-            mlflow.log_metric("learning_rate", optimizer.param_groups[0]['lr'], step=epoch)
+            # Log metrics to MLflow safely
+            safe_log_metric("train_loss", train_loss / len(train_loader), step=epoch)
+            safe_log_metric("train_accuracy", train_acc, step=epoch)
+            safe_log_metric("val_loss", val_loss / len(val_loader), step=epoch)
+            safe_log_metric("val_accuracy", val_acc, step=epoch)
+            safe_log_metric("learning_rate", optimizer.param_groups[0]['lr'], step=epoch)
         
         # Load best model and evaluate on test set
         model.load_state_dict(torch.load(os.path.join(MODEL_SAVE_DIR, 'best_advanced_model.pth')))
@@ -323,12 +371,12 @@ def train_advanced_model():
         logging.info(f"F1-Score: {f1:.4f}")
         logging.info(f"Best Val Accuracy: {best_val_acc:.4f} ({best_val_acc*100:.1f}%)")
         
-        # Log final metrics to MLflow
-        mlflow.log_metric("test_accuracy", test_acc)
-        mlflow.log_metric("test_precision", precision)
-        mlflow.log_metric("test_recall", recall)
-        mlflow.log_metric("test_f1_score", f1)
-        mlflow.log_metric("best_val_accuracy", best_val_acc)
+        # Log final metrics to MLflow safely
+        safe_log_metric("test_accuracy", test_acc, step=0)
+        safe_log_metric("test_precision", precision, step=0)
+        safe_log_metric("test_recall", recall, step=0)
+        safe_log_metric("test_f1_score", f1, step=0)
+        safe_log_metric("best_val_accuracy", best_val_acc, step=0)
         
         # Save model artifacts
         mlflow.pytorch.log_model(model, "model")
