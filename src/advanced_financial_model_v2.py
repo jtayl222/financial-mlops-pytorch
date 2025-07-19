@@ -105,76 +105,28 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
         return self.sequences[idx], self.targets[idx]
 
 def load_processed_datasets(processed_data_dir):
-    """Load the processed datasets - use same format as regular training"""
+    """Load the processed datasets - use PyTorch format from current pipeline"""
     
     logging.info(f"Loading processed data from {processed_data_dir}")
     
     try:
-        # Load numpy arrays (same as regular training)
-        train_features = np.load(os.path.join(processed_data_dir, 'train_features.npy'))
-        train_targets = np.load(os.path.join(processed_data_dir, 'train_targets.npy'))
-        val_features = np.load(os.path.join(processed_data_dir, 'val_features.npy'))
-        val_targets = np.load(os.path.join(processed_data_dir, 'val_targets.npy'))
-        test_features = np.load(os.path.join(processed_data_dir, 'test_features.npy'))
-        test_targets = np.load(os.path.join(processed_data_dir, 'test_targets.npy'))
+        # Load PyTorch datasets directly from current pipeline output
+        train_dataset = torch.load(os.path.join(processed_data_dir, 'train_dataset.pt'))
+        val_dataset = torch.load(os.path.join(processed_data_dir, 'validation_dataset.pt'))
+        test_dataset = torch.load(os.path.join(processed_data_dir, 'test_dataset.pt'))
         
-        logging.info("Successfully loaded processed data.")
-        logging.info(f"Training data shape: Features {train_features.shape}, Targets {train_targets.shape}")
-        logging.info(f"Validation data shape: Features {val_features.shape}, Targets {val_targets.shape}")
-        logging.info(f"Test data shape: Features {test_features.shape}, Targets {test_targets.shape}")
+        with open(os.path.join(processed_data_dir, 'metadata.pkl'), 'rb') as f:
+            metadata = pickle.load(f)
         
-        # Handle different data shapes
-        if len(train_features.shape) == 3:
-            # 3D shape: (batch, sequence, features)
-            n_features = train_features.shape[2]
-            sequence_length = train_features.shape[1]
-        elif len(train_features.shape) == 2:
-            # 2D shape: (batch, features) - needs reshaping for LSTM
-            n_features = train_features.shape[1]
-            sequence_length = 10  # Default sequence length
-            # Reshape for LSTM: (batch, sequence, features)
-            batch_size = train_features.shape[0] // sequence_length
-            train_features = train_features[:batch_size*sequence_length].reshape(batch_size, sequence_length, n_features)
-            train_targets = train_targets[:batch_size*sequence_length:sequence_length]  # Take every 10th target
-            
-            val_batch_size = val_features.shape[0] // sequence_length
-            val_features = val_features[:val_batch_size*sequence_length].reshape(val_batch_size, sequence_length, n_features)
-            val_targets = val_targets[:val_batch_size*sequence_length:sequence_length]
-            
-            test_batch_size = test_features.shape[0] // sequence_length
-            test_features = test_features[:test_batch_size*sequence_length].reshape(test_batch_size, sequence_length, n_features)
-            test_targets = test_targets[:test_batch_size*sequence_length:sequence_length]
-            
-            logging.info(f"Reshaped to 3D: Train {train_features.shape}, Val {val_features.shape}, Test {test_features.shape}")
-        else:
-            raise ValueError(f"Unexpected data shape: {train_features.shape}")
+        logging.info("Successfully loaded PyTorch processed datasets.")
+        logging.info(f"Training dataset length: {len(train_dataset)}")
+        logging.info(f"Validation dataset length: {len(val_dataset)}")
+        logging.info(f"Test dataset length: {len(test_dataset)}")
         
-        # Convert to torch tensors and create simple datasets
-        train_dataset = torch.utils.data.TensorDataset(
-            torch.FloatTensor(train_features), 
-            torch.LongTensor(train_targets)
-        )
-        val_dataset = torch.utils.data.TensorDataset(
-            torch.FloatTensor(val_features), 
-            torch.LongTensor(val_targets)
-        )
-        test_dataset = torch.utils.data.TensorDataset(
-            torch.FloatTensor(test_features), 
-            torch.LongTensor(test_targets)
-        )
-        
-        # Create metadata from the data shapes
-        metadata = {
-            'n_features': n_features,
-            'sequence_length': sequence_length,
-            'n_samples': {
-                'train': len(train_features),
-                'val': len(val_features), 
-                'test': len(test_features)
-            }
-        }
-        
-        logging.info(f"Features: {metadata['n_features']}, Sequence length: {metadata['sequence_length']}")
+        # Get sample to determine input dimensions
+        sample_features, sample_target = train_dataset[0]
+        n_features = sample_features.shape[-1]  # Last dimension is features
+        sequence_length = sample_features.shape[0] if len(sample_features.shape) > 1 else 1
         
         return train_dataset, val_dataset, test_dataset, metadata
         
@@ -242,6 +194,7 @@ def train_advanced_model():
     # Start MLflow run
     with mlflow.start_run(run_name="advanced_financial_model_v2"):
         # Log parameters
+        mlflow.log_param("model_variant", MODEL_VARIANT)
         mlflow.log_param("model_type", "AdvancedFinancialLSTM")
         mlflow.log_param("hidden_size", 128)
         mlflow.log_param("num_layers", 3)

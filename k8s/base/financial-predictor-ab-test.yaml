@@ -21,14 +21,14 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
-  name: enhanced-predictor
+  name: advanced-predictor
   namespace: seldon-system
   labels:
     app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  storageUri: s3://mlflow-artifacts/33/models/m-69f4837d122b4b9b856696f54e931041/artifacts/
+  storageUri: s3://mlflow-artifacts/33/69f4837d122b4b9b856696f54e931041/artifacts
   requirements:
   - mlflow
   - torch
@@ -51,6 +51,6 @@ spec:
   candidates:
   - name: baseline-predictor
     weight: 70
-  - name: enhanced-predictor
+  - name: advanced-predictor
     weight: 30
 
