@@ -310,10 +310,10 @@ def train_advanced_model():
         
         test_acc = test_correct / test_total
         
-        # Calculate additional metrics
-        precision = precision_score(all_targets, all_predictions, zero_division=0)
-        recall = recall_score(all_targets, all_predictions, zero_division=0)
-        f1 = f1_score(all_targets, all_predictions, zero_division=0)
+        # Calculate additional metrics for multiclass
+        precision = precision_score(all_targets, all_predictions, average='weighted', zero_division=0)
+        recall = recall_score(all_targets, all_predictions, average='weighted', zero_division=0)
+        f1 = f1_score(all_targets, all_predictions, average='weighted', zero_division=0)
         
         # Log final results
         logging.info(f"\nFinal Results:")
