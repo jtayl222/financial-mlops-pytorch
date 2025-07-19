@@ -111,9 +111,9 @@ def load_processed_datasets(processed_data_dir):
     
     try:
         # Load PyTorch datasets directly from current pipeline output
-        train_dataset = torch.load(os.path.join(processed_data_dir, 'train_dataset.pt'))
-        val_dataset = torch.load(os.path.join(processed_data_dir, 'validation_dataset.pt'))
-        test_dataset = torch.load(os.path.join(processed_data_dir, 'test_dataset.pt'))
+        train_dataset = torch.load(os.path.join(processed_data_dir, 'train_dataset.pt'), weights_only=False)
+        val_dataset = torch.load(os.path.join(processed_data_dir, 'validation_dataset.pt'), weights_only=False)
+        test_dataset = torch.load(os.path.join(processed_data_dir, 'test_dataset.pt'), weights_only=False)
         
         with open(os.path.join(processed_data_dir, 'metadata.pkl'), 'rb') as f:
             metadata = pickle.load(f)
