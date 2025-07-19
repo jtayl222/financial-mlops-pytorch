@@ -129,19 +129,43 @@ def load_processed_datasets(processed_data_dir):
         val_dataset = torch.load(os.path.join(processed_data_dir, 'validation_dataset.pt'), weights_only=False)
         test_dataset = torch.load(os.path.join(processed_data_dir, 'test_dataset.pt'), weights_only=False)
         
-        with open(os.path.join(processed_data_dir, 'metadata.pkl'), 'rb') as f:
-            metadata = pickle.load(f)
+        # Load metadata if available, otherwise create empty dict
+        metadata_path = os.path.join(processed_data_dir, 'metadata.pkl')
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'rb') as f:
+                metadata = pickle.load(f)
+        else:
+            logging.warning("No metadata.pkl found, creating basic metadata from data")
+            metadata = {}
         
         logging.info("Successfully loaded PyTorch processed datasets.")
         logging.info(f"Training dataset length: {len(train_dataset)}")
         logging.info(f"Validation dataset length: {len(val_dataset)}")
         logging.info(f"Test dataset length: {len(test_dataset)}")
         
-        # Get sample to determine input dimensions
+        # Get sample to determine input dimensions and create metadata
         sample_features, sample_target = train_dataset[0]
-        n_features = sample_features.shape[-1]  # Last dimension is features
-        sequence_length = sample_features.shape[0] if len(sample_features.shape) > 1 else 1
+        if len(sample_features.shape) == 2:  # (sequence_length, n_features)
+            sequence_length = sample_features.shape[0]
+            n_features = sample_features.shape[1]
+        else:  # (n_features,) - flattened case
+            sequence_length = 10  # default
+            n_features = sample_features.shape[0]
         
+        # Create or update metadata with actual dimensions
+        if metadata is None:
+            metadata = {}
+        
+        metadata.update({
+            'n_features': n_features,
+            'sequence_length': sequence_length,
+            'input_size': n_features,
+            'train_size': len(train_dataset),
+            'val_size': len(val_dataset),
+            'test_size': len(test_dataset)
+        })
+        
+        logging.info(f"Dataset metadata: {metadata}")
         return train_dataset, val_dataset, test_dataset, metadata
         
     except FileNotFoundError as e:
@@ -164,9 +188,12 @@ def train_advanced_model():
     # Load processed datasets
     train_dataset, val_dataset, test_dataset, metadata = load_processed_datasets(PROCESSED_DATA_DIR)
     
-    # Model parameters
-    input_size = metadata['n_features']
+    # Extract model parameters from metadata
+    input_size = metadata['n_features'] 
     sequence_length = metadata['sequence_length']
+    
+    logging.info(f"Using input_size: {input_size}, sequence_length: {sequence_length}")
+    logging.info(f"Dataset sizes - Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
     
     # Create data loaders
     batch_size = 32
@@ -221,8 +248,13 @@ def train_advanced_model():
         mlflow.log_param("scheduler", "ReduceLROnPlateau")
         # Log ticker information if available
         ticker_names = metadata.get('ticker_names', ['unknown'])
-        mlflow.log_param("n_tickers", len(ticker_names))
-        mlflow.log_param("ticker_names", ",".join(ticker_names))
+        if isinstance(ticker_names, list):
+            ticker_names_str = ",".join(str(name) for name in ticker_names)
+        else:
+            ticker_names_str = str(ticker_names)
+        
+        mlflow.log_param("n_tickers", len(ticker_names) if isinstance(ticker_names, list) else 1)
+        mlflow.log_param("ticker_names", ticker_names_str)
         
         # Training loop
         best_val_acc = 0.0
