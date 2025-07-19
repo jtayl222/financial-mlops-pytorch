@@ -4,7 +4,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: mlserver-hpa
-  namespace: financial-inference
+  namespace: financial-mlops-pytorch
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

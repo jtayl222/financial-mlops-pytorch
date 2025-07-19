@@ -36,7 +36,7 @@ class SeldonDataConnector:
     def __init__(self, config: Dict):
         self.config = config
         self.prometheus_url = config.get('prometheus', {}).get('url')
-        self.seldon_namespace = config.get('seldon', {}).get('namespace', 'financial-inference')
+        self.seldon_namespace = config.get('seldon', {}).get('namespace', 'financial-mlops-pytorch')
         self.experiment_name = config.get('seldon', {}).get('experiment_name', 'financial-ab-test-experiment')
         
     async def connect(self):

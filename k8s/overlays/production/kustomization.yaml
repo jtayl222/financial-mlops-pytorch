@@ -8,5 +8,5 @@ patches:
       group: mlops.seldon.io
       version: v1alpha1
       kind: SeldonRuntime
-      name: financial-inference-runtime
-      namespace: financial-inference
+      name: financial-mlops-runtime
+      namespace: financial-mlops-pytorch

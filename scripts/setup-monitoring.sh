@@ -87,7 +87,7 @@ scrape_configs:
       - role: endpoints
         namespaces:
           names:
-            - financial-inference
+            - financial-mlops-pytorch
     relabel_configs:
       - source_labels: [__meta_kubernetes_service_name]
         action: keep

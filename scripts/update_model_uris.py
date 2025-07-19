@@ -125,7 +125,7 @@ def main():
     parser.add_argument('--yaml-file', default='k8s/base/financial-predictor-ab-test.yaml',
                        help='YAML file to update')
     parser.add_argument('--mlflow-endpoint', 
-                       default='http://mlflow.local:30800',
+                       default='http://mlflow.test:30800',
                        help='MLflow endpoint URL')
     parser.add_argument('--experiment-id',
                        help='MLflow experiment ID (overrides experiment name lookup)')

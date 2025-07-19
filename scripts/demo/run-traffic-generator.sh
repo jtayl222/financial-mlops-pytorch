@@ -27,7 +27,7 @@ if [ -f ".env.live-dashboards" ]; then
 fi
 
 # Set default environment variables for traffic generation
-export SELDON_NAMESPACE="${SELDON_NAMESPACE:-financial-inference}"
+export SELDON_NAMESPACE="${SELDON_NAMESPACE:-financial-mlops-pytorch}"
 export SELDON_EXPERIMENT_NAME="${SELDON_EXPERIMENT_NAME:-financial-ab-test-experiment}"
 export TRAFFIC_RATE="${TRAFFIC_RATE:-120}"           # 120 requests per minute (2/sec)
 export TRAFFIC_DURATION="${TRAFFIC_DURATION:-10}"    # 10 minutes

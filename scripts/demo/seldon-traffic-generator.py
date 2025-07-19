@@ -30,7 +30,7 @@ class TrafficConfig:
     """Configuration for traffic generation"""
     seldon_endpoint: str
     experiment_name: str = "financial-ab-test-experiment"
-    namespace: str = "financial-inference"
+    namespace: str = "financial-mlops-pytorch"
     requests_per_minute: int = 120  # 2 requests per second
     duration_minutes: int = 10
     concurrent_workers: int = 5

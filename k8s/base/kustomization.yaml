@@ -15,7 +15,7 @@ resources:
   - financial-data-pvc.yaml  # New dedicated financial data PVCs
   - financial-predictor-vs.yaml
   - seldon-runtime.yaml
-  - server-config-centralized.yaml
+  - server-config-scoped.yaml
   - network-policy.yaml
   - mlserver.yaml
   - nginx-ingress.yaml

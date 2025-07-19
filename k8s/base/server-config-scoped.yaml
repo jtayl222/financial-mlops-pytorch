@@ -12,6 +12,7 @@ spec:
   podSpec:
     containers:
     - name: agent
+      image: seldonio/seldon-agent:2.9.1
       resources:
         requests:
           cpu: 200m
@@ -20,6 +21,7 @@ spec:
           cpu: 500m
           memory: 2Gi
     - name: mlserver
+      image: seldonio/mlserver:1.6.0
       env:
       - name: MLSERVER_PARALLEL_WORKERS
         value: "4"

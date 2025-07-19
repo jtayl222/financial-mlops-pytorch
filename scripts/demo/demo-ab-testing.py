@@ -18,7 +18,7 @@ from collections import defaultdict
 import argparse
 
 class ABTestingDemo:
-    def __init__(self, seldon_endpoint="http://ml-api.local/financial-inference", experiment_name="financial-ab-test-experiment"):
+    def __init__(self, seldon_endpoint="http://ml-api.local/financial-mlops-pytorch", experiment_name="financial-ab-test-experiment"):
         self.seldon_endpoint = seldon_endpoint
         self.experiment_name = experiment_name
         self.results = defaultdict(list)

@@ -25,7 +25,7 @@ fi
 
 echo ""
 echo "3. Testing specific endpoint..."
-response_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 http://ml-api.local/financial-inference/v2/models)
+response_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 http://ml-api.local/financial-mlops-pytorch/v2/models)
 if [ "$response_code" -eq 200 ]; then
     echo "   ✅ A/B testing endpoint is working"
 elif [ "$response_code" -eq 404 ]; then
@@ -64,7 +64,7 @@ else
     echo "✅ CLUSTER IS REACHABLE"
     echo ""
     echo "Check if your Kubernetes cluster services are running:"
-    echo "   kubectl get pods -n financial-inference"
+    echo "   kubectl get pods -n financial-mlops-pytorch"
     echo "   kubectl get pods -n ingress-nginx"
     echo ""
 fi
