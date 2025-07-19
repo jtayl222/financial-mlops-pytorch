@@ -315,7 +315,7 @@ In **Part 3**, we'll explore the business impact:
 *This is Part 1 of the "A/B Testing in Production MLOps" series. The complete implementation is available as open source:*
 
 - **Platform**: [github.com/jtayl222/ml-platform](https://github.com/jtayl222/ml-platform)
-- **Application**: [github.com/jtayl222/financial-mlops-pytorch](https://github.com/jtayl222/financial-mlops-pytorch)
+- **Application**: [github.com/jtayl222/seldon-system](https://github.com/jtayl222/seldon-system)
 
 ---
 

@@ -10,8 +10,8 @@ This document captures key lessons learned during the implementation of enterpri
 
 **Implementation:**
 ```yaml
-financial-inference/           # Model serving and inference
-financial-mlops-pytorch/ # Training pipelines and development  
+seldon-system/           # Model serving and inference
+seldon-system/ # Training pipelines and development  
 seldon-system/          # Shared infrastructure (if needed)
 ```
 
@@ -32,14 +32,14 @@ seldon-system/          # Shared infrastructure (if needed)
 **Commands:**
 ```bash
 # Infrastructure team delivers packages
-# financial-mlops-pytorch-ml-secrets-20250704.tar.gz
-# financial-mlops-pytorch-models-secrets-20250704.tar.gz
+# seldon-system-ml-secrets-20250704.tar.gz
+# seldon-system-models-secrets-20250704.tar.gz
 
 # Development team applies
-tar xzf financial-mlops-pytorch-ml-secrets-20250704.tar.gz -C k8s/manifests/financial-mlops-pytorch
-tar xzf financial-mlops-pytorch-models-secrets-20250704.tar.gz -C k8s/manifests/financial-inference
-kubectl apply -k k8s/manifests/financial-inference/production
-kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
+tar xzf seldon-system-ml-secrets-20250704.tar.gz -C k8s/manifests/seldon-system
+tar xzf seldon-system-models-secrets-20250704.tar.gz -C k8s/manifests/seldon-system
+kubectl apply -k k8s/manifests/seldon-system/production
+kubectl apply -k k8s/manifests/seldon-system/production
 ```
 
 **Benefits:**
@@ -69,8 +69,8 @@ kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: seldon-system-runtime
+  namespace: seldon-system
 spec:
   config:
     agentConfig:
@@ -106,7 +106,7 @@ spec:
 
 **Problem:** SeldonRuntime components don't include CPU limits by default, causing pod creation failures:
 ```
-Error creating: pods "seldon-scheduler-0" is forbidden: failed quota: financial-inference-quota: must specify limits.cpu for: scheduler
+Error creating: pods "seldon-scheduler-0" is forbidden: failed quota: seldon-system-quota: must specify limits.cpu for: scheduler
 ```
 
 **Solutions:**
@@ -144,8 +144,8 @@ args:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: financial-inference-isolation
-  namespace: financial-inference
+  name: seldon-system-isolation
+  namespace: seldon-system
 spec:
   podSelector: {}
   policyTypes:

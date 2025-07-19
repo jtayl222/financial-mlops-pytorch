@@ -42,16 +42,16 @@ This UAT framework follows industry-standard practices for mission-critical fina
 kubectl apply -k k8s/base
 
 # Verify model deployment
-kubectl get models -n financial-inference
-kubectl describe model baseline-predictor -n financial-inference
-kubectl describe model enhanced-predictor -n financial-inference
+kubectl get models -n seldon-system
+kubectl describe model baseline-predictor -n seldon-system
+kubectl describe model enhanced-predictor -n seldon-system
 
 # Test prediction endpoints
-curl -X POST http://baseline-predictor.financial-inference.local/predict \
+curl -X POST http://baseline-predictor.seldon-system.local/predict \
   -H "Content-Type: application/json" \
   -d '{"data": {"ndarray": [[1.0, 2.0, 3.0, 4.0, 5.0]]}}'
 
-curl -X POST http://enhanced-predictor.financial-inference.local/predict \
+curl -X POST http://enhanced-predictor.seldon-system.local/predict \
   -H "Content-Type: application/json" \
   -d '{"data": {"ndarray": [[1.0, 2.0, 3.0, 4.0, 5.0]]}}'
 ```
@@ -85,8 +85,8 @@ curl -X POST http://enhanced-predictor.financial-inference.local/predict \
 kubectl apply -f k8s/base/financial-predictor-ab-test.yaml
 
 # Verify experiment status
-kubectl get experiment financial-ab-test-experiment -n financial-inference
-kubectl describe experiment financial-ab-test-experiment -n financial-inference
+kubectl get experiment financial-ab-test-experiment -n seldon-system
+kubectl describe experiment financial-ab-test-experiment -n seldon-system
 
 # Run traffic simulation
 python3 scripts/demo/demo-ab-testing.py --scenarios 100 --workers 2
@@ -212,7 +212,7 @@ python3 scripts/validate-explanations.py --test-cases 50
 python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5 --duration 30m
 
 # Monitor system resources during test
-kubectl top pods -n financial-inference
+kubectl top pods -n seldon-system
 kubectl top nodes
 
 # Analyze performance results
@@ -239,8 +239,8 @@ for load in 100 500 1000 2500 5000; do
 done
 
 # Monitor auto-scaling behavior
-kubectl get hpa -n financial-inference -w
-kubectl get pods -n financial-inference -w
+kubectl get hpa -n seldon-system -w
+kubectl get pods -n seldon-system -w
 ```
 
 **Acceptance Criteria**:
@@ -286,16 +286,16 @@ python3 scripts/stress-test.py --network-stress --duration 10m
 # Step 1: Train new model
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=test-integration -p data-version=v1.0.0 \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 # Step 2: Wait for training completion
-argo get @latest -n financial-mlops-pytorch
+argo get @latest -n seldon-system
 
 # Step 3: Deploy model via GitOps
 ./scripts/gitops-model-update.sh test-integration v1.0.0
 
 # Step 4: Verify model deployment
-kubectl wait --for=condition=ready model/test-integration-predictor -n financial-inference --timeout=300s
+kubectl wait --for=condition=ready model/test-integration-predictor -n seldon-system --timeout=300s
 
 # Step 5: Run predictions and collect metrics
 python3 scripts/integration-test.py --model test-integration-predictor --requests 100
@@ -478,11 +478,11 @@ python3 scripts/validate-grafana-dashboard.py --url http://localhost:3000
 **Test Steps**:
 ```bash
 # Test service account permissions
-kubectl auth can-i create models --as=system:serviceaccount:financial-inference:default -n financial-inference
-kubectl auth can-i delete models --as=system:serviceaccount:financial-inference:default -n financial-inference
+kubectl auth can-i create models --as=system:serviceaccount:seldon-system:default -n seldon-system
+kubectl auth can-i delete models --as=system:serviceaccount:seldon-system:default -n seldon-system
 
 # Test cross-namespace restrictions
-kubectl auth can-i get secrets --as=system:serviceaccount:financial-inference:default -n financial-mlops-pytorch
+kubectl auth can-i get secrets --as=system:serviceaccount:seldon-system:default -n seldon-system
 
 # Validate RBAC matrix
 python3 scripts/validate-rbac.py --comprehensive
@@ -500,10 +500,10 @@ python3 scripts/validate-rbac.py --comprehensive
 **Test Steps**:
 ```bash
 # Test allowed traffic
-kubectl exec -n financial-inference deployment/baseline-predictor -- curl -m 5 http://mlflow-server.financial-mlops-pytorch:5000/health
+kubectl exec -n seldon-system deployment/baseline-predictor -- curl -m 5 http://mlflow-server.seldon-system:5000/health
 
 # Test blocked traffic (should fail)
-kubectl exec -n financial-inference deployment/baseline-predictor -- curl -m 5 http://prometheus-server.monitoring:9090/api/v1/query
+kubectl exec -n seldon-system deployment/baseline-predictor -- curl -m 5 http://prometheus-server.monitoring:9090/api/v1/query
 
 # Comprehensive network policy testing
 python3 scripts/test-network-policies.py --validate-isolation

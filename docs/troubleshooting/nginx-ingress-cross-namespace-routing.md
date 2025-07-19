@@ -1,31 +1,31 @@
 # NGINX Ingress Cross-Namespace Routing Issue
 
 ## Problem Statement
-NGINX Ingress Controller is installed and operational, but ExternalName services for cross-namespace routing are not resolving properly, resulting in 404 errors for financial-inference namespace services.
+NGINX Ingress Controller is installed and operational, but ExternalName services for cross-namespace routing are not resolving properly, resulting in 404 errors for seldon-system namespace services.
 
 ## Current State
 
 ### ✅ Working Components
 - NGINX Ingress Controller: `192.168.1.249` (responds to requests)
-- Backend services: `seldon-mesh.financial-inference` accessible via port-forward
+- Backend services: `seldon-mesh.seldon-system` accessible via port-forward
 - Individual models: `baseline-predictor`, `enhanced-predictor` work via localhost:8082
 - Ingress responds: Returns nginx 404 (not connection refused)
 
 ### ❌ Failing Components
-- Cross-namespace routing: `ml-api.local/financial-inference/*` → 404
+- Cross-namespace routing: `ml-api.local/seldon-system/*` → 404
 - ExternalName service resolution: May not be resolving DNS correctly
 - Path rewriting: `/$2` rewrite rule may have issues
 
 ## Architecture Overview
 
 ```
-External Request → NGINX Ingress (192.168.1.249) → ExternalName Service → financial-inference namespace
+External Request → NGINX Ingress (192.168.1.249) → ExternalName Service → seldon-system namespace
                                  ↓
-                          ml-api.local/financial-inference/v2/models
+                          ml-api.local/seldon-system/v2/models
                                  ↓
-                          financial-inference-seldon (ExternalName)
+                          seldon-system-seldon (ExternalName)
                                  ↓
-                          seldon-mesh.financial-inference.svc.cluster.local
+                          seldon-mesh.seldon-system.svc.cluster.local
 ```
 
 ## Debugging Steps Performed
@@ -33,11 +33,11 @@ External Request → NGINX Ingress (192.168.1.249) → ExternalName Service → 
 ### 1. Basic Connectivity Tests
 ```bash
 # NGINX Ingress responds
-curl http://ml-api.local/financial-inference/v2/models
+curl http://ml-api.local/seldon-system/v2/models
 # Result: nginx 404 (not connection refused) ✅
 
 # Backend works via port-forward  
-kubectl port-forward -n financial-inference svc/seldon-mesh 8082:80
+kubectl port-forward -n seldon-system svc/seldon-mesh 8082:80
 curl http://localhost:8082/v2/models/baseline-predictor
 # Result: JSON model metadata ✅
 ```
@@ -56,10 +56,10 @@ spec:
       paths:
       - backend:
           service:
-            name: financial-inference-seldon
+            name: seldon-system-seldon
             port:
               number: 80
-        path: /financial-inference(/|$)(.*)
+        path: /seldon-system(/|$)(.*)
         pathType: Prefix
 ```
 
@@ -72,28 +72,28 @@ nginx.ingress.kubernetes.io/cors-allow-origin: "*"
 
 ### 3. ExternalName Service Verification
 ```bash
-kubectl get svc -n ingress-nginx financial-inference-seldon
+kubectl get svc -n ingress-nginx seldon-system-seldon
 ```
 
 **Output:**
 ```
 NAME                         TYPE           EXTERNAL-IP
-financial-inference-seldon   ExternalName   seldon-mesh.financial-inference.svc.cluster.local
+seldon-system-seldon   ExternalName   seldon-mesh.seldon-system.svc.cluster.local
 ```
 
 ## Potential Root Causes
 
 ### Theory 1: DNS Resolution Issue
-**Hypothesis**: ExternalName service cannot resolve `seldon-mesh.financial-inference.svc.cluster.local`
+**Hypothesis**: ExternalName service cannot resolve `seldon-mesh.seldon-system.svc.cluster.local`
 
 **Test Commands Needed:**
 ```bash
 # Test DNS resolution from ingress-nginx namespace
 kubectl run debug-pod -n ingress-nginx --image=busybox --rm -it -- sh
-nslookup seldon-mesh.financial-inference.svc.cluster.local
+nslookup seldon-mesh.seldon-system.svc.cluster.local
 
 # Test from a pod in the ingress-nginx namespace
-kubectl exec -n ingress-nginx deployment/ingress-nginx-controller -- nslookup seldon-mesh.financial-inference.svc.cluster.local
+kubectl exec -n ingress-nginx deployment/ingress-nginx-controller -- nslookup seldon-mesh.seldon-system.svc.cluster.local
 ```
 
 ### Theory 2: Path Rewriting Issue
@@ -101,8 +101,8 @@ kubectl exec -n ingress-nginx deployment/ingress-nginx-controller -- nslookup se
 
 **Current Flow:**
 ```
-/financial-inference/v2/models/baseline-predictor
-            ↓ regex: /financial-inference(/|$)(.*)
+/seldon-system/v2/models/baseline-predictor
+            ↓ regex: /seldon-system(/|$)(.*)
             ↓ rewrite: /$2  
             ↓ result: /v2/models/baseline-predictor
 ```
@@ -117,16 +117,16 @@ kubectl annotate ingress -n ingress-nginx mlops-ingress nginx.ingress.kubernetes
 ```
 
 ### Theory 3: Network Policies Blocking Cross-Namespace Traffic
-**Hypothesis**: Network policies prevent ingress-nginx → financial-inference communication
+**Hypothesis**: Network policies prevent ingress-nginx → seldon-system communication
 
 **Test Commands Needed:**
 ```bash
 # Check network policies in both namespaces
 kubectl get networkpolicy -n ingress-nginx
-kubectl get networkpolicy -n financial-inference
+kubectl get networkpolicy -n seldon-system
 
 # Test with network policies temporarily disabled
-kubectl delete networkpolicy -n financial-inference --all
+kubectl delete networkpolicy -n seldon-system --all
 ```
 
 ### Theory 4: Service Port Mismatch
@@ -134,13 +134,13 @@ kubectl delete networkpolicy -n financial-inference --all
 
 **Current Configuration:**
 - ExternalName service: port 80
-- Target service: `seldon-mesh.financial-inference` port ?
+- Target service: `seldon-mesh.seldon-system` port ?
 
 **Test Commands Needed:**
 ```bash
 # Verify target service ports
-kubectl get svc -n financial-inference seldon-mesh
-kubectl describe svc -n financial-inference seldon-mesh
+kubectl get svc -n seldon-system seldon-mesh
+kubectl describe svc -n seldon-system seldon-mesh
 ```
 
 ## Systematic Debugging Plan
@@ -169,7 +169,7 @@ kubectl describe svc -n financial-inference seldon-mesh
 
 ### Immediate Investigation Required:
 1. **DNS Resolution**: Verify CoreDNS cross-namespace service discovery
-2. **Network Policies**: Check if financial-inference policies block ingress traffic
+2. **Network Policies**: Check if seldon-system policies block ingress traffic
 3. **NGINX Ingress Logs**: Enable debug logging to see routing decisions
 
 ### Commands for Platform Team:
@@ -181,13 +181,13 @@ kubectl logs -n ingress-nginx deployment/ingress-nginx-controller
 kubectl patch configmap -n ingress-nginx ingress-nginx-controller --patch '{"data":{"error-log-level":"debug"}}'
 
 # 3. Test DNS resolution
-kubectl run test-dns -n ingress-nginx --image=busybox --rm -it -- nslookup seldon-mesh.financial-inference.svc.cluster.local
+kubectl run test-dns -n ingress-nginx --image=busybox --rm -it -- nslookup seldon-mesh.seldon-system.svc.cluster.local
 
 # 4. Check CoreDNS configuration
 kubectl get configmap -n kube-system coredns -o yaml
 
 # 5. Verify service discovery works
-kubectl run test-curl -n ingress-nginx --image=curlimages/curl --rm -it -- curl http://seldon-mesh.financial-inference.svc.cluster.local/v2/models
+kubectl run test-curl -n ingress-nginx --image=curlimages/curl --rm -it -- curl http://seldon-mesh.seldon-system.svc.cluster.local/v2/models
 ```
 
 ## ✅ SOLUTION FOUND
@@ -216,31 +216,31 @@ spec:
   - host: ml-api.local
     http:
       paths:
-      - path: /financial-inference/(.*)
+      - path: /seldon-system/(.*)
         pathType: ImplementationSpecific
         backend:
           service:
-            name: financial-inference-seldon
+            name: seldon-system-seldon
             port:
               number: 80
 ```
 
 ### Verification:
 ```bash
-curl http://ml-api.local/financial-inference/v2/models/baseline-predictor
+curl http://ml-api.local/seldon-system/v2/models/baseline-predictor
 # Result: ✅ JSON model metadata
 ```
 
 ## Workaround (Current)
 Port-forwarding works reliably:
 ```bash
-kubectl port-forward -n financial-inference svc/seldon-mesh 8082:80
+kubectl port-forward -n seldon-system svc/seldon-mesh 8082:80
 curl http://localhost:8082/v2/models/baseline-predictor  # ✅ Works
 ```
 
 ## Success Criteria
 ```bash
-curl http://ml-api.local/financial-inference/v2/models/baseline-predictor
+curl http://ml-api.local/seldon-system/v2/models/baseline-predictor
 # Expected: JSON model metadata (not 404)
 ```
 

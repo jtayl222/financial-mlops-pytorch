@@ -14,7 +14,7 @@ As a Seldon Core maintainer reviewing this financial MLOps platform, I see a **c
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
+  name: seldon-system-runtime
 spec:
   overrides:
   - name: seldon-scheduler
@@ -28,7 +28,7 @@ spec:
 **Critical Issues**:
 - **Scheduler disabled**: Setting `seldon-scheduler: replicas: 0` defeats core orchestration benefits
 - **No pipeline support**: Disabled dataflow engine limits complex ML workflows
-- **Inconsistent namespace deployment**: Runtime in `financial-inference` but scheduler needed system-wide
+- **Inconsistent namespace deployment**: Runtime in `seldon-system` but scheduler needed system-wide
 - **Missing service mesh integration**: No Istio integration for advanced traffic management
 
 ### **Model Deployment Patterns** 🔍
@@ -85,7 +85,7 @@ spec:
         value: "32"
         type: "INT"
   runtime:
-    name: "financial-inference-runtime"
+    name: "seldon-system-runtime"
 ```
 
 ### **Experiment Configuration Analysis** 📊
@@ -165,8 +165,8 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: seldon-system-runtime
+  namespace: seldon-system
 spec:
   config:
     agentConfig:
@@ -224,7 +224,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Pipeline
 metadata:
   name: financial-prediction-pipeline
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   steps:
   - name: data-preprocessor
@@ -291,7 +291,7 @@ spec:
     - name: "MLSERVER_MODEL_PARALLEL"
       value: "true"
   runtime:
-    name: "financial-inference-runtime"
+    name: "seldon-system-runtime"
   batchingConfig:
     maxBatchSize: 64
     maxLatency: "100ms"
@@ -312,7 +312,7 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
+  name: seldon-system-runtime
 spec:
   config:
     tracingConfig:
@@ -449,9 +449,9 @@ spec:
 ```yaml
 # Correct namespace structure
 # System namespace: seldon-system
-# Application namespace: financial-inference
+# Application namespace: seldon-system
 # Runtime deployed in: seldon-system
-# Models deployed in: financial-inference
+# Models deployed in: seldon-system
 ```
 
 ### **2. Inadequate Resource Management**
@@ -573,7 +573,7 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
+  name: seldon-system-runtime
 spec:
   config:
     backupConfig:
@@ -634,7 +634,7 @@ spec:
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-global
+  name: seldon-system-global
 spec:
   config:
     multiRegion:

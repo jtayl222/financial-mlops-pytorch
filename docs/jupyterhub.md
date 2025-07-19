@@ -1,6 +1,6 @@
 # Using JupyterHub with the Financial MLOps Project
 
-This document guides developers on how to leverage JupyterHub for interactive development, experimentation, and analysis within the `financial-mlops-pytorch` project. JupyterHub provides a pre-configured, scalable environment that integrates seamlessly with your project's data, artifacts, and MLflow tracking server.
+This document guides developers on how to leverage JupyterHub for interactive development, experimentation, and analysis within the `seldon-system` project. JupyterHub provides a pre-configured, scalable environment that integrates seamlessly with your project's data, artifacts, and MLflow tracking server.
 
 ## 1\. Introduction to JupyterHub
 
@@ -8,7 +8,7 @@ JupyterHub is a multi-user environment for Jupyter notebooks. It is deployed as 
 
 ## 2\. Capabilities for Developers
 
-With JupyterHub, you can perform the following key activities for the `financial-mlops-pytorch` project:
+With JupyterHub, you can perform the following key activities for the `seldon-system` project:
 
   * **Interactive Development & Prototyping:**
       * Quickly write, test, and debug Python code for data ingestion, feature engineering (`src/data_ingestion.py`, `src/feature_engineering_pytorch.py`), and model training (`src/train_pytorch_model.py`).
@@ -66,11 +66,11 @@ Follow these steps to begin using JupyterHub for your project:
 
       * Once your Jupyter environment loads, open a new **Terminal** (File \> New \> Terminal or the `+` icon on the Launcher).
       * Navigate to your desired working directory (e.g., `cd work`).
-      * Clone the `financial-mlops-pytorch` repository:
+      * Clone the `seldon-system` repository:
         ```bash
-        git clone https://github.com/your-username/financial-mlops-pytorch.git
+        git clone https://github.com/your-username/seldon-system.git
         ```
-      * `cd financial-mlops-pytorch` to enter the project directory.
+      * `cd seldon-system` to enter the project directory.
 
 4.  **Verify Environment & Access:**
 
@@ -95,7 +95,7 @@ Follow these steps to begin using JupyterHub for your project:
         ```python
         import sys
         import os
-        # Assumes you are in the root of the financial-mlops-pytorch repo
+        # Assumes you are in the root of the seldon-system repo
         sys.path.append(os.path.abspath('src'))
 
         # Now you can import your modules
@@ -124,14 +124,14 @@ Follow these steps to begin using JupyterHub for your project:
 
 Your JupyterHub environment is built using a custom Docker image (`jtayl22/financial-predictor-jupyter:latest`) which includes a comprehensive set of pre-installed Python libraries defined in the project's `requirements.txt`. This approach ensures a consistent and reproducible environment for everyone.
 
-  * **For Project Dependencies:** If you identify a new core library needed for the `financial-mlops-pytorch` project (e.g., a new data source connector, a widely used ML utility), please open an issue in the `k3s-homelab` (infrastructure) repository. The platform team will review the request, add it to the `requirements.txt` used for the JupyterHub user image, rebuild the image on a dedicated Linux runner, and push the updated version. This ensures that the base development environment remains consistent and performant for all users.
+  * **For Project Dependencies:** If you identify a new core library needed for the `seldon-system` project (e.g., a new data source connector, a widely used ML utility), please open an issue in the `k3s-homelab` (infrastructure) repository. The platform team will review the request, add it to the `requirements.txt` used for the JupyterHub user image, rebuild the image on a dedicated Linux runner, and push the updated version. This ensures that the base development environment remains consistent and performant for all users.
   * **For Personal Experimentation:** For temporary or highly specialized libraries needed for a short-term experiment, you can install them locally within your JupyterHub user environment using `pip install --user <package_name>`. Be aware that these installations are specific to your user's home directory and will persist across sessions unless your home directory is recreated. These changes will not be visible to other users or automated pipelines.
 
 ## 8\. Troubleshooting
 
   * **Jupyter Server Fails to Start:** Check the server logs (often visible in the JupyterHub UI itself or via `kubectl logs -f <your-user-pod-name> -n jupyterhub`). Contact the platform team with the error message.
   * **Missing Python Libraries:** If a library is not found (`ModuleNotFoundError`), ensure it's listed in the `requirements.txt` used for the JupyterHub user image. If it is, contact the platform team for a potential image rebuild.
-  * **Cannot Access Shared Data:** Double-check the `mountPath` (e.g., `/mnt/shared-data`) and ensure the shared PVCs (`shared-data-pvc`, `shared-artifacts-pvc`) exist and are `Bound` in the `financial-mlops-pytorch` namespace (`kubectl get pvc -n financial-mlops-pytorch`).
+  * **Cannot Access Shared Data:** Double-check the `mountPath` (e.g., `/mnt/shared-data`) and ensure the shared PVCs (`shared-data-pvc`, `shared-artifacts-pvc`) exist and are `Bound` in the `seldon-system` namespace (`kubectl get pvc -n seldon-system`).
 
 -----
 

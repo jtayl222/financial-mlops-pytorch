@@ -49,7 +49,7 @@ This document defines the authoritative architecture for Seldon Core v2 deployme
                              │ Standard Kubernetes networking
                              │
 ┌─────────────────────────────────────────────────────────┐
-│                financial-inference                      │
+│                seldon-system                      │
 │                                                         │
 │  ┌─────────────────────────────────────────────────────┐│
 │  │                 MLServer Pods                       ││
@@ -135,15 +135,15 @@ spec:
           value: "9004"
 ```
 
-### Application Namespace Configuration (financial-inference)
+### Application Namespace Configuration (seldon-system)
 
 **SeldonRuntime Specification**:
 ```yaml
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: seldon-system-runtime
+  namespace: seldon-system
 spec:
   overrides:
   # Critical: No local scheduler
@@ -216,8 +216,8 @@ external → seldon-envoy → mlserver-pods
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: financial-inference-network-policy
-  namespace: financial-inference
+  name: seldon-system-network-policy
+  namespace: seldon-system
 spec:
   podSelector: {}
   policyTypes:
@@ -261,7 +261,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   storageUri: "s3://mlflow-artifacts/models/baseline-predictor"
   requirements:
@@ -277,7 +277,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:
@@ -295,7 +295,7 @@ spec:
 # scripts/validate-seldon-architecture.sh
 
 # 1. Verify no local scheduler services exist
-if kubectl get svc seldon-scheduler -n financial-inference 2>/dev/null; then
+if kubectl get svc seldon-scheduler -n seldon-system 2>/dev/null; then
     echo "❌ FAIL: Local scheduler service exists - must be removed"
     exit 1
 fi
@@ -308,7 +308,7 @@ if [[ "$SCHEDULER_READY" -lt 1 ]]; then
 fi
 
 # 3. Verify agent connections
-AGENT_CONNECTED=$(kubectl logs -n financial-inference sts/mlserver -c agent --tail=50 | grep -c "Subscribed to scheduler")
+AGENT_CONNECTED=$(kubectl logs -n seldon-system sts/mlserver -c agent --tail=50 | grep -c "Subscribed to scheduler")
 if [[ "$AGENT_CONNECTED" -lt 1 ]]; then
     echo "❌ FAIL: Agents not connected to scheduler"
     exit 1
@@ -316,14 +316,14 @@ fi
 
 # 4. Verify intra-pod communication
 # Agent should connect to MLServer on localhost:9000
-LOCALHOST_BINDING=$(kubectl logs -n financial-inference sts/mlserver -c mlserver --tail=50 | grep -c "0.0.0.0:9000")
+LOCALHOST_BINDING=$(kubectl logs -n seldon-system sts/mlserver -c mlserver --tail=50 | grep -c "0.0.0.0:9000")
 if [[ "$LOCALHOST_BINDING" -lt 1 ]]; then
     echo "❌ FAIL: MLServer not binding to localhost"
     exit 1
 fi
 
 # 5. Verify models are ready
-MODELS_READY=$(kubectl get models -n financial-inference -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}')
+MODELS_READY=$(kubectl get models -n seldon-system -o jsonpath='{.items[*].status.conditions[?(@.type=="Ready")].status}')
 if [[ "$MODELS_READY" != *"True"* ]]; then
     echo "❌ FAIL: Models not ready"
     exit 1
@@ -340,7 +340,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: mlserver-hpa
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -393,7 +393,7 @@ spec:
 #### Agent Cannot Connect to MLServer
 ```bash
 # Check MLServer is binding to localhost
-kubectl logs -n financial-inference sts/mlserver -c mlserver | grep "0.0.0.0:9000"
+kubectl logs -n seldon-system sts/mlserver -c mlserver | grep "0.0.0.0:9000"
 
 # Expected: "INFO: MLServer listening on 0.0.0.0:9000"
 # If not found, check container runtime networking
@@ -402,7 +402,7 @@ kubectl logs -n financial-inference sts/mlserver -c mlserver | grep "0.0.0.0:900
 #### Models Not Ready
 ```bash
 # Check agent scheduler connection
-kubectl logs -n financial-inference sts/mlserver -c agent | grep "Subscribed to scheduler"
+kubectl logs -n seldon-system sts/mlserver -c agent | grep "Subscribed to scheduler"
 
 # Check central scheduler logs
 kubectl logs -n seldon-system sts/seldon-scheduler | grep "Model registered"
@@ -411,10 +411,10 @@ kubectl logs -n seldon-system sts/seldon-scheduler | grep "Model registered"
 #### xDS Connection Failures
 ```bash
 # Verify no local scheduler services
-kubectl get svc seldon-scheduler -n financial-inference
+kubectl get svc seldon-scheduler -n seldon-system
 
 # Should return: "Error from server (NotFound)"
-# If exists, delete: kubectl delete svc seldon-scheduler -n financial-inference
+# If exists, delete: kubectl delete svc seldon-scheduler -n seldon-system
 ```
 
 ## Migration from Previous Architectures
@@ -422,10 +422,10 @@ kubectl get svc seldon-scheduler -n financial-inference
 ### Step 1: Clean Environment
 ```bash
 # Remove any local scheduler services
-kubectl delete svc seldon-scheduler -n financial-inference --ignore-not-found
+kubectl delete svc seldon-scheduler -n seldon-system --ignore-not-found
 
 # Remove any local scheduler statefulsets
-kubectl delete sts seldon-scheduler -n financial-inference --ignore-not-found
+kubectl delete sts seldon-scheduler -n seldon-system --ignore-not-found
 ```
 
 ### Step 2: Apply Standard Configuration
@@ -459,7 +459,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: seldon-model-manager
-  namespace: financial-inference
+  namespace: seldon-system
 rules:
 - apiGroups: ["mlops.seldon.io"]
   resources: ["models", "experiments"]

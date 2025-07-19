@@ -506,6 +506,6 @@ Start with a simple experiment, measure the results, and build your A/B testing 
 *This concludes the "A/B Testing in Production MLOps" series. The complete implementation is available as open source:*
 
 - **Platform**: [github.com/jtayl222/ml-platform](https://github.com/jtayl222/ml-platform)
-- **Application**: [github.com/jtayl222/financial-mlops-pytorch](https://github.com/jtayl222/financial-mlops-pytorch)
+- **Application**: [github.com/jtayl222/seldon-system](https://github.com/jtayl222/seldon-system)
 
 *Follow me for more enterprise MLOps content and practical implementation guides. Next series: Advanced monitoring and observability for production ML systems.*

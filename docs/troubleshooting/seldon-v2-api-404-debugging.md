@@ -17,7 +17,7 @@ All Seldon resources show as `READY` and `True`, but any attempt to access the v
 ### What We Expect:
 ```bash
 curl -H "Host: financial-predictor.local" \
-  http://192.168.1.249/financial-inference/v2/models/financial-ab-test-experiment/infer \
+  http://192.168.1.249/seldon-system/v2/models/financial-ab-test-experiment/infer \
   --data '{"inputs":[{"name":"input_data","shape":[1,10,35],"datatype":"FP32","data":[...]}]}' \
   -H "Content-Type: application/json"
 ```
@@ -62,7 +62,7 @@ baseline-predictor   True                       1                    24h
 enhanced-predictor   True                       1                    24h
 
 NAME                          AGE
-financial-inference-runtime   24h
+seldon-system-runtime   24h
 
 NAME       READY   REPLICAS   LOADED MODELS   AGE
 mlserver   True    1          2               24h
@@ -72,7 +72,7 @@ mlserver   True    1          2               24h
 - **MetalLB LoadBalancer:** `192.168.1.249` (responding)
 - **NGINX Ingress:** Active, routing configured for `financial-predictor.local`
 - **DNS Resolution:** `financial-predictor.local` → `192.168.1.249` ✅
-- **Cross-namespace networking:** Network policies allow `ingress-nginx` → `financial-inference`
+- **Cross-namespace networking:** Network policies allow `ingress-nginx` → `seldon-system`
 - **MacBook connectivity:** Can reach NGINX and other MetalLB services
 
 ### ✅ Storage and Models:
@@ -98,7 +98,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-63118756949141cba59ab87e90e8a96a/artifacts/
   requirements: [mlflow, torch, numpy, scikit-learn]
@@ -109,7 +109,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: enhanced-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
   requirements: [mlflow, torch, numpy, scikit-learn]
@@ -120,7 +120,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:
@@ -138,11 +138,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: financial-inference-seldon
+  name: seldon-system-seldon
   namespace: ingress-nginx
 spec:
   type: ExternalName
-  externalName: seldon-mesh.financial-inference.svc.cluster.local
+  externalName: seldon-mesh.seldon-system.svc.cluster.local
   ports:
   - port: 80
     targetPort: 80
@@ -163,11 +163,11 @@ spec:
   - host: financial-predictor.local
     http:
       paths:
-      - path: /financial-inference/(.*)
+      - path: /seldon-system/(.*)
         pathType: ImplementationSpecific
         backend:
           service:
-            name: financial-inference-seldon
+            name: seldon-system-seldon
             port:
               number: 80
 ```
@@ -194,7 +194,7 @@ spec:
 **Verification:** `financial-predictor.local` now resolves and NGINX responds
 
 ### 3. ✅ Verified Cross-Namespace Networking
-**Problem:** Suspected network policy blocking ingress-nginx → financial-inference
+**Problem:** Suspected network policy blocking ingress-nginx → seldon-system
 **Solution:** Confirmed network policies already allow this traffic
 **Verification:** Other cross-namespace services working (MLflow, MinIO)
 
@@ -223,7 +223,7 @@ Based on [seldon-reality-check.md](./seldon-reality-check.md), our setup has pot
 ```
 NGINX Ingress (192.168.1.249)
     ↓
-ExternalName Service (seldon-mesh.financial-inference.svc.cluster.local)
+ExternalName Service (seldon-mesh.seldon-system.svc.cluster.local)
     ↓
 Seldon Mesh (192.168.1.202) ← **404 HERE**
     ↓
@@ -235,7 +235,7 @@ MLServer (models loaded)
 ### Suspected Root Causes:
 
 #### 1. **Multi-Scheduler Architecture Conflict**
-- **Issue:** Possible conflict between `seldon-system` and `financial-inference` schedulers
+- **Issue:** Possible conflict between `seldon-system` and `seldon-system` schedulers
 - **Symptom:** Controllers not properly configuring Envoy routes
 - **Reference:** "90% of Seldon debugging time is spent on architecture pattern confusion"
 
@@ -251,7 +251,7 @@ MLServer (models loaded)
 ## Expert Questions Needed
 
 ### 1. **Architecture Pattern Validation**
-**Question:** For A/B experiments across models in `financial-inference` namespace, should we use:
+**Question:** For A/B experiments across models in `seldon-system` namespace, should we use:
 - **Option A:** Centralized scheduler in `seldon-system` managing all namespaces?
 - **Option B:** Distributed scheduler per namespace (current setup)?
 - **Option C:** Single namespace for both Seldon system and models?
@@ -272,7 +272,7 @@ MLServer (models loaded)
 **Needed Commands:**
 ```bash
 # Controller → Scheduler connectivity
-kubectl logs seldon-v2-controller-manager -n seldon-system | grep "financial-inference"
+kubectl logs seldon-v2-controller-manager -n seldon-system | grep "seldon-system"
 
 # Scheduler → Envoy XDS configuration  
 kubectl logs seldon-scheduler-0 -n seldon-system | grep -E "(disconnected|route)"
@@ -282,7 +282,7 @@ curl -s http://192.168.1.202:9003/stats | grep -E "(route|no_route)"
 curl -s http://192.168.1.202:9003/config_dump | jq '.configs[0].dynamic_route_configs'
 
 # MLServer model status
-kubectl logs mlserver-0 -c mlserver -n financial-inference | grep -E "(loaded|error)"
+kubectl logs mlserver-0 -c mlserver -n seldon-system | grep -E "(loaded|error)"
 ```
 
 ### 5. **Common Configuration Gotchas**
@@ -290,15 +290,15 @@ kubectl logs mlserver-0 -c mlserver -n financial-inference | grep -E "(loaded|er
 - Are there known issues with MLflow model loading in Seldon v2?
 - Do experiments require different service exposure than individual models?
 - Are there namespace label requirements we're missing?
-- Should `financial-inference-runtime` be in `seldon-system` instead?
+- Should `seldon-system-runtime` be in `seldon-system` instead?
 
 ## ✅ EXPERT FIXES APPLIED (Field-Tested Checklist)
 
 ### 1. Fixed NGINX Path Rewrite Issue
-**Problem:** Request path contained custom prefix `/financial-inference/` that Envoy doesn't expect  
+**Problem:** Request path contained custom prefix `/seldon-system/` that Envoy doesn't expect  
 **Solution:** Implemented host-based routing pattern
 ```yaml
-# Before: /financial-inference(/|$)(.*)
+# Before: /seldon-system(/|$)(.*)
 # After: /v2/(.*)  # Direct v2 API path
 rules:
 - host: financial-predictor.local
@@ -308,7 +308,7 @@ rules:
       pathType: ImplementationSpecific
       backend:
         service:
-          name: financial-inference-seldon
+          name: seldon-system-seldon
           port:
             number: 80
 ```
@@ -340,7 +340,7 @@ INFO: "POST /v2/models/baseline-predictor_1/infer HTTP/1.1" 200 OK
 Advanced debugging revealed **Seldon scheduler is stuck in continuous loop**:
 
 ```bash
-kubectl logs -n financial-inference seldon-scheduler-0 --tail=50
+kubectl logs -n seldon-system seldon-scheduler-0 --tail=50
 ```
 
 **Output shows infinite cycle:**
@@ -378,7 +378,7 @@ Remove routes for model financial-ab-test-experiment.experiment
 
 1. **Scaled down per-namespace scheduler**:
    ```bash
-   kubectl -n financial-inference scale sts/seldon-scheduler --replicas=0
+   kubectl -n seldon-system scale sts/seldon-scheduler --replicas=0
    ```
 
 2. **Updated SeldonRuntime configuration**:
@@ -393,7 +393,7 @@ Remove routes for model financial-ab-test-experiment.experiment
 
 ### Status After Fix:
 - ✅ **No more split-brain conflict** - Only central scheduler running
-- ✅ **Network policies verified** - `seldon-system` can access `financial-inference`
+- ✅ **Network policies verified** - `seldon-system` can access `seldon-system`
 - ✅ **NGINX routing correct** - Host-based routing and seldon-model header configured
 - ❌ **Still getting 404** - Central scheduler not discovering models
 
@@ -410,14 +410,14 @@ kubectl logs -n seldon-system seldon-scheduler-0 --tail=50
 
 **Evidence 2 - Models Still Show Ready But Unreachable:**
 ```bash
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 # Shows: baseline-predictor (True), enhanced-predictor (True)
 # But: curl requests still return 404
 ```
 
 **Evidence 3 - MLServer Missing Scheduler Configuration:**
 ```bash
-kubectl get pod -n financial-inference mlserver-0 -o yaml | grep -A30 env:
+kubectl get pod -n seldon-system mlserver-0 -o yaml | grep -A30 env:
 # Missing: SCHEDULER_HOST environment variable
 # Agent container lacks connection to seldon-system-scheduler:9004
 ```
@@ -426,7 +426,7 @@ kubectl get pod -n financial-inference mlserver-0 -o yaml | grep -A30 env:
 
 The **centralized scheduler pattern** requires additional configuration beyond just scaling down the per-namespace scheduler:
 
-1. **Cross-namespace model discovery** - Central scheduler may need explicit configuration to watch `financial-inference` namespace
+1. **Cross-namespace model discovery** - Central scheduler may need explicit configuration to watch `seldon-system` namespace
 2. **Agent connection configuration** - MLServer agents need `SCHEDULER_HOST=seldon-system-scheduler:9004`
 3. **Service discovery** - Verify `seldon-system-scheduler` service exists and is accessible
 
@@ -447,12 +447,12 @@ The **centralized scheduler pattern** requires additional configuration beyond j
 
 3. **Test direct connection to central scheduler:**
    ```bash
-   kubectl exec -n financial-inference mlserver-0 -c agent -- nc -zv seldon-system-scheduler.seldon-system.svc.cluster.local 9004
+   kubectl exec -n seldon-system mlserver-0 -c agent -- nc -zv seldon-system-scheduler.seldon-system.svc.cluster.local 9004
    ```
 
 4. **Check agent configuration:**
    ```bash
-   kubectl logs -n financial-inference mlserver-0 -c agent --tail=50
+   kubectl logs -n seldon-system mlserver-0 -c agent --tail=50
    # Look for scheduler connection attempts or errors
    ```
 
@@ -505,7 +505,7 @@ kubectl logs -n seldon-system deployment/seldon-v2-controller-manager --tail=10
 
 2. **Agents connecting successfully:**
    ```bash
-   kubectl logs -n financial-inference sts/mlserver -c agent --tail=10
+   kubectl logs -n seldon-system sts/mlserver -c agent --tail=10
    # ✅ "Subscribed to scheduler"
    # ✅ "Load model enhanced-predictor:1 success"
    # ✅ "Load model baseline-predictor:3 success"
@@ -534,7 +534,7 @@ kubectl logs -n seldon-system deployment/seldon-v2-controller-manager --tail=10
 - Are there authentication/TLS requirements we're missing?
 
 ### 2. Cross-Namespace Model Discovery  
-**Question:** In centralized scheduler pattern, how does the controller manager discover models in `financial-inference` namespace?
+**Question:** In centralized scheduler pattern, how does the controller manager discover models in `seldon-system` namespace?
 - Does `--clusterwide=true` automatically watch all namespaces?
 - Are there RBAC permissions that could be blocking discovery?
 - Should models be moved to `seldon-system` namespace instead?
@@ -599,7 +599,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: seldon-scheduler  # DNS name that pods already use
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   type: ExternalName
   externalName: seldon-scheduler.seldon-system.svc.cluster.local
@@ -610,7 +610,7 @@ spec:
 
 ### Agent Now Connecting Successfully:
 ```bash
-kubectl -n financial-inference logs sts/mlserver -c agent --tail=20
+kubectl -n seldon-system logs sts/mlserver -c agent --tail=20
 # ✅ "Subscribed to scheduler"
 # ✅ "Load model enhanced-predictor:1 success"  
 # ✅ "Load model baseline-predictor:3 success"
@@ -681,7 +681,7 @@ headers = {
     "Host": "ml-api.local",
     "seldon-model": f"{self.experiment_name}.experiment"
 }
-# Default endpoint: http://192.168.1.249/financial-inference
+# Default endpoint: http://192.168.1.249/seldon-system
 ```
 
 ### 🏆 Trade Show Demonstration Ready

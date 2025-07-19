@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: docker-build-pipeline-template
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
 spec:
   entrypoint: build-and-push-image
   serviceAccountName: argo-workflow-sa
@@ -10,7 +10,7 @@ spec:
   arguments:
     parameters:
     - name: git-repo
-      value: "https://github.com/jtayl222/financial-mlops-pytorch.git"
+      value: "https://github.com/jtayl222/seldon-system.git"
     - name: git-branch
       value: "July-17"
     - name: image-name
@@ -186,7 +186,7 @@ spec:
         apk add --no-cache git
         
         # Clone and build
-        git clone --depth 1 --branch July-17 https://github.com/jtayl222/financial-mlops-pytorch.git /workspace
+        git clone --depth 1 --branch July-17 https://github.com/jtayl222/seldon-system.git /workspace
         cd /workspace
         
         # Quick build

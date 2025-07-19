@@ -167,7 +167,7 @@ def create_kubectl_debugging_session():
     # Command sections with realistic output
     commands = [
         {
-            'cmd': '$ kubectl get pods -n financial-inference',
+            'cmd': '$ kubectl get pods -n seldon-system',
             'output': '''NAME                           READY   STATUS    RESTARTS   AGE
 mlserver-0                     2/2     Running   0          27h
 mlserver-1                     0/2     Pending   0          5m''',

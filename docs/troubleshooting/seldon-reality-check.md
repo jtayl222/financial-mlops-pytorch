@@ -83,7 +83,7 @@ When **any** link breaks, you get 404s with no helpful error messages.
 # Don't do this (multi-namespace hell):
 seldon-system:     # Platform scheduler
   - scheduler
-financial-inference:      # Tenant scheduler  
+seldon-system:      # Tenant scheduler  
   - scheduler      # ← Conflict zone
   - models
 
@@ -91,7 +91,7 @@ financial-inference:      # Tenant scheduler
 seldon-system:
   - scheduler      # ← Single source of truth
   - envoy
-financial-inference:
+seldon-system:
   - models only    # ← Keep it simple
 ```
 

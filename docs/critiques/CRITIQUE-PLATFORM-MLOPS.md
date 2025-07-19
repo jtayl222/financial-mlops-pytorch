@@ -9,7 +9,7 @@ As platform and MLOps engineers reviewing this financial MLOps platform, we see 
 ### **Kubernetes Platform Excellence** ✅
 
 **Strengths Observed**:
-- **Multi-namespace separation**: Proper isolation between training (`financial-mlops-pytorch`) and serving (`financial-inference`)
+- **Multi-namespace separation**: Proper isolation between training (`seldon-system`) and serving (`seldon-system`)
 - **GitOps integration**: ArgoCD implementation follows best practices
 - **Kustomize usage**: Clean base/overlay pattern for environment management
 - **Service mesh readiness**: Seldon Core v2 integration with proper ingress configuration
@@ -172,7 +172,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/jtayl222/financial-mlops-pytorch.git
+    repoURL: https://github.com/jtayl222/seldon-system.git
     targetRevision: HEAD
     path: k8s/base
   syncPolicy:
@@ -440,12 +440,12 @@ case $1 in
     ;;
   "check-health")
     echo "Checking platform health"
-    kubectl get pods -n financial-inference
-    kubectl get experiments -n financial-inference
+    kubectl get pods -n seldon-system
+    kubectl get experiments -n seldon-system
     ;;
   "logs")
     echo "Fetching logs for model $2"
-    kubectl logs -l app=financial-predictor,version=$2 -n financial-inference
+    kubectl logs -l app=financial-predictor,version=$2 -n seldon-system
     ;;
   *)
     echo "Usage: $0 {deploy-model|run-experiment|check-health|logs}"
@@ -733,7 +733,7 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: financial-inference
+  name: seldon-system
   labels:
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/audit: restricted

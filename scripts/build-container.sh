@@ -11,7 +11,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Default values
 BUILD_TYPE="${1:-quick}"
 IMAGE_TAG="${2:-latest}"
-NAMESPACE="financial-mlops-pytorch"
+NAMESPACE="seldon-system"
 
 echo "🐳 Container Build Script"
 echo "========================"

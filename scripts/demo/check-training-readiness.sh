@@ -7,7 +7,7 @@ echo "=============================================="
 # Check if we're in the right directory
 if [ ! -f "src/train_pytorch_model.py" ]; then
     echo "❌ Error: Not in project root directory"
-    echo "   Please run from the financial-mlops-pytorch directory"
+    echo "   Please run from the seldon-system directory"
     exit 1
 fi
 

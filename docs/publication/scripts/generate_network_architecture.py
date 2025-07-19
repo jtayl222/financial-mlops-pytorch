@@ -196,7 +196,7 @@ def create_network_policy_comparison():
     # Namespaces
     ns1 = Rectangle((1, 6), 3, 3, facecolor=colors['namespace'], alpha=0.3, edgecolor='blue')
     ax1.add_patch(ns1)
-    ax1.text(2.5, 8.5, 'financial-inference', fontsize=10, fontweight='bold', ha='center')
+    ax1.text(2.5, 8.5, 'seldon-system', fontsize=10, fontweight='bold', ha='center')
     
     ns2 = Rectangle((5, 6), 3, 3, facecolor=colors['namespace'], alpha=0.3, edgecolor='blue')
     ax1.add_patch(ns2)
@@ -242,7 +242,7 @@ def create_network_policy_comparison():
     # Same namespaces
     ns1_2 = Rectangle((1, 6), 3, 3, facecolor=colors['namespace'], alpha=0.3, edgecolor='blue')
     ax2.add_patch(ns1_2)
-    ax2.text(2.5, 8.5, 'financial-inference', fontsize=10, fontweight='bold', ha='center')
+    ax2.text(2.5, 8.5, 'seldon-system', fontsize=10, fontweight='bold', ha='center')
     
     ns2_2 = Rectangle((5, 6), 3, 3, facecolor=colors['namespace'], alpha=0.3, edgecolor='blue')
     ax2.add_patch(ns2_2)

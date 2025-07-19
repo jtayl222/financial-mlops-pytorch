@@ -488,7 +488,7 @@ class LiveDashboardGenerator:
                     sorted_data = sorted(zip(training_times, loss_values))
                     times, losses = zip(*sorted_data)
                     
-                    display_name = exp_name.replace('financial-mlops-pytorch-', '').title()[:15]
+                    display_name = exp_name.replace('seldon-system-', '').title()[:15]
                     ax2.plot(times, losses, label=display_name, linewidth=2, 
                             color=colors[color_idx % len(colors)], marker='o', markersize=4)
                     color_idx += 1
@@ -509,7 +509,7 @@ class LiveDashboardGenerator:
                     if exp_data['creation_time']:
                         creation_date = datetime.fromtimestamp(exp_data['creation_time'] / 1000)
                         exp_dates.append(creation_date)
-                        exp_names.append(exp_name.replace('financial-mlops-pytorch-', '').title()[:10])
+                        exp_names.append(exp_name.replace('seldon-system-', '').title()[:10])
                         exp_counts.append(len(exp_data['runs']))
                 
                 if exp_dates:
@@ -558,7 +558,7 @@ class LiveDashboardGenerator:
                 
                 if best_accuracy > 0:
                     # Clean up experiment name for display
-                    display_name = exp_name.replace('financial-mlops-pytorch-', '').title()[:12]
+                    display_name = exp_name.replace('seldon-system-', '').title()[:12]
                     exp_accuracies[display_name] = best_accuracy
             
             if exp_accuracies:

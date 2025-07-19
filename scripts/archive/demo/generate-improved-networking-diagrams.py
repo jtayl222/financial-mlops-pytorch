@@ -213,14 +213,14 @@ def create_network_architecture_with_debugging():
     ax.text(15, 12.25, 'Central\nScheduler', ha='center', va='center',
             fontweight='bold', fontsize=10, color='white')
     
-    # financial-inference namespace (data plane)
+    # seldon-system namespace (data plane)
     app_ns = FancyBboxPatch(
         (1, 4), 16, 6,
         boxstyle="round,pad=0.1",
         facecolor=colors['namespace'], alpha=0.3, edgecolor=colors['seldon_data'], linewidth=2
     )
     ax.add_patch(app_ns)
-    ax.text(9, 9.5, 'financial-inference namespace (Data Plane)', ha='center', va='center',
+    ax.text(9, 9.5, 'seldon-system namespace (Data Plane)', ha='center', va='center',
             fontsize=12, fontweight='bold', color=colors['seldon_data'])
     
     # Seldon Envoy Gateway

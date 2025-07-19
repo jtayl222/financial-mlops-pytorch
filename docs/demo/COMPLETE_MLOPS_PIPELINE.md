@@ -113,11 +113,11 @@ Financial APIs → Argo Workflows → MinIO/S3 → Model Training → MLflow Reg
 ### Core Infrastructure Status
 ```bash
 # Workflow Templates
-kubectl get workflowtemplates -n financial-mlops-pytorch
+kubectl get workflowtemplates -n seldon-system
 # NAME: financial-data-pipeline-template, financial-training-pipeline-template
 
 # Model Deployments
-kubectl get models,experiments -n financial-inference
+kubectl get models,experiments -n seldon-system
 # STATUS: baseline-predictor (Ready=True), enhanced-predictor (Ready=True)
 # EXPERIMENT: financial-ab-test-experiment (Ready=True)
 
@@ -133,7 +133,7 @@ kubectl get services -n monitoring | grep grafana
 ### Data Pipeline Execution
 ```bash
 # Successful Workflows
-argo list -n financial-mlops-pytorch
+argo list -n seldon-system
 # financial-data-pipeline-template-rcgqr: Succeeded (IBB data ingestion)
 # financial-training-pipeline-template-rb4jj: Succeeded (baseline model)
 # financial-training-pipeline-template-znbbs: Running (enhanced model)

@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: financial-data-pipeline-template
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
 spec:
   entrypoint: data-ingestion-and-feature-engineering
   serviceAccountName: argo-workflow-sa

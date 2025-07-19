@@ -155,7 +155,7 @@ $ python3 scripts/demo/advanced-ab-demo.py --scenarios 500 --workers 3
    Created 500 diverse market scenarios
 🚀 Starting Advanced A/B Testing with 500 scenarios
    Concurrent workers: 3
-   Target endpoint: http://192.168.1.249/financial-inference
+   Target endpoint: http://192.168.1.249/seldon-system
    Experiment: financial-ab-test-experiment
 
    Progress: 100/500 (100 successful)

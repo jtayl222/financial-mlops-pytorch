@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: financial-training-pipeline-gitops-template
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
 spec:
   entrypoint: train-and-deploy
   serviceAccountName: argo-workflow-sa
@@ -122,7 +122,7 @@ spec:
         apk add --no-cache git || apt-get update && apt-get install -y git || yum install -y git || true
         
         # Clone repository (assumes CI/CD has credentials)
-        git clone https://github.com/jtayl222/financial-mlops-pytorch.git /tmp/repo
+        git clone https://github.com/jtayl222/seldon-system.git /tmp/repo
         cd /tmp/repo
         
         # Configure git (required for commits)

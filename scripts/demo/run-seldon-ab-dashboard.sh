@@ -36,7 +36,7 @@ fi
 
 # Set default environment variables
 export PROMETHEUS_URL="${PROMETHEUS_URL:-http://192.168.1.85:30090}"
-export SELDON_NAMESPACE="${SELDON_NAMESPACE:-financial-mlops-pytorch}"
+export SELDON_NAMESPACE="${SELDON_NAMESPACE:-seldon-system}"
 export SELDON_EXPERIMENT_NAME="${SELDON_EXPERIMENT_NAME:-financial-ab-test-experiment}"
 
 echo "📈 Configuration:"

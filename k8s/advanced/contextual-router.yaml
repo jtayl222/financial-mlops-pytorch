@@ -2,12 +2,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: contextual-financial-router
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "router"
     seldon.io/description: "Contextual router for market condition-based model selection"
 spec:
-  storageUri: "gs://financial-inference-models/contextual-router/v1.0.0"
+  storageUri: "gs://seldon-system-models/contextual-router/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "numpy>=1.21.0"
@@ -53,12 +53,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: robust-financial-model
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "predictor"
     seldon.io/description: "Robust model optimized for high volatility markets"
 spec:
-  storageUri: "gs://financial-inference-models/robust/v1.0.0"
+  storageUri: "gs://seldon-system-models/robust/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "numpy>=1.21.0"
@@ -84,12 +84,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: aggressive-financial-model
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "predictor"
     seldon.io/description: "Aggressive model optimized for bull markets"
 spec:
-  storageUri: "gs://financial-inference-models/aggressive/v1.0.0"
+  storageUri: "gs://seldon-system-models/aggressive/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "numpy>=1.21.0"
@@ -115,12 +115,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: conservative-financial-model
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "predictor"
     seldon.io/description: "Conservative model optimized for bear markets"
 spec:
-  storageUri: "gs://financial-inference-models/conservative/v1.0.0"
+  storageUri: "gs://seldon-system-models/conservative/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "numpy>=1.21.0"
@@ -146,7 +146,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: contextual-router-config
-  namespace: financial-inference
+  namespace: seldon-system
 data:
   routing_config.yaml: |
     routing_strategy: contextual
@@ -209,7 +209,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-service
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   selector:
     app: redis
@@ -222,7 +222,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   replicas: 1
   selector:

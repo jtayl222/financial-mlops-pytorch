@@ -221,7 +221,7 @@ spec:
 ```bash
 # Check routing headers
 curl -H "seldon-model: financial-ab-test-experiment.experiment" \
-     http://ml-api.local/financial-inference/v2/models/baseline-predictor_1/infer
+     http://ml-api.local/seldon-system/v2/models/baseline-predictor_1/infer
 
 # Response includes:
 # x-seldon-route: :baseline-predictor_3: (or :enhanced-predictor_1:)
@@ -271,7 +271,7 @@ MetalLB + NGINX:
 
 **Problem Identified:**
 ```
-financial-inference namespace:
+seldon-system namespace:
 ├── seldon-scheduler-0 (per-namespace) ❌
 └── models (baseline-predictor, enhanced-predictor)
 
@@ -284,7 +284,7 @@ Both schedulers = Split-brain conflict = Route thrashing = 404 errors
 **Solution Applied:**
 ```bash
 # 1. Scale down per-namespace scheduler
-kubectl -n financial-inference scale sts/seldon-scheduler --replicas=0
+kubectl -n seldon-system scale sts/seldon-scheduler --replicas=0
 
 # 2. Configure runtime to use central scheduler
 # k8s/base/seldon-runtime.yaml
@@ -299,7 +299,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: seldon-scheduler
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   type: ExternalName
   externalName: seldon-scheduler.seldon-system.svc.cluster.local
@@ -529,7 +529,7 @@ self.accuracy_gauge = Gauge('ab_test_model_accuracy',
 kubectl apply -k k8s/base/
 
 # Wait for pods to be ready
-kubectl get pods -n financial-inference -w
+kubectl get pods -n seldon-system -w
 ```
 
 **Model Training (15-20 minutes):**
@@ -598,7 +598,7 @@ seldon-envoy:
 
 **Kubernetes Secrets:**
 ```bash
-# Sealed secrets for GitOps (k8s/manifests/financial-inference/)
+# Sealed secrets for GitOps (k8s/manifests/seldon-system/)
 - ghcr-sealed-secret.yaml       # Container registry access
 - ml-platform-sealed-secret.yaml # MLflow and MinIO credentials  
 - seldon-rclone-sealed-secret.yaml # S3 storage access
@@ -644,24 +644,24 @@ spec:
 **Step 1: Infrastructure Verification**
 ```bash
 # Check all Seldon resources
-kubectl get experiments,models,seldonruntimes -n financial-inference
+kubectl get experiments,models,seldonruntimes -n seldon-system
 
 # Verify scheduler connectivity  
 kubectl logs -n seldon-system deployment/seldon-v2-controller-manager --tail=50
 
 # Check agent connectivity
-kubectl logs -n financial-inference sts/mlserver -c agent --tail=20
+kubectl logs -n seldon-system sts/mlserver -c agent --tail=20
 ```
 
 **Step 2: Network Connectivity**
 ```bash
 # Test NGINX routing
-curl -v http://ml-api.local/financial-inference/v2/models
+curl -v http://ml-api.local/seldon-system/v2/models
 
 # Test A/B endpoint with headers
 curl -H "Host: ml-api.local" \
      -H "seldon-model: financial-ab-test-experiment.experiment" \
-     http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer
+     http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer
 ```
 
 **Step 3: Traffic Analysis**

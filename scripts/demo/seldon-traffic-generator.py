@@ -30,7 +30,7 @@ class TrafficConfig:
     """Configuration for traffic generation"""
     seldon_endpoint: str
     experiment_name: str = "financial-ab-test-experiment"
-    namespace: str = "financial-mlops-pytorch"
+    namespace: str = "seldon-system"
     requests_per_minute: int = 120  # 2 requests per second
     duration_minutes: int = 10
     concurrent_workers: int = 5
@@ -351,9 +351,9 @@ async def main():
     
     # Configuration
     config = TrafficConfig(
-        seldon_endpoint=os.getenv('SELDON_ENDPOINT', 'http://192.168.1.85:30080/seldon/financial-inference/financial-ab-test-experiment/api/v1.0/predictions'),
+        seldon_endpoint=os.getenv('SELDON_ENDPOINT', 'http://192.168.1.85:30080/seldon/seldon-system/financial-ab-test-experiment/api/v1.0/predictions'),
         experiment_name=os.getenv('SELDON_EXPERIMENT_NAME', 'financial-ab-test-experiment'),
-        namespace=os.getenv('SELDON_NAMESPACE', 'financial-inference'),
+        namespace=os.getenv('SELDON_NAMESPACE', 'seldon-system'),
         requests_per_minute=int(os.getenv('TRAFFIC_RATE', '120')),  # 2 requests per second
         duration_minutes=int(os.getenv('TRAFFIC_DURATION', '10')),   # 10 minutes
         concurrent_workers=int(os.getenv('TRAFFIC_WORKERS', '5')),   # 5 concurrent workers

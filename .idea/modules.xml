@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/financial-mlops-pytorch.iml" filepath="$PROJECT_DIR$/.idea/financial-mlops-pytorch.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/seldon-system.iml" filepath="$PROJECT_DIR$/.idea/seldon-system.iml" />
     </modules>
   </component>
 </project>

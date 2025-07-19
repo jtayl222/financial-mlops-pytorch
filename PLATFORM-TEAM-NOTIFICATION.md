@@ -7,7 +7,7 @@
 
 ## Summary
 
-We are migrating from the **Centralized Scheduler Pattern** to the **Scoped Operator Pattern** for our Seldon Core v2 deployment in the `financial-inference` namespace. This follows v2.9.1 best practices and resolves capability synchronization issues we encountered.
+We are migrating from the **Centralized Scheduler Pattern** to the **Scoped Operator Pattern** for our Seldon Core v2 deployment in the `seldon-system` namespace. This follows v2.9.1 best practices and resolves capability synchronization issues we encountered.
 
 ## Changes Made
 
@@ -19,7 +19,7 @@ We are migrating from the **Centralized Scheduler Pattern** to the **Scoped Oper
 
 ### 🔄 In Progress
 - **Architecture Migration**: Moving from centralized to scoped operator pattern
-- **Local Scheduler**: Changing `seldon-scheduler` replicas from 0 to 1 in financial-inference namespace
+- **Local Scheduler**: Changing `seldon-scheduler` replicas from 0 to 1 in seldon-system namespace
 - **Service Cleanup**: Removing ExternalName service for centralized scheduler
 
 ## Impact Assessment
@@ -39,7 +39,7 @@ We are migrating from the **Centralized Scheduler Pattern** to the **Scoped Oper
 
 ### Before (Centralized Pattern)
 ```yaml
-# financial-inference namespace
+# seldon-system namespace
 seldon-scheduler:
   replicas: 0  # No local scheduler
   
@@ -51,7 +51,7 @@ service:
 
 ### After (Scoped Operator Pattern)
 ```yaml
-# financial-inference namespace
+# seldon-system namespace
 seldon-scheduler:
   replicas: 1  # Local scheduler
   

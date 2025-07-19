@@ -9,7 +9,7 @@ This platform showcases comprehensive MLOps infrastructure engineering with mult
 This platform demonstrates enterprise-grade MLOps infrastructure with production-ready capabilities:
 
 ### **Core Infrastructure Components**
-- **Multi-Namespace Kubernetes**: Separation of training (`financial-mlops-pytorch`) and serving (`financial-mlops-pytorch`) environments
+- **Multi-Namespace Kubernetes**: Separation of training (`seldon-system`) and serving (`seldon-system`) environments
 - **GitOps Automation**: ArgoCD-based deployment with Kustomize configuration management
 - **Comprehensive Monitoring**: Prometheus/Grafana stack with business and technical metrics
 - **Security Controls**: RBAC, network policies, and secure secret management
@@ -67,8 +67,8 @@ Ensure your infrastructure provides the required secrets and namespaces as docum
 
 ```bash
 # Apply infrastructure-delivered secret packages
-kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
-kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
+kubectl apply -k k8s/manifests/seldon-system/production
+kubectl apply -k k8s/manifests/seldon-system/production
 ```
 
 ### 3. Deploy Application
@@ -78,32 +78,32 @@ kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
 kubectl apply -k k8s/base
 
 # Verify deployment
-kubectl get pods -n financial-mlops-pytorch
-kubectl get models -n financial-mlops-pytorch
+kubectl get pods -n seldon-system
+kubectl get models -n seldon-system
 ```
 
 ### 4. Run Training Pipeline
 
 ```bash
 # Submit data pipeline
-argo submit --from workflowtemplate/financial-data-pipeline-template -n financial-mlops-pytorch
+argo submit --from workflowtemplate/financial-data-pipeline-template -n seldon-system
 
 # Train baseline model
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=baseline \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 # Train enhanced model for A/B testing
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=enhanced \
-  -n financial-mlops-pytorch
+  -n seldon-system
 ```
 
 ### 5. Verify Model Deployment
 
 ```bash
 # Check model status
-kubectl get models,experiments -n financial-mlops-pytorch
+kubectl get models,experiments -n seldon-system
 
 # Test model endpoint
 curl -H "Host: financial-predictor.local" http://<CLUSTER_IP>/predict

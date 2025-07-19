@@ -142,7 +142,7 @@ def create_enhanced_architecture_diagram():
                           facecolor=colors['ml'], alpha=0.2,
                           edgecolor=colors['ml'])
     ax.add_patch(ml_ns)
-    ax.text(15.5, 10, 'financial-inference namespace', ha='center', va='center',
+    ax.text(15.5, 10, 'seldon-system namespace', ha='center', va='center',
             fontweight='bold', fontsize=10, color=colors['ml'])
     
     # A/B Experiment
@@ -335,7 +335,7 @@ def create_enhanced_architecture_diagram():
     
 • External IP: 192.168.1.249 (MetalLB)
 • Ingress: ml-api.local
-• A/B Endpoint: /financial-inference/v2/models/
+• A/B Endpoint: /seldon-system/v2/models/
 • Success Rate: 100% (2500+ requests tested)
 • Response Time: ~13ms average
 • Traffic Split: 70.6% / 29.4% (actual)"""

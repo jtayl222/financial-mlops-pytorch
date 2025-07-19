@@ -27,7 +27,7 @@ def setup_mlflow_experiment(experiment_name_suffix=""):
         mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
     
     # Set experiment name with optional suffix
-    base_name = "financial-mlops-pytorch"
+    base_name = "seldon-system"
     if experiment_name_suffix:
         experiment_name = f"{base_name}-{experiment_name_suffix}"
     else:

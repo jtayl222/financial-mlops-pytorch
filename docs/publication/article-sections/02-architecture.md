@@ -27,7 +27,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:
@@ -59,7 +59,7 @@ spec:
     httpPort: 9000
     grpcPort: 9001
   protocol: v2
-  modelUri: "gs://financial-inference-models/baseline/v1.2.0"
+  modelUri: "gs://seldon-system-models/baseline/v1.2.0"
   requirements:
     - "torch==2.0.0"
     - "transformers==4.21.0"

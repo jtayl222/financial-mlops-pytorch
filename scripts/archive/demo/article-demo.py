@@ -60,7 +60,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:

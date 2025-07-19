@@ -77,8 +77,8 @@ data:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: financial-inference-ingress
-  namespace: financial-inference  # App team's namespace
+  name: seldon-system-ingress
+  namespace: seldon-system  # App team's namespace
   annotations:
     # App-specific configurations only
     nginx.ingress.kubernetes.io/rewrite-target: /$2
@@ -87,7 +87,7 @@ spec:
   - host: ml-api.company.com  # Platform team provides this domain
     http:
       paths:
-      - path: /financial-inference(/|$)(.*)
+      - path: /seldon-system(/|$)(.*)
         pathType: Prefix
         backend:
           service:
@@ -148,13 +148,13 @@ kubectl apply -f platform/ingress-controller/
 
 ### Application Team Self-Service
 ```yaml
-# k8s/ingress/financial-inference-ingress.yaml
+# k8s/ingress/seldon-system-ingress.yaml
 # App team copies template, modifies for their needs
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: financial-inference-routes
-  namespace: financial-inference
+  name: seldon-system-routes
+  namespace: seldon-system
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
@@ -166,7 +166,7 @@ spec:
   - host: ml-api.company.com
     http:
       paths:
-      - path: /financial-inference(/|$)(.*)
+      - path: /seldon-system(/|$)(.*)
         pathType: Prefix
         backend:
           service:
@@ -178,7 +178,7 @@ spec:
 ## Network Policy Boundary Clarification
 
 ### Current Network Policy Issue
-The financial-mlops-pytorch team managing network policies is indeed **crossing the platform boundary** because:
+The seldon-system team managing network policies is indeed **crossing the platform boundary** because:
 
 - Network policies affect **cluster-wide connectivity**
 - **Security implications** beyond single namespace
@@ -193,7 +193,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-to-apps
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector: {}
   ingress:
@@ -210,7 +210,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: seldon-internal-communication
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector:
     matchLabels:

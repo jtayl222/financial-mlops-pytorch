@@ -2,14 +2,14 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: explainable-financial-predictor
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "explainable-predictor"
     seldon.io/description: "Financial predictor with SHAP and LIME explainability"
     seldon.io/explainability: "true"
     seldon.io/compliance: "regulatory-ready"
 spec:
-  storageUri: "gs://financial-inference-models/explainable/v1.0.0"
+  storageUri: "gs://seldon-system-models/explainable/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "shap>=0.40.0"
@@ -60,12 +60,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: shap-explanation-service
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "explainer"
     seldon.io/description: "Dedicated SHAP explanation service"
 spec:
-  storageUri: "gs://financial-inference-models/shap-explainer/v1.0.0"
+  storageUri: "gs://seldon-system-models/shap-explainer/v1.0.0"
   requirements:
     - "shap>=0.40.0"
     - "torch>=1.9.0"
@@ -97,12 +97,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: lime-explanation-service
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "explainer"
     seldon.io/description: "Dedicated LIME explanation service"
 spec:
-  storageUri: "gs://financial-inference-models/lime-explainer/v1.0.0"
+  storageUri: "gs://seldon-system-models/lime-explainer/v1.0.0"
   requirements:
     - "lime>=0.2.0"
     - "torch>=1.9.0"
@@ -137,7 +137,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: explainable-model-experiment
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/experiment-type: "explainability-comparison"
     seldon.io/description: "A/B test comparing explainable vs standard models"
@@ -182,7 +182,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: explainability-analysis
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   args:
     - name: quality-threshold
@@ -234,7 +234,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: explainability-config
-  namespace: financial-inference
+  namespace: seldon-system
 data:
   explainability.yaml: |
     explainer_config:
@@ -371,7 +371,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: explainable-model-policy
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector:
     matchLabels:
@@ -383,7 +383,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: financial-inference
+              name: seldon-system
         - podSelector:
             matchLabels:
               app: seldon-mesh
@@ -415,7 +415,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: explainable-predictor-service
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 spec:
@@ -436,7 +436,7 @@ apiVersion: v1
 kind: ServiceMonitor
 metadata:
   name: explainable-model-monitor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   selector:
     matchLabels:
@@ -451,7 +451,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: explainable-predictor-pdb
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   minAvailable: 1
   selector:
@@ -462,7 +462,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: explainable-predictor-hpa
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

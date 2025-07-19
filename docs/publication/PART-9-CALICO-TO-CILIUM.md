@@ -166,7 +166,7 @@ spec:
   - from:
     - namespaceSelector:
         matchLabels:
-          name: financial-inference
+          name: seldon-system
 
 # Cilium CiliumNetworkPolicy (enhanced)
 apiVersion: cilium.io/v2
@@ -180,7 +180,7 @@ spec:
   ingress:
   - fromEndpoints:
     - matchLabels:
-        k8s:io.kubernetes.pod.namespace: financial-inference
+        k8s:io.kubernetes.pod.namespace: seldon-system
     toPorts:
     - ports:
       - port: "5000"
@@ -200,7 +200,7 @@ kubectl get all --all-namespaces -o yaml > pre-cilium-migration.yaml
 
 # Persistent volume backup using Velero
 velero backup create calico-to-cilium-migration \
-  --include-namespaces=mlflow-system,jupyter,seldon-system,financial-inference,argo \
+  --include-namespaces=mlflow-system,jupyter,seldon-system,seldon-system,argo \
   --include-cluster-resources=true
 
 # Network configuration backup
@@ -284,7 +284,7 @@ ansible-playbook -i inventory/production/hosts \
 # migrate-pods-to-cilium.sh
 set -e
 
-NAMESPACES=("kube-system" "mlflow-system" "jupyter" "seldon-system" "financial-inference" "argo")
+NAMESPACES=("kube-system" "mlflow-system" "jupyter" "seldon-system" "seldon-system" "argo")
 
 for namespace in "${NAMESPACES[@]}"; do
     echo "=== Migrating namespace: $namespace ==="
@@ -330,7 +330,7 @@ spec:
   ingress:
   - fromEndpoints:
     - matchLabels:
-        k8s:io.kubernetes.pod.namespace: financial-inference
+        k8s:io.kubernetes.pod.namespace: seldon-system
     toPorts:
     - ports:
       - port: "5000"
@@ -409,14 +409,14 @@ kubectl run iperf3-client --image=networkstatic/iperf3 -- \
 **Seldon Core v2 Performance:**
 ```bash
 # Model serving latency testing
-kubectl logs mlserver-0 -c agent -n financial-inference
+kubectl logs mlserver-0 -c agent -n seldon-system
 # INFO: Successfully registered with scheduler in 1.2s ✅
 # INFO: Model loaded and ready for inference ✅
 
 # A/B testing endpoint validation
 curl -H "Host: ml-api.local" \
      -H "seldon-model: financial-ab-test-experiment.experiment" \
-     http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer
+     http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer
 # Response: HTTP 200, x-seldon-route: :baseline-predictor_3: ✅
 ```
 
@@ -438,18 +438,18 @@ kubectl get workflow financial-training-cilium-test
 **Network Flow Monitoring:**
 ```bash
 # Install Hubble CLI for network observability
-hubble observe --follow --namespace financial-inference
+hubble observe --follow --namespace seldon-system
 
 # Sample output showing network flows
 # TIMESTAMP             SOURCE                    DESTINATION              VERDICT
-# 2025-07-13T10:30:45Z  financial-inference/mlserver-0:9500 -> mlflow-system/mlflow-tracking:5000  ALLOWED (NetworkPolicy)
-# 2025-07-13T10:30:46Z  financial-inference/mlserver-0:9500 -> kube-system/kube-dns:53            ALLOWED (DNS)
+# 2025-07-13T10:30:45Z  seldon-system/mlserver-0:9500 -> mlflow-system/mlflow-tracking:5000  ALLOWED (NetworkPolicy)
+# 2025-07-13T10:30:46Z  seldon-system/mlserver-0:9500 -> kube-system/kube-dns:53            ALLOWED (DNS)
 ```
 
 **Network Policy Debugging:**
 ```bash
 # Identify dropped connections
-hubble observe --verdict DROPPED --namespace financial-inference
+hubble observe --verdict DROPPED --namespace seldon-system
 # Shows exactly which network policies are blocking traffic
 
 # L7 HTTP monitoring
@@ -629,7 +629,7 @@ This experience demonstrates that infrastructure migration, while complex, can d
 All migration procedures, configurations, and lessons learned are available in:
 
 - **[The ML Platform](https://github.com/jtayl222/ml-platform)**: Complete Cilium migration automation and configurations
-- **[Financial MLOps PyTorch](https://github.com/jtayl222/financial-mlops-pytorch)**: ML workloads optimized for Cilium networking
+- **[Financial MLOps PyTorch](https://github.com/jtayl222/seldon-system)**: ML workloads optimized for Cilium networking
 
 **Current Status:** The Cilium migration is production-tested and stable. All automation and configurations are available for community use. I am currently the sole contributor to both repositories, having developed this migration strategy with assistance from AI tools (Claude 4, Gemini, and ChatGPT).
 

@@ -69,10 +69,10 @@ spec:
 ```python
 # Train multiple model variants
 argo submit --from workflowtemplate/financial-training-pipeline-template \
-  -p model-variant=baseline -n financial-mlops-pytorch
+  -p model-variant=baseline -n seldon-system
 
 argo submit --from workflowtemplate/financial-training-pipeline-template \
-  -p model-variant=enhanced -n financial-mlops-pytorch
+  -p model-variant=enhanced -n seldon-system
 ```
 
 #### 2. Automated Model Deployment

@@ -8,7 +8,7 @@
 Our previous implementation suffered from **split-brain scheduler conflict**:
 
 ```
-financial-inference namespace:
+seldon-system namespace:
 ├── seldon-scheduler-0 (per-namespace)
 └── models (baseline-predictor, enhanced-predictor)
 
@@ -34,8 +34,8 @@ Based on expert analysis, **99% of production installs use centralized scheduler
 ├── seldon-scheduler ← SINGLE source of truth
 └── shared infrastructure
 
-# financial-inference namespace (models only)
-├── financial-inference-runtime (with scheduler scaled to 0)
+# seldon-system namespace (models only)
+├── seldon-system-runtime (with scheduler scaled to 0)
 ├── mlserver (points to central scheduler)
 ├── baseline-predictor (Model CRD)
 ├── enhanced-predictor (Model CRD) 
@@ -45,7 +45,7 @@ Based on expert analysis, **99% of production installs use centralized scheduler
 ### ❌ Anti-Pattern: Distributed Schedulers (What We Had)
 
 ```yaml
-# seldon-system + financial-inference both running schedulers
+# seldon-system + seldon-system both running schedulers
 # = Split-brain conflict = Route thrashing = 404 errors
 ```
 
@@ -53,7 +53,7 @@ Based on expert analysis, **99% of production installs use centralized scheduler
 
 ### 1. Scale Down Per-Namespace Scheduler
 ```bash
-kubectl -n financial-inference scale sts/seldon-scheduler --replicas=0
+kubectl -n seldon-system scale sts/seldon-scheduler --replicas=0
 ```
 
 ### 2. Configure Runtime to Use Central Scheduler
@@ -61,8 +61,8 @@ kubectl -n financial-inference scale sts/seldon-scheduler --replicas=0
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: seldon-system-runtime
+  namespace: seldon-system
 spec:
   overrides:
   - name: seldon-scheduler
@@ -78,7 +78,7 @@ The central scheduler automatically discovers Model and Experiment CRDs across n
 
 | Pattern | Use Case | Examples |
 |---------|----------|----------|
-| **Centralized** | Single team, shared platform, <50 models | Our financial-inference use case |
+| **Centralized** | Single team, shared platform, <50 models | Our seldon-system use case |
 | **Distributed** | Multi-tenant, strict isolation, regulatory compliance | Enterprise with 100+ teams |
 
 ## Benefits of Centralized Approach
@@ -107,20 +107,20 @@ This decision aligns with:
 ### ✅ Phase 1 Complete: Split-Brain Resolution
 ```bash
 # 1. Scaled down per-namespace scheduler
-kubectl -n financial-inference scale sts/seldon-scheduler --replicas=0
+kubectl -n seldon-system scale sts/seldon-scheduler --replicas=0
 
 # 2. Created ExternalName service alias
 # k8s/base/seldon-scheduler-alias.yaml - Routes agents to central scheduler
 
 # 3. Agents now connect successfully
-kubectl -n financial-inference logs sts/mlserver -c agent | grep "Subscribed to scheduler"
+kubectl -n seldon-system logs sts/mlserver -c agent | grep "Subscribed to scheduler"
 # ✅ Result: "Subscribed to scheduler"
 ```
 
 ### ✅ Phase 2 Complete: Agent Connection Fixed
 ```bash
 # Models loading successfully in agents
-kubectl -n financial-inference logs sts/mlserver -c agent --tail=20
+kubectl -n seldon-system logs sts/mlserver -c agent --tail=20
 # ✅ "Load model enhanced-predictor:1 success"  
 # ✅ "Load model baseline-predictor:3 success"
 ```
@@ -128,7 +128,7 @@ kubectl -n financial-inference logs sts/mlserver -c agent --tail=20
 ### ⏳ Phase 3 Pending: Route Configuration
 ```bash
 # Models ready but routes not configured
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 # Shows: baseline-predictor (True), enhanced-predictor (True)
 
 # A/B testing endpoint still 404

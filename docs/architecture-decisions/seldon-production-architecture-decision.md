@@ -45,7 +45,7 @@ helm install seldon-core-v2-setup seldon-charts/seldon-core-v2-setup \
 
 # Install runtime per namespace
 helm install seldon-core-v2-runtime seldon-charts/seldon-core-v2-runtime \
-  --namespace financial-inference
+  --namespace seldon-system
 ```
 
 ### Pattern 3: Scoped Operator Pattern (NEW in 2.9.1)
@@ -67,12 +67,12 @@ helm install seldon-core-v2-runtime seldon-charts/seldon-core-v2-runtime \
 # Install operator watching specific namespaces (v2.9.1+)
 helm install seldon-core-v2-setup seldon-charts/seldon-core-v2-setup \
   --set controller.clusterwide=true \
-  --set controller.watchNamespaces="{financial-inference,financial-staging}" \
+  --set controller.watchNamespaces="{seldon-system,financial-staging}" \
   --namespace seldon-system
 
 # Install runtime in watched namespaces
 helm install seldon-core-v2-runtime seldon-charts/seldon-core-v2-runtime \
-  --namespace financial-inference
+  --namespace seldon-system
 ```
 
 ## Version Consideration: Move to 2.9.1?

@@ -4,9 +4,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: financial-historical-data-pvc
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/component: data-storage
 spec:
@@ -22,9 +22,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: financial-features-pvc
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/component: feature-storage
 spec:

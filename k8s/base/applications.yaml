@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default # Your Argo CD project
   source:
-    repoURL: https://github.com/your-username/financial-mlops-pytorch.git # Your Git repo
+    repoURL: https://github.com/your-username/seldon-system.git # Your Git repo
     targetRevision: HEAD
     path: kubernetes/mlflow # Path to your MLflow manifests
   destination:
@@ -25,12 +25,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-username/financial-mlops-pytorch.git
+    repoURL: https://github.com/your-username/seldon-system.git
     targetRevision: HEAD
     path: kubernetes/argo-workflows # Path to your Argo Workflows
   destination:
     server: https://kubernetes.default.svc
-    namespace: financial-mlops-pytorch # Namespace where Argo Workflows run
+    namespace: seldon-system # Namespace where Argo Workflows run
   syncPolicy:
     automated:
       prune: true
@@ -44,7 +44,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-username/financial-mlops-pytorch.git
+    repoURL: https://github.com/your-username/seldon-system.git
     targetRevision: HEAD
     path: kubernetes/seldon-deployments # Path to your Seldon Deployments
   destination:

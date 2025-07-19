@@ -39,7 +39,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mlserver
-  namespace: financial-inference  # Application-specific namespace
+  namespace: seldon-system  # Application-specific namespace
 spec:
   # ... StatefulSet configuration
   template:
@@ -61,8 +61,8 @@ spec:
 
 ### Network Configuration
 - **Service**: ClusterIP within namespace
-- **Network Policy**: Allow ingress from seldon-system and financial-mlops-pytorch
-- **DNS**: `mlserver.financial-inference.svc.cluster.local`
+- **Network Policy**: Allow ingress from seldon-system and seldon-system
+- **DNS**: `mlserver.seldon-system.svc.cluster.local`
 
 ## Alternatives Considered
 

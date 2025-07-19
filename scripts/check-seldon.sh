@@ -1,10 +1,10 @@
 #!/bin/bash
-# filepath: /home/user/REPOS/financial-mlops-pytorch/scripts/check-seldon.sh
+# filepath: /home/user/REPOS/seldon-system/scripts/check-seldon.sh
 
 set -e
 
 echo "=== ARGO WORKFLOWS ==="
-argo -n financial-mlops-pytorch list | head -10
+argo -n seldon-system list | head -10
 echo
 
 echo "=== SELDON SYSTEM PODS ==="

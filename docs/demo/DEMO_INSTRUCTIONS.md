@@ -32,7 +32,7 @@ python3 scripts/demo/test-model-inference.py --endpoint http://localhost:8082
 python3 scripts/demo/advanced-ab-demo.py --scenarios 500 --workers 3
 
 # External access test
-curl http://ml-api.local/financial-inference/v2/models
+curl http://ml-api.local/seldon-system/v2/models
 ```
 
 For the most up-to-date demo procedures, always refer to `CLAUDE.md` and `docs/operations/quick-reference.md`.

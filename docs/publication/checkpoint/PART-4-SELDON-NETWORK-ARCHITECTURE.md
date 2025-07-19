@@ -36,7 +36,7 @@ This is Part 4 of a 9-part series documenting the construction and operation of 
 - Familiarity with kubectl and container orchestration
 - Basic understanding of ML model serving concepts
 
-**Note:** While this article uses [financial prediction models](https://github.com/jtayl222/financial-mlops-pytorch) as examples, the content focuses entirely on infrastructure and networking. No financial domain knowledge is required - the techniques apply to any ML use case.
+**Note:** While this article uses [financial prediction models](https://github.com/jtayl222/seldon-system) as examples, the content focuses entirely on infrastructure and networking. No financial domain knowledge is required - the techniques apply to any ML use case.
 
 **Not For:** Data scientists looking to improve model accuracy, business analysts seeking ROI insights, or product managers planning ML features. This is a deep technical dive into production infrastructure.
 
@@ -127,7 +127,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: seldon-mesh
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   selector:
     app: seldon-envoy  # Finds all available Envoy pods
@@ -297,7 +297,7 @@ The monitoring flow runs parallel to the prediction flow:
 All code and configurations discussed in this article are available in two open source repositories:
 
 - **[The ML Platform](https://github.com/jtayl222/ml-platform)**: Complete Kubernetes-based MLOps platform
-- **[Financial MLOps PyTorch](https://github.com/jtayl222/financial-mlops-pytorch)**: End-to-end ML pipeline with A/B testing
+- **[Financial MLOps PyTorch](https://github.com/jtayl222/seldon-system)**: End-to-end ML pipeline with A/B testing
 
 **Current Status:** Both repositories are fully functional production implementations. I am currently the sole contributor, having developed this platform with assistance from AI tools (Claude 4, Gemini, and ChatGPT) for code generation and documentation.
 

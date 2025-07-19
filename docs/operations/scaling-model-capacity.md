@@ -14,10 +14,10 @@ Low success rates (26.8%) during high-volume A/B testing due to:
 
 ```bash
 # Scale MLServer replicas immediately
-kubectl scale statefulset mlserver -n financial-inference --replicas=3
+kubectl scale statefulset mlserver -n seldon-system --replicas=3
 
 # Scale Envoy proxy for better load distribution
-kubectl scale deployment seldon-envoy -n financial-inference --replicas=2
+kubectl scale deployment seldon-envoy -n seldon-system --replicas=2
 ```
 
 **Impact**: 3x capacity increase within ~30 seconds
@@ -69,13 +69,13 @@ spec:
 
 ```bash
 # Watch pod scaling
-kubectl get pods -n financial-inference -w
+kubectl get pods -n seldon-system -w
 
 # Check resource usage
-kubectl top pods -n financial-inference
+kubectl top pods -n seldon-system
 
 # Monitor HPA status
-kubectl get hpa mlserver-hpa -n financial-inference -w
+kubectl get hpa mlserver-hpa -n seldon-system -w
 
 # Test new capacity
 python3 scripts/demo/advanced-ab-demo.py \
@@ -109,7 +109,7 @@ If issues occur after scaling:
 
 ```bash
 # Revert to single replica
-kubectl scale statefulset mlserver -n financial-inference --replicas=1
+kubectl scale statefulset mlserver -n seldon-system --replicas=1
 
 # Or revert the entire configuration
 kubectl delete -f k8s/overlays/production/increase-capacity-patch.yaml

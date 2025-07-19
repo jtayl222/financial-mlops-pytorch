@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: advanced-training-pipeline-template
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
 spec:
   entrypoint: train-advanced-model
   serviceAccountName: argo-workflow-sa

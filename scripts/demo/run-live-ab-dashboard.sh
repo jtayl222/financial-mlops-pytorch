@@ -28,7 +28,7 @@ print(running_count)
     if [ "$RUNNING_COUNT" = "0" ]; then
         echo "⚠️  No running experiments found!"
         echo "   To start an experiment for live monitoring:"
-        echo "   argo submit --from workflowtemplate/financial-training-pipeline-template -p model-variant=enhanced -n financial-mlops-pytorch"
+        echo "   argo submit --from workflowtemplate/financial-training-pipeline-template -p model-variant=enhanced -n seldon-system"
         echo ""
         echo "   Or use historical analysis instead:"
         echo "   ./scripts/run-historical-ab-dashboard.sh"

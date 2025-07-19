@@ -39,7 +39,7 @@ kubectl -n seldon-system logs deploy/seldon-v2-controller-manager | grep "Succes
 ### 2. Model Registration Activity
 ```bash
 kubectl -n seldon-system logs deploy/seldon-scheduler | grep "Register model"
-# ✅ SUCCESS: Models from financial-inference namespace being discovered
+# ✅ SUCCESS: Models from seldon-system namespace being discovered
 ```
 
 ### 3. A/B Testing Functionality

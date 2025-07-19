@@ -471,7 +471,7 @@ def run_training_pipeline():
     np.random.seed(RANDOM_SEED)
 
     # Set experiment name for better organization with variant tracking
-    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"financial-mlops-pytorch-{MODEL_VARIANT}")
+    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"seldon-system-{MODEL_VARIANT}")
     mlflow.set_experiment(experiment_name)
     
     # Configure device after logging is set up

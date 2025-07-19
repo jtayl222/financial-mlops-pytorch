@@ -74,11 +74,11 @@ done
 
 # Step 7: Verify model deployment
 echo "🔍 Verifying model deployment..."
-kubectl get models -n financial-mlops-pytorch
+kubectl get models -n seldon-system
 
 # Step 8: Check model readiness
-BASELINE_READY=$(kubectl get model baseline-predictor -n financial-mlops-pytorch -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "Unknown")
-ENHANCED_READY=$(kubectl get model enhanced-predictor -n financial-mlops-pytorch -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "Unknown")
+BASELINE_READY=$(kubectl get model baseline-predictor -n seldon-system -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "Unknown")
+ENHANCED_READY=$(kubectl get model enhanced-predictor -n seldon-system -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "Unknown")
 
 echo ""
 echo "📊 Model Status Summary:"
@@ -89,12 +89,12 @@ if [ "$BASELINE_READY" = "True" ] && [ "$ENHANCED_READY" = "True" ]; then
   echo "🎉 All models deployed successfully!"
   echo ""
   echo "🔗 Next steps:"
-  echo "   - Verify A/B experiment: kubectl get experiments -n financial-mlops-pytorch"
+  echo "   - Verify A/B experiment: kubectl get experiments -n seldon-system"
   echo "   - Test model endpoints via Seldon mesh"
   echo "   - Monitor model performance in MLflow"
 else
   echo "⚠️  Some models may still be loading. Check:"
-  echo "   kubectl describe models -n financial-mlops-pytorch"
+  echo "   kubectl describe models -n seldon-system"
 fi
 
 echo ""

@@ -117,7 +117,7 @@ data:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: financial-inference
+  name: seldon-system
   labels:
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/audit: restricted
@@ -177,7 +177,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: financial-inference-zero-trust
+  name: seldon-system-zero-trust
 spec:
   podSelector:
     matchLabels:
@@ -212,7 +212,7 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
-  name: financial-inference-mtls
+  name: seldon-system-mtls
 spec:
   mtls:
     mode: STRICT
@@ -220,7 +220,7 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: financial-inference-authz
+  name: seldon-system-authz
 spec:
   selector:
     matchLabels:
@@ -228,7 +228,7 @@ spec:
   rules:
   - from:
     - source:
-        principals: ["cluster.local/ns/financial-inference/sa/seldon-mesh"]
+        principals: ["cluster.local/ns/seldon-system/sa/seldon-mesh"]
 ```
 
 ### **Phase 3: Compliance & Monitoring (Weeks 9-12)**

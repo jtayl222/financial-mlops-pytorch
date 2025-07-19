@@ -10,16 +10,16 @@ During k3s cluster rebuild (July 2025), the platform team upgraded:
 ### Problem
 Workflows that ran successfully for 2 weeks began failing with:
 ```
-failed quota: financial-mlops-pytorch-quota: must specify limits.memory for: init,wait; requests.cpu for: init,wait; requests.memory for: init,wait
+failed quota: seldon-system-quota: must specify limits.memory for: init,wait; requests.cpu for: init,wait; requests.memory for: init,wait
 ```
 
 ### Root Cause
 **Argo Workflows v3.6.10 + Kubernetes v1.33** enforces stricter ResourceQuota validation requiring explicit resource specifications for Argo's system containers (`init`, `wait`).
 
 ### Current Workaround (Technical Debt)
-**Temporarily removed ResourceQuota** from `financial-mlops-pytorch` namespace:
+**Temporarily removed ResourceQuota** from `seldon-system` namespace:
 ```bash
-kubectl delete resourcequota financial-mlops-pytorch-quota -n financial-mlops-pytorch
+kubectl delete resourcequota seldon-system-quota -n seldon-system
 ```
 
 ### Impact

@@ -2,12 +2,12 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: drift-monitoring-service
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/model-type: "drift-monitor"
     seldon.io/description: "Advanced drift detection and monitoring service"
 spec:
-  storageUri: "gs://financial-inference-models/drift-monitor/v1.0.0"
+  storageUri: "gs://seldon-system-models/drift-monitor/v1.0.0"
   requirements:
     - "alibi-detect>=0.12.0"
     - "evidently>=0.4.0"
@@ -68,7 +68,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: drift-reference-data
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   accessModes:
     - ReadWriteOnce
@@ -81,7 +81,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: drift-monitoring-config
-  namespace: financial-inference
+  namespace: seldon-system
 data:
   drift_config.yaml: |
     drift_detection:
@@ -247,7 +247,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: drift-reference-updater
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   schedule: "0 2 * * 0"  # Weekly at 2 AM Sunday
   jobTemplate:
@@ -256,7 +256,7 @@ spec:
         spec:
           containers:
             - name: reference-updater
-              image: financial-inference/drift-updater:latest
+              image: seldon-system/drift-updater:latest
               command:
                 - python3
                 - -c
@@ -305,7 +305,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: drift-monitoring-service
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   selector:
     app: drift-monitoring-service
@@ -325,7 +325,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: drift-monitoring-metrics
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   selector:
     matchLabels:
@@ -339,7 +339,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: drift-monitoring-alerts
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   groups:
     - name: drift.alerts
@@ -398,7 +398,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: drift-monitoring-policy
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector:
     matchLabels:
@@ -410,7 +410,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: financial-inference
+              name: seldon-system
       ports:
         - protocol: TCP
           port: 9000
@@ -427,7 +427,7 @@ spec:
     - to:
         - namespaceSelector:
             matchLabels:
-              name: financial-inference
+              name: seldon-system
       ports:
         - protocol: TCP
           port: 80
@@ -445,7 +445,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: drift-dashboard
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   replicas: 1
   selector:
@@ -458,7 +458,7 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: financial-inference/drift-dashboard:latest
+          image: seldon-system/drift-dashboard:latest
           ports:
             - containerPort: 8050
           env:
@@ -491,7 +491,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: drift-dashboard-service
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   selector:
     app: drift-dashboard
@@ -505,7 +505,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: drift-monitoring-hpa
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -554,7 +554,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: drift-monitoring-pdb
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   minAvailable: 1
   selector:
@@ -565,7 +565,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: drift-monitoring-role
-  namespace: financial-inference
+  namespace: seldon-system
 rules:
   - apiGroups: [""]
     resources: ["pods", "services", "configmaps"]
@@ -584,11 +584,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: drift-monitoring-binding
-  namespace: financial-inference
+  namespace: seldon-system
 subjects:
   - kind: ServiceAccount
     name: drift-monitoring-service
-    namespace: financial-inference
+    namespace: seldon-system
 roleRef:
   kind: Role
   name: drift-monitoring-role
@@ -598,13 +598,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: drift-monitoring-service
-  namespace: financial-inference
+  namespace: seldon-system
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: drift-triggered-retraining
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   entrypoint: retrain-model
   templates:
@@ -623,7 +623,7 @@ spec:
   
     - name: validate-drift-alert
       container:
-        image: financial-inference/drift-validator:latest
+        image: seldon-system/drift-validator:latest
         command: [python3, -c]
         args:
           - |
@@ -639,7 +639,7 @@ spec:
     
     - name: prepare-training-data
       container:
-        image: financial-inference/data-processor:latest
+        image: seldon-system/data-processor:latest
         command: [python3, -c]
         args:
           - |
@@ -652,7 +652,7 @@ spec:
     
     - name: train-financial-model
       container:
-        image: financial-inference/trainer:latest
+        image: seldon-system/trainer:latest
         command: [python3, -c]
         args:
           - |
@@ -665,7 +665,7 @@ spec:
     
     - name: validate-new-model
       container:
-        image: financial-inference/validator:latest
+        image: seldon-system/validator:latest
         command: [python3, -c]
         args:
           - |
@@ -678,7 +678,7 @@ spec:
     
     - name: deploy-if-better
       container:
-        image: financial-inference/deployer:latest
+        image: seldon-system/deployer:latest
         command: [python3, -c]
         args:
           - |

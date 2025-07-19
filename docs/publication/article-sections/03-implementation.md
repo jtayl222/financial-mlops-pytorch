@@ -11,13 +11,13 @@ Our implementation follows a structured approach to ensure reliable results:
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=baseline \
   -p data-version=v2.3.0 \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 # Train enhanced model
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=enhanced \
   -p data-version=v2.3.0 \
-  -n financial-mlops-pytorch
+  -n seldon-system
 ```
 
 ### 2. Model Deployment via GitOps
@@ -27,7 +27,7 @@ argo submit --from workflowtemplate/financial-training-pipeline-template \
 ./scripts/gitops-model-update.sh enhanced v1.2.0
 
 # Argo CD automatically deploys changes
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 ```
 
 ### 3. Experiment Execution

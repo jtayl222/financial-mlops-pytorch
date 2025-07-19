@@ -86,7 +86,7 @@ After configuration is applied:
 **P0 - Critical** - Blocks all model serving capabilities
 
 ## Contact
-- **Requesting Team**: financial-mlops-pytorch
+- **Requesting Team**: seldon-system
 - **Technical Contact**: [Team Lead]
 - **Business Contact**: [Product Owner]
 

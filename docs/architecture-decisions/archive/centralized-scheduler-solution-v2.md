@@ -55,8 +55,8 @@ kubectl get seldonconfig default -n seldon-system
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: seldon-system-runtime
+  namespace: seldon-system
 spec:
   overrides:
   - name: hodometer
@@ -85,7 +85,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Server
 metadata:
   name: mlserver
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   # Use default mlserver ServerConfig from seldon-system
   serverConfig: mlserver
@@ -100,7 +100,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   server: mlserver
   # Fixed capability strings to match server
@@ -117,7 +117,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: seldon-scheduler
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   type: ExternalName
   externalName: seldon-scheduler.seldon-system.svc.cluster.local
@@ -135,7 +135,7 @@ spec:
 
 ## Configuration Alignment Matrix
 
-| Component | Control Plane (seldon-system) | Application (financial-inference) |
+| Component | Control Plane (seldon-system) | Application (seldon-system) |
 |-----------|-------------------------------|-----------------------------------|
 | **Scheduler** | Enabled via Helm (`replicas: 1`) | Disabled (`replicas: 0`) |
 | **SeldonConfig** | `default` (Helm-managed) | `default` (must match) |
@@ -170,7 +170,7 @@ spec:
 ### 1. Verify Scheduler Connectivity
 ```bash
 # Check agent logs for successful subscription
-kubectl logs mlserver-0 -n financial-inference -c agent | grep "Subscribed to scheduler"
+kubectl logs mlserver-0 -n seldon-system -c agent | grep "Subscribed to scheduler"
 # Expected: "Subscribed to scheduler"
 
 # Check scheduler receiving notifications
@@ -181,22 +181,22 @@ kubectl logs -n seldon-system seldon-scheduler-0 | grep "Server notification mls
 ### 2. Verify Configuration Alignment
 ```bash
 # Check SeldonRuntime configuration
-kubectl get seldonruntime financial-inference-runtime -n financial-inference -o yaml | grep seldonConfig
+kubectl get seldonruntime seldon-system-runtime -n seldon-system -o yaml | grep seldonConfig
 # Expected: seldonConfig: default
 
 # Check Server configuration
-kubectl get server mlserver -n financial-inference -o yaml | grep serverConfig
+kubectl get server mlserver -n seldon-system -o yaml | grep serverConfig
 # Expected: serverConfig: mlserver
 ```
 
 ### 3. Verify Model Scheduling
 ```bash
 # Check server loaded models
-kubectl get server mlserver -n financial-inference
+kubectl get server mlserver -n seldon-system
 # Expected: LOADED MODELS > 0
 
 # Check model status
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 # Expected: READY: True
 ```
 
@@ -226,8 +226,8 @@ Ensure cross-namespace communication is enabled:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: financial-inference-app-policy
-  namespace: financial-inference
+  name: seldon-system-app-policy
+  namespace: seldon-system
 spec:
   podSelector: {}
   policyTypes:

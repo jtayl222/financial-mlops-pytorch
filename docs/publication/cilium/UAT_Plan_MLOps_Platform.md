@@ -10,7 +10,7 @@
 
 This document outlines the User Acceptance Testing (UAT) strategy for the MLOps Platform repository. The primary goal of this UAT is to ensure that the customer can successfully deploy, configure, operate, and utilize the MLOps platform to support their machine learning workloads in an on-premise environment.
 
-The `financial-mlops-pytorch` project will be used as a **reference application** to validate the platform's functionality and adherence to industry best practices. It serves as a realistic workload to test the platform's core services (Kubernetes, Argo Workflows, MLflow, Seldon Core, MinIO, etc.).
+The `seldon-system` project will be used as a **reference application** to validate the platform's functionality and adherence to industry best practices. It serves as a realistic workload to test the platform's core services (Kubernetes, Argo Workflows, MLflow, Seldon Core, MinIO, etc.).
 
 ### 2. Platform Overview
 
@@ -19,7 +19,7 @@ This MLOps Platform provides a comprehensive, Kubernetes-native environment for 
 *   **Core Components:** K3s (Kubernetes), Cilium (CNI), MetalLB (Load Balancer), MLflow (Experiment Tracking & Model Registry), Seldon Core (Model Serving), Argo Workflows (ML Pipelines), Argo CD (GitOps), JupyterHub (Development Environment), MinIO (Object Storage), Prometheus/Grafana (Monitoring).
 *   **Automation:** Ansible playbooks for declarative infrastructure deployment and configuration.
 *   **Security:** Integrated Sealed Secrets for secure credential management and network policies for workload isolation.
-*   **Reference Application:** The `financial-mlops-pytorch` project will be used to demonstrate the platform's capability to host and execute real-world ML workflows.
+*   **Reference Application:** The `seldon-system` project will be used to demonstrate the platform's capability to host and execute real-world ML workflows.
 
 ### 3. Prerequisites for UAT
 
@@ -30,11 +30,11 @@ Before commencing UAT, ensure the following:
 *   **Base OS:** Supported Linux distribution on all target nodes.
 *   **Access:** SSH access to all target nodes from the Ansible control machine.
 *   **Tools:** `ansible`, `kubectl`, `argo`, `docker` (on control machine and target nodes as required).
-*   **Repository Access:** Cloned `ml-platform` repository and `financial-mlops-pytorch` repository.
+*   **Repository Access:** Cloned `ml-platform` repository and `seldon-system` repository.
 
 ### 4. UAT Scenarios / Test Cases (for `ml-platform` repository)
 
-The UAT will follow the typical lifecycle of deploying and operating the platform, using `financial-mlops-pytorch` to validate core functionality.
+The UAT will follow the typical lifecycle of deploying and operating the platform, using `seldon-system` to validate core functionality.
 
 **Scenario 1: Initial Platform Deployment**
 
@@ -61,19 +61,19 @@ The UAT will follow the typical lifecycle of deploying and operating the platfor
     *   Platform components reflect the new configurations without errors.
     *   Existing workloads (if any) continue to function or are gracefully restarted.
 
-**Scenario 3: Platform Operational Validation (using `financial-mlops-pytorch` as a workload)**
+**Scenario 3: Platform Operational Validation (using `seldon-system` as a workload)**
 
 *   **Objective:** Verify the platform's ability to support a realistic ML workload, demonstrating its core MLOps capabilities.
-*   **Steps (following `financial-mlops-pytorch`'s Quick Start):**
+*   **Steps (following `seldon-system`'s Quick Start):**
     1.  **Build & Push Application Images:** Build `financial-predictor` and `financial-predictor-jupyter` images and push them to the platform's configured Docker registry.
-    2.  **Deploy Application Resources:** Apply `financial-mlops-pytorch`'s Kubernetes manifests (`kubectl apply -k k8s/base`, `kubectl apply -k k8s/manifests/...`).
-    3.  **Run Data Pipeline:** Submit `financial-mlops-pytorch`'s data pipeline Argo Workflow.
-    4.  **Run Model Training:** Submit `financial-mlops-pytorch`'s model training Argo Workflows (e.g., `baseline`, `enhanced` variants).
+    2.  **Deploy Application Resources:** Apply `seldon-system`'s Kubernetes manifests (`kubectl apply -k k8s/base`, `kubectl apply -k k8s/manifests/...`).
+    3.  **Run Data Pipeline:** Submit `seldon-system`'s data pipeline Argo Workflow.
+    4.  **Run Model Training:** Submit `seldon-system`'s model training Argo Workflows (e.g., `baseline`, `enhanced` variants).
     5.  **Verify MLflow Tracking:** Confirm experiments, metrics, and artifacts are logged in the platform's MLflow UI.
-    6.  **Verify Model Deployment:** Check that `financial-mlops-pytorch` models are deployed in the platform's Seldon Core.
+    6.  **Verify Model Deployment:** Check that `seldon-system` models are deployed in the platform's Seldon Core.
     7.  **Test Model Inference:** Send inference requests to the deployed models and verify responses.
 *   **Expected Outcomes:**
-    *   All `financial-mlops-pytorch` pods are `Running` or `Completed`.
+    *   All `seldon-system` pods are `Running` or `Completed`.
     *   Argo Workflows for data and training complete successfully.
     *   MLflow UI shows all expected experiments and runs.
     *   Seldon Core successfully serves the models, and inference requests return correct predictions.
@@ -86,7 +86,7 @@ The UAT will follow the typical lifecycle of deploying and operating the platfor
     1.  Access the Grafana UI and review the pre-configured dashboards.
     2.  Access Prometheus to verify metrics collection from platform components.
     3.  Use `kubectl logs` to retrieve logs from various platform components (e.g., `mlflow-server`, `seldon-controller-manager`, `cilium-agent`).
-    4.  Use `kubectl logs` to retrieve logs from `financial-mlops-pytorch` application pods.
+    4.  Use `kubectl logs` to retrieve logs from `seldon-system` application pods.
     5.  (Optional) Use `scripts/parse-ansible-execution.py` to analyze Ansible deployment logs for deeper insights.
 *   **Expected Outcomes:**
     *   Grafana dashboards display relevant metrics and health indicators.

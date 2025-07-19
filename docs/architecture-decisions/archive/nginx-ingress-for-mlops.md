@@ -10,7 +10,7 @@ External Traffic → NGINX Ingress Controller → Kubernetes Services → Pods
 ```
 
 **Key Features:**
-- **Path-based routing**: `/financial-inference/` → financial-inference namespace
+- **Path-based routing**: `/seldon-system/` → seldon-system namespace
 - **Host-based routing**: `ml-api.company.com` → ML services
 - **TLS termination**: HTTPS handling at the edge
 - **Load balancing**: Distribute traffic across multiple pods
@@ -23,12 +23,12 @@ External Traffic → NGINX Ingress Controller → Kubernetes Services → Pods
 **Current Setup (Problematic):**
 ```
 External → MetalLB LoadBalancer (192.168.1.202) → seldon-system only
-        → Port-forward required for financial-inference namespace
+        → Port-forward required for seldon-system namespace
 ```
 
 **With NGINX Ingress (Industry Standard):**
 ```
-External → NGINX Ingress → /financial-inference/* → financial-inference namespace
+External → NGINX Ingress → /seldon-system/* → seldon-system namespace
                         → /trading-models/*     → trading namespace  
                         → /risk-analysis/*      → risk namespace
 ```
@@ -60,7 +60,7 @@ Based on 2025 MLOps research, the standard architecture pattern is:
 **Example MLOps Routing:**
 ```yaml
 # Route to different model serving frameworks
-/seldon/financial-inference/*  → Seldon Core models
+/seldon/seldon-system/*  → Seldon Core models
 /kserve/trading-models/*       → KServe models  
 /bentoml/risk-analysis/*       → BentoML models
 /mlflow/experimentation/*      → MLflow models
@@ -102,14 +102,14 @@ spec:
     http:
       paths:
       # Financial inference models
-      - path: /financial-inference(/|$)(.*)
+      - path: /seldon-system(/|$)(.*)
         pathType: Prefix
         backend:
           service:
             name: seldon-mesh
             port:
               number: 80
-        # Route to financial-inference namespace
+        # Route to seldon-system namespace
       
       # Future namespaces
       - path: /trading-models(/|$)(.*)
@@ -139,11 +139,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: financial-inference-seldon
+  name: seldon-system-seldon
   namespace: ingress-nginx
 spec:
   type: ExternalName
-  externalName: seldon-mesh.financial-inference.svc.cluster.local
+  externalName: seldon-mesh.seldon-system.svc.cluster.local
   ports:
   - port: 80
     targetPort: 80
@@ -175,7 +175,7 @@ ml-api.yourcompany.com → 192.168.1.210
 
 ### Phase 1: Basic NGINX Setup
 1. **Install NGINX Ingress** with MetalLB integration (new IP: 192.168.1.210)
-2. **Create basic ingress** for financial-inference namespace
+2. **Create basic ingress** for seldon-system namespace
 3. **Test external access** without port-forwarding
 4. **Update traffic generator** to use ingress endpoint
 
@@ -208,11 +208,11 @@ ml-api.yourcompany.com → 192.168.1.210
 ### 3. **Developer Experience**
 ```bash
 # Before (development only)
-kubectl port-forward -n financial-inference svc/seldon-mesh 8082:80
+kubectl port-forward -n seldon-system svc/seldon-mesh 8082:80
 curl http://localhost:8082/v2/models/financial-ab-test-experiment
 
 # After (production ready)
-curl http://ml-api.company.com/financial-inference/v2/models/financial-ab-test-experiment
+curl http://ml-api.company.com/seldon-system/v2/models/financial-ab-test-experiment
 ```
 
 ## Architecture Comparison
@@ -220,14 +220,14 @@ curl http://ml-api.company.com/financial-inference/v2/models/financial-ab-test-e
 ### Current Architecture (Anti-Pattern)
 ```
 Internet → MetalLB → seldon-system only
-                  ❌ financial-inference (port-forward required)
+                  ❌ seldon-system (port-forward required)
                   ❌ trading-models (would need separate LoadBalancer)
                   ❌ risk-analysis (would need separate LoadBalancer)
 ```
 
 ### Proposed Architecture (Best Practice)
 ```
-Internet → NGINX Ingress (192.168.1.210) → /financial-inference/* → financial-inference namespace
+Internet → NGINX Ingress (192.168.1.210) → /seldon-system/* → seldon-system namespace
                                         → /trading-models/*     → trading-models namespace
                                         → /risk-analysis/*      → risk-analysis namespace
                                         → /mlflow/*             → mlflow namespace
@@ -297,4 +297,4 @@ NGINX Ingress Controller solves our **fundamental architectural gap** and aligns
 - ✅ **Cost-effective solution** using existing MetalLB infrastructure
 - ✅ **Industry-standard approach** for Kubernetes MLOps platforms
 
-**Next Steps**: Implement Phase 1 with basic NGINX setup and test external access to financial-inference namespace without port-forwarding.
+**Next Steps**: Implement Phase 1 with basic NGINX setup and test external access to seldon-system namespace without port-forwarding.

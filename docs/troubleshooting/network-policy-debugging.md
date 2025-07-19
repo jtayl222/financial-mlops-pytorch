@@ -79,21 +79,21 @@ egress:
 ```bash
 kubectl run test-dns --image=busybox --rm -it --restart=Never \
   --overrides='{"spec":{"containers":[{"name":"test-dns","image":"busybox","command":["nslookup","kubernetes.default"],"resources":{"requests":{"cpu":"100m","memory":"128Mi"},"limits":{"cpu":"200m","memory":"256Mi"}}}]}}' \
-  -n financial-mlops-pytorch
+  -n seldon-system
 ```
 
 ### API Server Connectivity Test
 ```bash
 kubectl run test-api --image=curlimages/curl --rm --restart=Never \
   --overrides='{"spec":{"containers":[{"name":"test-api","image":"curlimages/curl","command":["curl","-k","-m","5","https://10.43.0.1:443/healthz"],"resources":{"requests":{"cpu":"100m","memory":"128Mi"},"limits":{"cpu":"200m","memory":"256Mi"}}}]}}' \
-  -n financial-mlops-pytorch
+  -n seldon-system
 ```
 
 ### Service Connectivity Test
 ```bash
 kubectl run test-service --image=curlimages/curl --rm --restart=Never \
   --overrides='{"spec":{"containers":[{"name":"test-service","image":"curlimages/curl","command":["curl","-m","5","http://mlflow.mlflow.svc.cluster.local:5000"],"resources":{"requests":{"cpu":"100m","memory":"128Mi"},"limits":{"cpu":"200m","memory":"256Mi"}}}]}}' \
-  -n financial-mlops-pytorch
+  -n seldon-system
 ```
 
 ## Environment Detection

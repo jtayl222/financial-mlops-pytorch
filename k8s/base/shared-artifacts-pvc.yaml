@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: shared-artifacts-pvc # Same name, different namespace
-  namespace: financial-mlops-pytorch # This app's namespace
+  namespace: seldon-system # This app's namespace
 spec:
   accessModes:
     - ReadWriteMany

@@ -30,7 +30,7 @@ Every platform engineer has experienced this moment: you inherit a working syste
 
 **Target Audience:** Platform Engineers, DevOps Engineers, and Site Reliability Engineers responsible for production Kubernetes infrastructure who need battle-tested migration strategies and proven reliability patterns.
 
-**Open Source Foundation:** Every solution and lesson learned is implemented in [The ML Platform](https://github.com/jtayl222/ml-platform) and the [financial MLOps demonstration](https://github.com/jtayl222/financial-mlops-pytorch). This article serves as both a case study and a practical guide for your own CNI migrations.
+**Open Source Foundation:** Every solution and lesson learned is implemented in [The ML Platform](https://github.com/jtayl222/ml-platform) and the [financial MLOps demonstration](https://github.com/jtayl222/seldon-system). This article serves as both a case study and a practical guide for your own CNI migrations.
 
 ---
 
@@ -161,22 +161,22 @@ After successfully deploying Seldon Core v2 on the new Calico cluster, ML model 
 
 ```bash
 # Symptoms: Models stuck in loading state
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 # NAME                 READY   REASON
 # baseline-predictor   False   LoadFailed
 
 # Agent logs revealed DNS timeouts
-kubectl logs -n financial-inference sts/mlserver -c agent
+kubectl logs -n seldon-system sts/mlserver -c agent
 # ERROR: Failed to resolve seldon-scheduler.seldon-system.svc.cluster.local: timeout
 ```
 
 **Root Cause Investigation:**
 ```bash
 # Test DNS resolution from ML pods
-kubectl exec -n financial-inference mlserver-0 -c agent -- nslookup seldon-scheduler.seldon-system.svc.cluster.local
+kubectl exec -n seldon-system mlserver-0 -c agent -- nslookup seldon-scheduler.seldon-system.svc.cluster.local
 
 # This revealed Calico network policies were blocking DNS traffic
-kubectl get networkpolicy -n financial-inference
+kubectl get networkpolicy -n seldon-system
 ```
 
 ### The Network Policy Design Challenge
@@ -198,7 +198,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: ml-namespace-baseline
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector: {}
   policyTypes: ["Ingress", "Egress"]
@@ -233,7 +233,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: financial-ml-policies
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector:
     matchLabels:
@@ -490,7 +490,7 @@ ansible-playbook -i inventory/production/hosts infrastructure/cluster/site.yml -
 # Validate A/B testing functionality
 curl -H "Host: ml-api.local" \
      -H "seldon-model: financial-ab-test-experiment.experiment" \
-     http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer
+     http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer
 ```
 
 **Hour 36-48: Traffic Cutover and Validation**
@@ -645,7 +645,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: financial-isolation
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector: {}
   policyTypes: ["Ingress", "Egress"]

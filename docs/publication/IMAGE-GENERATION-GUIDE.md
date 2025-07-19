@@ -374,14 +374,14 @@ def create_terminal_view():
     
     # Terminal content
     terminal_content = [
-        "user@mlops-cluster:~/financial-mlops-pytorch$ python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5",
+        "user@mlops-cluster:~/seldon-system$ python3 scripts/demo/advanced-ab-demo.py --scenarios 2500 --workers 5",
         "",
         "🚀 Starting Financial ML A/B Testing Demo",
         "   📊 Scenarios: 2,500 | Workers: 5 | Duration: 2h 15m",
         "   🎯 Models: baseline-predictor (70%) vs enhanced-predictor (30%)",
         "",
         "📡 Connecting to Seldon Core v2 endpoint...",
-        "   ✅ Connected to http://financial-inference-gateway:8080",
+        "   ✅ Connected to http://seldon-system-gateway:8080",
         "   ✅ Experiment: financial-ab-test-experiment",
         "",
         "🔄 Processing test scenarios...",
@@ -419,9 +419,9 @@ def create_terminal_view():
         "✅ Recommendation: STRONG RECOMMEND - Deploy enhanced model",
         "",
         "📈 Metrics exported to Prometheus at :8080/metrics",
-        "🔗 Dashboard available at http://grafana.financial-inference.local:3000",
+        "🔗 Dashboard available at http://grafana.seldon-system.local:3000",
         "",
-        "user@mlops-cluster:~/financial-mlops-pytorch$ "
+        "user@mlops-cluster:~/seldon-system$ "
     ]
     
     # Render terminal text
@@ -450,7 +450,7 @@ def create_terminal_view():
         y_pos -= 1.8
     
     # Add cursor
-    ax.text(5 + len("user@mlops-cluster:~/financial-mlops-pytorch$ ") * 0.6, 
+    ax.text(5 + len("user@mlops-cluster:~/seldon-system$ ") * 0.6, 
             y_pos + 1.8, "▌", fontfamily='monospace', fontsize=9, 
             color='#00ff00', verticalalignment='top')
     

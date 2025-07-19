@@ -1,5 +1,5 @@
 
-# Application-Level Network Policy for financial-mlops-pytorch namespace
+# Application-Level Network Policy for seldon-system namespace
 # 
 # SCOPE: This policy manages application-specific networking rules within our namespace.
 # COORDINATION: Cross-namespace and cluster-wide policies are managed by Platform Team.
@@ -9,10 +9,10 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: financial-mlops-app-policy
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   annotations:
     policy.scope: "application-level"
-    managed.by: "financial-mlops-pytorch-team"
+    managed.by: "seldon-system-team"
     coordination.required: "platform-team"
 spec:
   podSelector: {}
@@ -24,7 +24,7 @@ spec:
   - from:
     - namespaceSelector:
         matchLabels:
-          name: financial-mlops-pytorch
+          name: seldon-system
   # Allow traffic from seldon-system for model management
   - from:
     - namespaceSelector:
@@ -47,7 +47,7 @@ spec:
   - from:
     - namespaceSelector:
         matchLabels:
-          name: financial-mlops-pytorch
+          name: seldon-system
   # Allow traffic from NGINX Ingress for cross-namespace routing
   - from:
     - namespaceSelector:
@@ -67,7 +67,7 @@ spec:
   - to:
     - namespaceSelector:
         matchLabels:
-          name: financial-mlops-pytorch
+          name: seldon-system
   # Allow communication to seldon-system for runtime operations
   - to:
     - namespaceSelector:
@@ -77,7 +77,7 @@ spec:
   - to:
     - namespaceSelector:
         matchLabels:
-          name: financial-mlops-pytorch
+          name: seldon-system
   - to:
     - podSelector: {} # Selects all pods in the current namespace
     ports:

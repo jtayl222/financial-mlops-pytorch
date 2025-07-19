@@ -55,7 +55,7 @@ def create_terminal_screenshot():
         "",
         "🚀 Starting A/B Testing with 2500 scenarios",
         "   Concurrent workers: 5",
-        "   Target endpoint: http://ml-api.local/financial-inference",
+        "   Target endpoint: http://ml-api.local/seldon-system",
         "   Experiment: financial-ab-test-experiment",
         "",
         "   Progress: 500/2500 (347 successful)",
@@ -333,7 +333,7 @@ def create_enhanced_architecture_diagram():
         {'name': 'Grafana\n(Dashboards)', 'pos': (10, 6.5), 'size': (1.5, 1), 'color': colors['monitoring']},
         
         # Third row - Model Deployment
-        {'name': 'financial-inference\nNamespace', 'pos': (1, 4.5), 'size': (2.5, 1), 'color': colors['platform']},
+        {'name': 'seldon-system\nNamespace', 'pos': (1, 4.5), 'size': (2.5, 1), 'color': colors['platform']},
         {'name': 'Experiment\nController', 'pos': (4.5, 4.5), 'size': (1.8, 1), 'color': colors['seldon']},
         {'name': 'Traffic Router\n70/30 Split', 'pos': (7, 4.5), 'size': (1.8, 1), 'color': colors['seldon']},
         {'name': 'Metrics\nCollector', 'pos': (9.5, 4.5), 'size': (1.5, 1), 'color': colors['monitoring']},

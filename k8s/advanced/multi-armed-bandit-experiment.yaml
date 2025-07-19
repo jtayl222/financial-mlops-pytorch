@@ -2,7 +2,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-mab-experiment
-  namespace: financial-inference
+  namespace: seldon-system
   annotations:
     seldon.io/experiment-type: "multi-armed-bandit"
     seldon.io/description: "Multi-armed bandit experiment with dynamic traffic allocation"
@@ -53,9 +53,9 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: transformer-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
-  storageUri: "gs://financial-inference-models/transformer/v1.0.0"
+  storageUri: "gs://seldon-system-models/transformer/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "transformers>=4.15.0"
@@ -82,9 +82,9 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: ensemble-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
-  storageUri: "gs://financial-inference-models/ensemble/v1.0.0"
+  storageUri: "gs://seldon-system-models/ensemble/v1.0.0"
   requirements:
     - "torch>=1.9.0"
     - "scikit-learn>=1.0.0"
@@ -112,7 +112,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: financial-mab-analysis
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   args:
     - name: success-rate

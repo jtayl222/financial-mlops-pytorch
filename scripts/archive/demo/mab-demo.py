@@ -146,7 +146,7 @@ class FinancialMABDemo:
 
 def main():
     parser = argparse.ArgumentParser(description='Multi-Armed Bandit Financial Model Selection Demo')
-    parser.add_argument('--endpoint', default='http://ml-api.local/financial-inference',
+    parser.add_argument('--endpoint', default='http://ml-api.local/seldon-system',
                        help='Seldon mesh endpoint (via NGINX ingress)')
     parser.add_argument('--experiment', default='financial-mab-experiment',
                        help='MAB experiment name')

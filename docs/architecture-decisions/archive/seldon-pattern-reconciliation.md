@@ -84,7 +84,7 @@ Based on our actual requirements, we should use **Pattern B**:
 - seldon-envoy ✅ (exists)
 - shared mlserver ✅ (exists)
 
-# financial-inference namespace:
+# seldon-system namespace:
 - models only ✅ (what we want)
 - NO SeldonRuntime ✅ (this was our mistake)
 - NO namespace-specific scheduler ✅ (source of conflicts)
@@ -128,7 +128,7 @@ The pattern is: **Centralized platform, distributed models**
 ## Implementation Plan
 
 1. **Document the correction** in all affected files
-2. **Remove SeldonRuntime** from financial-inference namespace  
+2. **Remove SeldonRuntime** from seldon-system namespace  
 3. **Deploy models to use shared infrastructure**
 4. **Validate the working pattern**
 5. **Update troubleshooting guides** with correct approach

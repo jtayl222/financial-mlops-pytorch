@@ -9,4 +9,4 @@ patches:
       version: v1alpha1
       kind: SeldonRuntime
       name: financial-mlops-runtime
-      namespace: financial-mlops-pytorch
+      namespace: seldon-system

@@ -101,10 +101,10 @@ def get_latest_run_metrics(experiment_name, model_variant):
         return None
 
 # Extract metrics for both variants
-experiment_name = "financial-mlops-pytorch-baseline"  # Default experiment name
+experiment_name = "seldon-system-baseline"  # Default experiment name
 baseline_metrics = get_latest_run_metrics(experiment_name, "baseline")
 
-experiment_name = "financial-mlops-pytorch-enhanced"
+experiment_name = "seldon-system-enhanced"
 enhanced_metrics = get_latest_run_metrics(experiment_name, "enhanced")
 
 # Save results

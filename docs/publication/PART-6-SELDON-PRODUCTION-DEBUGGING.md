@@ -37,7 +37,7 @@ Building [The ML Platform](https://github.com/jtayl222/ml-platform) taught me th
 
 **Target Audience:** Site Reliability Engineers, DevOps Engineers, and Platform Engineers responsible for production MLOps infrastructure who need battle-tested debugging approaches and proven reliability patterns.
 
-**Open Source Foundation:** Every solution discussed is implemented in [The ML Platform](https://github.com/jtayl222/ml-platform) and the [financial MLOps demonstration](https://github.com/jtayl222/financial-mlops-pytorch). The entire stack is open source, fully functional, and ready for community contributions. If you find these patterns useful, I encourage pull requests and collaboration.
+**Open Source Foundation:** Every solution discussed is implemented in [The ML Platform](https://github.com/jtayl222/ml-platform) and the [financial MLOps demonstration](https://github.com/jtayl222/seldon-system). The entire stack is open source, fully functional, and ready for community contributions. If you find these patterns useful, I encourage pull requests and collaboration.
 
 ---
 
@@ -55,22 +55,22 @@ Before diving into specific problems, these commands are your diagnostic toolkit
 
 ```bash
 # Check if the building residents are present and healthy
-kubectl get experiments,models -n financial-inference
+kubectl get experiments,models -n seldon-system
 
 # Listen to the building manager's radio
 kubectl logs -n seldon-system deploy/seldon-v2-controller-manager
 
 # Check what the Smart Assistant is thinking
-kubectl logs -n financial-inference sts/mlserver -c agent
+kubectl logs -n seldon-system sts/mlserver -c agent
 
 # Inspect the department organization chart
 kubectl describe experiment financial-ab-test-experiment
 
 # Verify the directory is current
-kubectl get services -n financial-inference
+kubectl get services -n seldon-system
 
 # Check if staff can communicate
-kubectl get networkpolicies -n financial-inference
+kubectl get networkpolicies -n seldon-system
 ```
 
 ## Real-World Challenge #1: The Confused Building Receptionist
@@ -81,7 +81,7 @@ The most common issue I encountered was the Building Receptionist (NGINX) return
 
 **Symptoms:**
 ```bash
-$ curl -v -H "Host: ml-api.local" http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer
+$ curl -v -H "Host: ml-api.local" http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer
 < HTTP/1.1 404 Not Found
 < Server: nginx/1.21.6
 ```
@@ -93,8 +93,8 @@ The Building Receptionist doesn't know about your department because the routes 
 
 ```bash
 # Check if the receptionist knows about your routes
-kubectl get experiments -n financial-inference
-kubectl get models -n financial-inference
+kubectl get experiments -n seldon-system
+kubectl get models -n seldon-system
 
 # Listen to the building manager's communications
 kubectl logs -n seldon-system deploy/seldon-v2-controller-manager | grep ERROR
@@ -115,14 +115,14 @@ kubectl logs -n seldon-system deploy/seldon-v2-controller-manager | grep ERROR
 
 **Friday, 9 PM. Demo is Monday. The A/B testing endpoint that worked perfectly yesterday now returns 404s.**
 
-This was the reality I faced while preparing the [financial MLOps demonstration](https://github.com/jtayl222/financial-mlops-pytorch) for a critical showcase. The models were deployed, the experiments were configured, but something fundamental had broken in the Seldon Core v2 controller manager communication.
+This was the reality I faced while preparing the [financial MLOps demonstration](https://github.com/jtayl222/seldon-system) for a critical showcase. The models were deployed, the experiments were configured, but something fundamental had broken in the Seldon Core v2 controller manager communication.
 
 **The Symptoms:**
 ```bash
 # A/B testing endpoint suddenly broken
 curl -H "Host: ml-api.local" \
      -H "seldon-model: financial-ab-test-experiment.experiment" \
-     http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer
+     http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer
 
 # HTTP/1.1 404 Not Found
 # Everything was working yesterday
@@ -133,13 +133,13 @@ curl -H "Host: ml-api.local" \
 **Layer 1: Application Health Check**
 ```bash
 # Models appear healthy
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 # NAME                 READY   DESIRED REPLICAS   AVAILABLE REPLICAS   AGE
 # baseline-predictor   True                   1                    27h ✅
 # enhanced-predictor   True                   1                    27h ✅
 
 # Experiment appears configured  
-kubectl get experiments -n financial-inference
+kubectl get experiments -n seldon-system
 # NAME                           EXPERIMENT READY   MESSAGE   AGE
 # financial-ab-test-experiment   True                         27h ✅
 ```
@@ -150,12 +150,12 @@ kubectl get experiments -n financial-inference
 kubectl describe ingress mlops-ingress -n ingress-nginx
 # Rules:
 #   Host          Path  Backends
-#   ml-api.local  /financial-inference/(.*)   financial-inference-seldon:80 ✅
+#   ml-api.local  /seldon-system/(.*)   seldon-system-seldon:80 ✅
 
 # Service endpoints exist
-kubectl get svc financial-inference-seldon -n ingress-nginx  
+kubectl get svc seldon-system-seldon -n ingress-nginx  
 # NAME                       TYPE         EXTERNAL-IP
-# financial-inference-seldon ExternalName seldon-mesh.financial-inference.svc.cluster.local ✅
+# seldon-system-seldon ExternalName seldon-mesh.seldon-system.svc.cluster.local ✅
 ```
 
 From a Kubernetes perspective, everything looked healthy. But the 404s persisted.
@@ -256,7 +256,7 @@ kubectl logs -n seldon-system deploy/seldon-v2-controller-manager -c manager --t
 # Test the financial inference endpoint
 curl -H "Host: ml-api.local" \
      -H "seldon-model: financial-ab-test-experiment.experiment" \
-     http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer \
+     http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer \
      --data '{"inputs":[{"name":"input_data","shape":[1,10,35],"datatype":"FP32","data":[[...]]}]}'
 
 # Response headers confirmed successful routing:
@@ -299,7 +299,7 @@ During initial deployment of [The ML Platform](https://github.com/jtayl222/ml-pl
 - Logs showing scheduler conflicts
 
 **Root Cause:**
-Two Seldon schedulers were running simultaneously—one in `seldon-system` (centralized) and one in `financial-inference` (per-namespace). Both were trying to manage the same models, creating a "split-brain" scenario.
+Two Seldon schedulers were running simultaneously—one in `seldon-system` (centralized) and one in `seldon-system` (per-namespace). Both were trying to manage the same models, creating a "split-brain" scenario.
 
 ### The Solution: Centralized Scheduler Pattern
 
@@ -308,7 +308,7 @@ I decided to adopt the centralized scheduler approach, which required:
 **Step 1: Scale down the per-namespace scheduler**
 ```bash
 # Remove the conflicting Smart Assistant from the department
-kubectl scale statefulset seldon-scheduler --replicas=0 -n financial-inference
+kubectl scale statefulset seldon-scheduler --replicas=0 -n seldon-system
 ```
 
 **Step 2: Create an ExternalName service for agent connectivity**
@@ -318,7 +318,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: seldon-scheduler
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   type: ExternalName
   externalName: seldon-scheduler.seldon-system.svc.cluster.local
@@ -383,7 +383,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ml-communications
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector: {}
   ingress:
@@ -428,7 +428,7 @@ Rather than implementing workarounds, I decided to contribute a fix directly to 
 **Production Implementation:**
 ```bash
 # The ML Platform runs with my contributed fix
-$ kubectl describe pod/mlserver-0 -n financial-inference | grep agent: -A4
+$ kubectl describe pod/mlserver-0 -n seldon-system | grep agent: -A4
   agent:
     Container ID:  containerd://7df45072d766d02bba84f9c0d7d9c4f9a80636db
     Image:         docker.io/jtayl22/seldon-agent:2.9.0-pr6582-test
@@ -579,31 +579,31 @@ Component breakdown:
 ### When the Building Receptionist is Confused
 ```bash
 # Check ingress configuration
-kubectl get ingress -n financial-inference
-kubectl describe ingress ml-api-ingress -n financial-inference
+kubectl get ingress -n seldon-system
+kubectl describe ingress ml-api-ingress -n seldon-system
 
 # Verify service endpoints
-kubectl get endpoints -n financial-inference
+kubectl get endpoints -n seldon-system
 ```
 
 ### When the Smart Assistant Makes Bad Decisions
 ```bash
 # Check experiment configuration
-kubectl describe experiment financial-ab-test-experiment -n financial-inference
+kubectl describe experiment financial-ab-test-experiment -n seldon-system
 
 # Verify model availability
-kubectl get models -n financial-inference
-kubectl logs -n financial-inference sts/mlserver -c mlserver --tail=20
+kubectl get models -n seldon-system
+kubectl logs -n seldon-system sts/mlserver -c mlserver --tail=20
 ```
 
 ### When the Department Directory is Outdated
 ```bash
 # Check service discovery
-kubectl get services -n financial-inference
-kubectl describe service seldon-mesh -n financial-inference
+kubectl get services -n seldon-system
+kubectl describe service seldon-mesh -n seldon-system
 
 # Verify pod selection
-kubectl get pods -n financial-inference -l app=seldon-envoy
+kubectl get pods -n seldon-system -l app=seldon-envoy
 ```
 
 ## Open Source Implementation
@@ -611,7 +611,7 @@ kubectl get pods -n financial-inference -l app=seldon-envoy
 All debugging strategies, configurations, and solutions discussed are available in:
 
 - **[The ML Platform](https://github.com/jtayl222/ml-platform)**: Complete production-ready MLOps platform
-- **[Financial MLOps PyTorch](https://github.com/jtayl222/financial-mlops-pytorch)**: End-to-end implementation with A/B testing
+- **[Financial MLOps PyTorch](https://github.com/jtayl222/seldon-system)**: End-to-end implementation with A/B testing
 
 **Current Status:** Both repositories contain fully functional implementations that demonstrate every technique covered in this article. I am currently the sole contributor, having developed these solutions with assistance from AI tools (Claude 4, Gemini, and ChatGPT).
 

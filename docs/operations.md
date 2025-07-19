@@ -24,7 +24,7 @@ MODEL_VARIANT=lightweight python src/train_pytorch_model.py
 Run training locally with environment variables:
 
 ```bash
-cd ~/REPOS/financial-mlops-pytorch
+cd ~/REPOS/seldon-system
 
 MODEL_VARIANT=baseline \
 SCALER_DIR=/mnt/shared-artifacts/scalers \
@@ -44,32 +44,32 @@ python3 src/train_pytorch_model.py
 # Submit individual model training workflows
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=baseline \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=enhanced \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=lightweight \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 # Submit data pipeline
 argo submit --from workflowtemplate/financial-data-pipeline-template \
-  -n financial-mlops-pytorch --watch
+  -n seldon-system --watch
 ```
 
 ### Monitor Workflows
 
 ```bash
 # List workflows
-argo list -n financial-mlops-pytorch
+argo list -n seldon-system
 
 # Watch workflow progress
-argo get <workflow-name> -n financial-mlops-pytorch
+argo get <workflow-name> -n seldon-system
 
 # View workflow logs
-argo logs <workflow-name> -n financial-mlops-pytorch
+argo logs <workflow-name> -n seldon-system
 ```
 
 ## Model Deployment
@@ -78,13 +78,13 @@ argo logs <workflow-name> -n financial-mlops-pytorch
 
 ```bash
 # Check if models are loading
-kubectl get models -n financial-inference
+kubectl get models -n seldon-system
 
 # Check experiment status  
-kubectl get experiments -n financial-inference
+kubectl get experiments -n seldon-system
 
 # Check model details
-kubectl describe model baseline-predictor -n financial-inference
+kubectl describe model baseline-predictor -n seldon-system
 ```
 
 ### Test Model Endpoints
@@ -147,11 +147,11 @@ If models are not loading or showing as "not ready":
 
 ```bash
 # 1. Check namespace configuration
-kubectl get models -n financial-inference
-kubectl describe model baseline-predictor -n financial-inference
+kubectl get models -n seldon-system
+kubectl describe model baseline-predictor -n seldon-system
 
 # 2. Verify secret exists
-kubectl get secret ml-platform -n financial-inference
+kubectl get secret ml-platform -n seldon-system
 
 # 3. Check Seldon controller logs
 kubectl logs -n seldon-system deployment/seldon-v2-controller-manager | grep baseline-predictor
@@ -180,8 +180,8 @@ argocd app delete seldon-deployments --cascade=true
 
 ```bash
 # Clean deployment (development only)
-kubectl delete ns financial-mlops-pytorch
-kubectl create ns financial-mlops-pytorch
+kubectl delete ns seldon-system
+kubectl create ns seldon-system
 
 # Apply configurations
 kubectl apply -k k8s/base
@@ -197,9 +197,9 @@ s3://mlflow-artifacts/<experiment_id>/models/<model_id>/artifacts/
 ```
 
 Example MLflow experiments:
-- **28**: financial-mlops-pytorch-baseline
-- **29**: financial-mlops-pytorch-enhanced  
-- **30**: financial-mlops-pytorch-lightweight
+- **28**: seldon-system-baseline
+- **29**: seldon-system-enhanced  
+- **30**: seldon-system-lightweight
 
 ## Environment Configuration
 
@@ -228,13 +228,13 @@ After deployment, validate the system:
 kubectl get pods -n seldon-system
 
 # Check model deployment status
-kubectl get models,experiments -n financial-inference
+kubectl get models,experiments -n seldon-system
 
 # Check training workflows
-kubectl get workflows -n financial-mlops-pytorch
+kubectl get workflows -n seldon-system
 
 # Verify persistent volumes
-kubectl get pvc -n financial-mlops-pytorch
+kubectl get pvc -n seldon-system
 ```
 
 ## Recovery Procedures
@@ -243,7 +243,7 @@ kubectl get pvc -n financial-mlops-pytorch
 
 ```bash
 # Route 100% traffic to stable model
-kubectl patch experiment financial-ab-test-experiment -n financial-inference --type='merge' \
+kubectl patch experiment financial-ab-test-experiment -n seldon-system --type='merge' \
   -p='{"spec":{"candidates":[{"name":"baseline-predictor","weight":100},{"name":"enhanced-predictor","weight":0}]}}'
 ```
 
@@ -251,8 +251,8 @@ kubectl patch experiment financial-ab-test-experiment -n financial-inference --t
 
 ```bash
 # Retry failed workflow
-argo retry <workflow-name> -n financial-mlops-pytorch
+argo retry <workflow-name> -n seldon-system
 
 # Resubmit workflow
-argo resubmit <workflow-name> -n financial-mlops-pytorch
+argo resubmit <workflow-name> -n seldon-system
 ```

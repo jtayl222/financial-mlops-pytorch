@@ -267,7 +267,7 @@ kubectl-access-matrix
 
 ### **6.2 Shared Infrastructure**
 - Use same test environment as functional UAT
-- Leverage financial-mlops-pytorch application for realistic security testing
+- Leverage seldon-system application for realistic security testing
 - Share monitoring and logging infrastructure
 
 ### **6.3 Combined Reporting**

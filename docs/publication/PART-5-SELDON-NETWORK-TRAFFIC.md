@@ -110,7 +110,7 @@ curl -v -w "Total: %{time_total}s\n" \
       "data": [[...financial_features...]]
     }]
   }' \
-  http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer
+  http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer
 
 # Response: 13ms total latency (production measurement)
 ```
@@ -141,13 +141,13 @@ Essential commands for troubleshooting Seldon Core v2 deployments:
 
 ```bash
 # Check resource status
-kubectl get experiments,models -n financial-inference
+kubectl get experiments,models -n seldon-system
 
 # Monitor controller logs
 kubectl logs -n seldon-system deploy/seldon-v2-controller-manager
 
 # Check MLServer agent logs  
-kubectl logs -n financial-inference sts/mlserver -c agent
+kubectl logs -n seldon-system sts/mlserver -c agent
 
 # Inspect experiment configuration
 kubectl describe experiment financial-ab-test-experiment
@@ -176,8 +176,8 @@ kubectl describe experiment financial-ab-test-experiment
 Based on your real infrastructure, the critical component is the **`seldon-envoy` pod** (`seldon-envoy-6f6d84d678-b6w9s`):
 
 ```bash
-# Your actual pods in financial-inference namespace:
-$ kubectl get pods -n financial-inference
+# Your actual pods in seldon-system namespace:
+$ kubectl get pods -n seldon-system
 NAME                                   READY   STATUS    RESTARTS   AGE
 mlserver-0                             3/3     Running   0          3h6m
 seldon-envoy-6f6d84d678-b6w9s          1/1     Running   0          29h  # ← This is the key!
@@ -206,7 +206,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:
@@ -232,7 +232,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-63118756949141cba59ab87e90e8a96a/artifacts/
   server: mlserver
@@ -241,7 +241,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: enhanced-predictor
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   storageUri: s3://mlflow-artifacts/29/models/m-d64ffcb77a684fbfa8597e439c920a07/artifacts/
   server: mlserver
@@ -250,7 +250,7 @@ spec:
 **Key Takeaways:**
 
 *   **Model Serving:** Both the `baseline-predictor` and `enhanced-predictor` are configured to be served by `mlserver`.
-*   **Pod Deployment:** Seldon Core automatically creates a deployment for `mlserver` in the `financial-inference` namespace. The `kubectl get pods -n financial-inference` command shows the `mlserver-0` pod, which is responsible for running our models.
+*   **Pod Deployment:** Seldon Core automatically creates a deployment for `mlserver` in the `seldon-system` namespace. The `kubectl get pods -n seldon-system` command shows the `mlserver-0` pod, which is responsible for running our models.
 *   **Model Loading:** The `storageUri` field tells `MLServer` where to download the model artifacts from. In this case, they are stored in an S3 bucket managed by MLflow.
 
 ## Deep Dive: Request Headers and Response Analysis
@@ -281,7 +281,7 @@ for i in {1..100}; do
     -H "seldon-model: financial-ab-test-experiment.experiment" \
     -H "Content-Type: application/json" \
     -d '{"inputs":[{"name":"input_data","shape":[1,10,35],"datatype":"FP32","data":[[...]]}]}' \
-    http://192.168.1.249/financial-inference/v2/models/baseline-predictor_1/infer \
+    http://192.168.1.249/seldon-system/v2/models/baseline-predictor_1/infer \
     -D /dev/stderr 2>&1 | grep "x-seldon-route")
   echo "Request $i: $response"
 done
@@ -294,9 +294,9 @@ done
 **2. Latency Profiling**
 ```bash
 # Measure latency breakdown by component
-kubectl top pods -n financial-inference    # Resource usage
+kubectl top pods -n seldon-system    # Resource usage
 kubectl logs -n seldon-system deployment/seldon-v2-controller-manager --tail=10
-kubectl logs -n financial-inference sts/mlserver -c agent --tail=10
+kubectl logs -n seldon-system sts/mlserver -c agent --tail=10
 ```
 
 ## Production Debugging Playbook
@@ -306,8 +306,8 @@ kubectl logs -n financial-inference sts/mlserver -c agent --tail=10
 **Issue 1: 404 Not Found**
 ```bash
 # Check if routes are properly configured
-kubectl get experiments -n financial-inference
-kubectl get models -n financial-inference
+kubectl get experiments -n seldon-system
+kubectl get models -n seldon-system
 kubectl logs -n seldon-system deployment/seldon-v2-controller-manager | grep ERROR
 
 # Expected: Should see route registration messages
@@ -316,11 +316,11 @@ kubectl logs -n seldon-system deployment/seldon-v2-controller-manager | grep ERR
 **Issue 2: Traffic Not Splitting Properly**
 ```bash
 # Verify experiment configuration
-kubectl describe experiment financial-ab-test-experiment -n financial-inference
+kubectl describe experiment financial-ab-test-experiment -n seldon-system
 
 # Check if both models are ready
-kubectl get pods -n financial-inference
-kubectl logs -n financial-inference sts/mlserver -c mlserver --tail=20
+kubectl get pods -n seldon-system
+kubectl logs -n seldon-system sts/mlserver -c mlserver --tail=20
 ```
 
 **Issue 3: High Latency (>50ms)**
@@ -345,16 +345,16 @@ Based on our production deployment experience, here are the critical issues and 
 
 ### 1. The "Split-Brain" Scheduler Problem
 
-**Problem:** Our initial setup had a Seldon scheduler running in both the `seldon-system` and `financial-inference` namespaces. This created a "split-brain" scenario where both schedulers were trying to manage the same models, leading to constant route changes and 404 errors.
+**Problem:** Our initial setup had a Seldon scheduler running in both the `seldon-system` and `seldon-system` namespaces. This created a "split-brain" scenario where both schedulers were trying to manage the same models, leading to constant route changes and 404 errors.
 
 **Solution:** We adopted the centralized scheduler pattern, which is the recommended approach for most production deployments. This involved:
 
-1.  **Disabling the per-namespace scheduler:** We scaled the `seldon-scheduler` statefulset in the `financial-inference` namespace to zero replicas.
-2.  **Using an `ExternalName` service:** We created a service in the `financial-inference` namespace that acts as a DNS alias for the central scheduler in `seldon-system`. This allows the `MLServer` agent to connect to the correct scheduler.
+1.  **Disabling the per-namespace scheduler:** We scaled the `seldon-scheduler` statefulset in the `seldon-system` namespace to zero replicas.
+2.  **Using an `ExternalName` service:** We created a service in the `seldon-system` namespace that acts as a DNS alias for the central scheduler in `seldon-system`. This allows the `MLServer` agent to connect to the correct scheduler.
 
 ### 2. Controller Manager Connectivity
 
-**Problem:** Even with a single scheduler, the `seldon-v2-controller-manager` (which runs in `seldon-system`) was not discovering the `Model` and `Experiment` resources in the `financial-inference` namespace. This meant that no routes were being created.
+**Problem:** Even with a single scheduler, the `seldon-v2-controller-manager` (which runs in `seldon-system`) was not discovering the `Model` and `Experiment` resources in the `seldon-system` namespace. This meant that no routes were being created.
 
 **Solution:** We had to explicitly configure the controller manager to connect to the central scheduler by setting the `SELDON_SCHEDULER_HOST` and `SELDON_SCHEDULER_PORT` environment variables in its deployment.
 
@@ -368,7 +368,7 @@ Based on our production deployment experience, here are the critical issues and 
 
 **Problem:** At one point, our models were failing to schedule with a "no matching servers available" error, even though the MLServer pod was running. This was because the MLServer agent couldn't register itself with the Seldon scheduler.
 
-**Solution:** The issue was a missing rule in our network policy. The policy allowed ingress from the `seldon-system` namespace, but it didn't allow ingress from other pods *within the `financial-inference` namespace*. We had to add a `podSelector: {}` rule to the ingress section of the network policy to allow the MLServer agent to communicate with the scheduler in the same namespace.
+**Solution:** The issue was a missing rule in our network policy. The policy allowed ingress from the `seldon-system` namespace, but it didn't allow ingress from other pods *within the `seldon-system` namespace*. We had to add a `podSelector: {}` rule to the ingress section of the network policy to allow the MLServer agent to communicate with the scheduler in the same namespace.
 
 ### 5. Contributing Upstream Fixes for Production Stability
 
@@ -378,7 +378,7 @@ Based on our production deployment experience, here are the critical issues and 
 
 ```bash
 # Our production MLServer pods use our contributed fix
-$ kubectl describe pod/mlserver-0 -n financial-inference | grep agent: -A4
+$ kubectl describe pod/mlserver-0 -n seldon-system | grep agent: -A4
   agent:
     Container ID:  containerd://7df45072d766d02bba84f9c0d7d9c4f9a80636db
     Image:         docker.io/jtayl22/seldon-agent:2.9.0-pr6582-test
@@ -604,7 +604,7 @@ As Seldon Core v2 continues to evolve, the principles demonstrated here—centra
 
 One of the key architectural decisions in any MLOps platform is whether to use centralized or per-namespace resources. Here's a summary of our findings:
 
-*   **Seldon Scheduler: Centralized is Best (for most use cases).** Our biggest challenge was the "split-brain" scheduler problem caused by running a scheduler in both the `seldon-system` and `financial-inference` namespaces. The solution was to use a single, centralized scheduler in `seldon-system`. This is the recommended approach for most production deployments, as it provides a single source of truth for routing and simplifies debugging.
+*   **Seldon Scheduler: Centralized is Best (for most use cases).** Our biggest challenge was the "split-brain" scheduler problem caused by running a scheduler in both the `seldon-system` and `seldon-system` namespaces. The solution was to use a single, centralized scheduler in `seldon-system`. This is the recommended approach for most production deployments, as it provides a single source of truth for routing and simplifies debugging.
 
 *   **MLServer: Per-Namespace is More Flexible.** While we use a centralized scheduler, we deploy a dedicated `MLServer` instance in each application namespace. This provides better security, resource isolation, and deployment autonomy for our application teams.
 
@@ -612,8 +612,8 @@ One of the key architectural decisions in any MLOps platform is whether to use c
 
 Network policies are essential for securing a multi-tenant MLOps platform. Here are the key rules we implemented:
 
-*   **Allow Cross-Namespace Communication:** We have a network policy that allows the `ingress-nginx` namespace to communicate with the `financial-inference` namespace.
-*   **Allow Intra-Namespace Communication:** We also have a rule that allows pods within the `financial-inference` namespace to communicate with each other. This is crucial for allowing the `MLServer` agent to connect to the Seldon scheduler.
+*   **Allow Cross-Namespace Communication:** We have a network policy that allows the `ingress-nginx` namespace to communicate with the `seldon-system` namespace.
+*   **Allow Intra-Namespace Communication:** We also have a rule that allows pods within the `seldon-system` namespace to communicate with each other. This is crucial for allowing the `MLServer` agent to connect to the Seldon scheduler.
 *   **Allow DNS Egress:** We have an egress rule that allows pods to communicate with `kube-system` on port 53 for DNS resolution.
 
 ### Comparing the Networking Layers: MetalLB vs. NGINX vs. Seldon-Mesh vs. Seldon Envoy
@@ -636,7 +636,7 @@ It can be confusing to understand how all the networking pieces fit together. He
 #### NGINX Ingress Controller: Directing Traffic Inside the Cluster
 
 *   **What it does:** NGINX is an Ingress Controller that manages HTTP/S traffic. It looks at the request's hostname (e.g., `financial-predictor.local`) and path (e.g., `/v2/...`) and routes it to the correct internal service.
-*   **In our stack:** It acts as the single entry point for all ML API traffic. It inspects the request and forwards it to the `seldon-mesh` service in the `financial-inference` namespace.
+*   **In our stack:** It acts as the single entry point for all ML API traffic. It inspects the request and forwards it to the `seldon-mesh` service in the `seldon-system` namespace.
 *   **Analogy:** It's the **Building Receptionist**. It looks at who the visitor is asking for (the hostname and path) and tells them which department (service) to go to.
 
 #### Seldon-Mesh: The Front Door to Seldon

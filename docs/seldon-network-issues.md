@@ -10,7 +10,7 @@ This document outlines the troubleshooting process for resolving network-related
 
 **Workaround:** Since the external DNS record is outside of our control, the solution is to rename the Seldon scheduler service within the `financial-ml` namespace to avoid the conflicting external DNS entry.
 
-**Final Solution:** Started with 2 namespaces: financial-mlops-pytorch for training and financial-ml for deployments. Completly rename financial-ml to financial-inference which will definitively avoid the external DNS conflict, as it creates a completely new, unambiguous name.
+**Final Solution:** Started with 2 namespaces: seldon-system for training and financial-ml for deployments. Completly rename financial-ml to seldon-system which will definitively avoid the external DNS conflict, as it creates a completely new, unambiguous name.
 
 
 

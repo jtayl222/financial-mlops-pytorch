@@ -67,7 +67,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:
@@ -357,7 +357,7 @@ class ProductionABTester:
 
 # Configuration
 config = {
-    'endpoint': 'http://financial-inference-gateway:8080',
+    'endpoint': 'http://seldon-system-gateway:8080',
     'duration': 3600,  # 1 hour
     'prometheus_port': 8080
 }
@@ -556,6 +556,6 @@ We'll analyze real business impact calculations and ROI frameworks that justify 
 *This is Part 2 of the "A/B Testing in Production MLOps" series. The complete implementation is available as open source:*
 
 - **Platform**: [github.com/jtayl222/ml-platform](https://github.com/jtayl222/ml-platform)
-- **Application**: [github.com/jtayl222/financial-mlops-pytorch](https://github.com/jtayl222/financial-mlops-pytorch)
+- **Application**: [github.com/jtayl222/seldon-system](https://github.com/jtayl222/seldon-system)
 
 *Follow me for more enterprise MLOps content and practical implementation guides.*

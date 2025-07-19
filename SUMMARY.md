@@ -30,7 +30,7 @@ This creates a risk-managed approach to model deployment where different model v
 The `k8s/` directory defines a complete production MLOps platform built on Kubernetes with the following components:
 
 **Infrastructure Foundation**:
-- **Multi-namespace separation**: `financial-mlops-pytorch` (training) and `financial-inference` (serving) for operational isolation (`k8s/base/namespace.yaml`)
+- **Multi-namespace separation**: `seldon-system` (training) and `seldon-system` (serving) for operational isolation (`k8s/base/namespace.yaml`)
 - **Seldon Core v2 Runtime**: ML model serving with hodometer, envoy, modelgateway, and mlserver components (`k8s/base/seldon-runtime.yaml`)
 - **Persistent storage**: Shared data and artifacts PVCs for cross-pipeline data sharing (`k8s/base/shared-data-pvc.yaml`, `k8s/base/shared-artifacts-pvc.yaml`)
 - **NGINX Ingress**: External API access with load balancing and routing (`k8s/base/nginx-ingress.yaml`)
@@ -72,14 +72,14 @@ The `kubernetes/` directory implements GitOps-based continuous deployment using 
 
 **ArgoCD Application Management**:
 - **Main Application**: Financial MLOps infrastructure managed as single ArgoCD application (`kubernetes/financial-mlops-application.yaml`)
-- **Git-based deployment**: Automatic synchronization from GitHub repository (`https://github.com/jtayl222/financial-mlops-pytorch.git`)
+- **Git-based deployment**: Automatic synchronization from GitHub repository (`https://github.com/jtayl222/seldon-system.git`)
 - **Auto-sync policies**: Automated pruning, self-healing, and namespace creation with foreground propagation
 - **Status handling**: Ignores transient status fields for Seldon Models and Experiments to prevent sync conflicts
 
 **Component-based Deployment Structure**:
-- **Argo Workflows**: Training pipeline components deployed to `financial-mlops-pytorch` namespace (`kubernetes/argo-workflows/kustomization.yaml`)
+- **Argo Workflows**: Training pipeline components deployed to `seldon-system` namespace (`kubernetes/argo-workflows/kustomization.yaml`)
   - Includes: Training pipelines, RBAC, storage, event sources, and sensors
-- **Seldon Deployments**: Model serving components deployed to `financial-inference` namespace (`kubernetes/seldon-deployments/kustomization.yaml`)
+- **Seldon Deployments**: Model serving components deployed to `seldon-system` namespace (`kubernetes/seldon-deployments/kustomization.yaml`)
   - Includes: MLServer, Seldon runtime, A/B test experiments, VirtualServices, and network policies
 - **MLflow Integration**: Placeholder for application-specific MLflow configurations (`kubernetes/mlflow/kustomization.yaml`)
   - Note: MLflow infrastructure managed by platform team separately
@@ -127,7 +127,7 @@ The Seldon Core v2 infrastructure provides ML model serving through a distribute
 - **triton-0**: NVIDIA Triton inference server for high-performance GPU workloads
   - Ports: 9000 (inference), 9500 (management), 9005 (metrics)
 
-### Application Services (financial-inference namespace)
+### Application Services (seldon-system namespace)
 - **seldon-scheduler**: Application-specific scheduler instance (ClusterIP only)
 - **seldon-mesh**: Application routing service (ClusterIP only)
 - **mlserver-0**: Dedicated model server for financial models
@@ -146,7 +146,7 @@ The Seldon Core v2 infrastructure provides ML model serving through a distribute
 - **Debugging**: seldon-scheduler debug interface on port 9008
 
 ### Key Architecture Benefits
-- **Separation of concerns**: System services in seldon-system, application models in financial-inference
+- **Separation of concerns**: System services in seldon-system, application models in seldon-system
 - **High availability**: LoadBalancer services provide external access with failover
 - **Scalability**: Headless services (ClusterIP None) enable direct pod-to-pod communication
 - **Observability**: Comprehensive metrics and health monitoring across all components
@@ -275,7 +275,7 @@ The results demonstrate a sophisticated MLOps platform with comprehensive busine
   - CNI migration history in `docs/migration/cni-migration-history.md`
 
 ### Multi-Namespace Design Enforces Production Separation of Concerns
-- **Key Finding**: Clear boundaries between training (`financial-mlops-pytorch`) and serving (`financial-inference`) prevent operational conflicts
+- **Key Finding**: Clear boundaries between training (`seldon-system`) and serving (`seldon-system`) prevent operational conflicts
 - **Evidence**:
   - Namespace separation documented in `docs/operations/quick-reference.md:10` with dedicated inference and training namespaces
   - Platform vs application team responsibility matrix in `docs/architecture-decisions/platform-vs-app-team-boundaries.md:40-47` defining infrastructure vs application boundaries

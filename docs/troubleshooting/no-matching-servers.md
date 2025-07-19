@@ -12,7 +12,7 @@ Type:   ModelReady
 
 **Model Status:**
 ```bash
-$ kubectl get models -n financial-inference
+$ kubectl get models -n seldon-system
 NAME                 READY   DESIRED REPLICAS   AVAILABLE REPLICAS   AGE
 baseline-predictor   False                                           15m
 ```
@@ -62,28 +62,28 @@ Despite the model requirements matching the server capabilities exactly, the Sel
 ### 1. Check Server Status
 ```bash
 # Check if server is ready
-kubectl get servers -n financial-inference
+kubectl get servers -n seldon-system
 
 # Check server details
-kubectl describe server mlserver -n financial-inference
+kubectl describe server mlserver -n seldon-system
 ```
 
 ### 2. Check Scheduler Logs
 ```bash
 # Look for server registration messages
-kubectl logs -n financial-inference seldon-scheduler-0 | grep -i "server"
+kubectl logs -n seldon-system seldon-scheduler-0 | grep -i "server"
 
 # Check for connectivity errors
-kubectl logs -n financial-inference seldon-scheduler-0 | grep -i "error"
+kubectl logs -n seldon-system seldon-scheduler-0 | grep -i "error"
 ```
 
 ### 3. Check Agent Connectivity
 ```bash
 # Check if agent can connect to scheduler
-kubectl logs -n financial-inference mlserver-0 -c agent | grep -i "scheduler"
+kubectl logs -n seldon-system mlserver-0 -c agent | grep -i "scheduler"
 
 # Look for connection errors
-kubectl logs -n financial-inference mlserver-0 -c agent | grep -i "error"
+kubectl logs -n seldon-system mlserver-0 -c agent | grep -i "error"
 
 # Common error patterns:
 # "Scheduler not ready" - Agent cannot connect to scheduler
@@ -94,10 +94,10 @@ kubectl logs -n financial-inference mlserver-0 -c agent | grep -i "error"
 ### 4. Check Network Connectivity
 ```bash
 # Test scheduler service resolution
-kubectl run debug --rm -it --image=busybox -- nslookup seldon-scheduler.financial-inference
+kubectl run debug --rm -it --image=busybox -- nslookup seldon-scheduler.seldon-system
 
 # Check if scheduler ports are accessible
-kubectl get svc seldon-scheduler -n financial-inference
+kubectl get svc seldon-scheduler -n seldon-system
 ```
 
 ## Resolution Strategies
@@ -108,7 +108,7 @@ kubectl get svc seldon-scheduler -n financial-inference
 
 ```bash
 # Check current network policy
-kubectl describe networkpolicy allow-seldon-scheduler-ingress -n financial-inference
+kubectl describe networkpolicy allow-seldon-scheduler-ingress -n seldon-system
 
 # The policy MUST include podSelector: {} to allow same-namespace communication
 ```
@@ -119,7 +119,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-seldon-scheduler-ingress
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector:
     matchLabels:
@@ -144,10 +144,10 @@ spec:
 kubectl apply -f k8s/base/network-policy.yaml
 
 # Restart MLServer to pick up changes
-kubectl delete pod mlserver-0 -n financial-inference
+kubectl delete pod mlserver-0 -n seldon-system
 
 # Verify connectivity
-kubectl logs -n financial-inference mlserver-0 -c agent | grep "Load model.*success"
+kubectl logs -n seldon-system mlserver-0 -c agent | grep "Load model.*success"
 ```
 
 ### Strategy 2: Delete and Recreate Models (Timing Issues)
@@ -159,7 +159,7 @@ Models created before the server is fully ready often get stuck in failed state:
 kubectl delete -f k8s/base/financial-predictor-ab-test.yaml
 
 # Wait for server to be fully ready
-kubectl wait --for=condition=Ready server/mlserver -n financial-inference --timeout=120s
+kubectl wait --for=condition=Ready server/mlserver -n seldon-system --timeout=120s
 
 # Recreate models with fresh scheduling
 kubectl apply -f k8s/base/financial-predictor-ab-test.yaml
@@ -171,13 +171,13 @@ If network policy and model recreation don't work, try component restart:
 
 ```bash
 # Restart the MLServer to refresh scheduler connection
-kubectl delete pod mlserver-0 -n financial-inference
+kubectl delete pod mlserver-0 -n seldon-system
 
 # If that doesn't work, restart the scheduler
-kubectl delete pod seldon-scheduler-0 -n financial-inference
+kubectl delete pod seldon-scheduler-0 -n seldon-system
 
 # Wait for pods to restart and check status
-kubectl get pods -n financial-inference
+kubectl get pods -n seldon-system
 ```
 
 ### Strategy 4: Check Network Policies (Verification)
@@ -186,10 +186,10 @@ Ensure communication is allowed between components:
 
 ```bash
 # Check existing network policies
-kubectl get networkpolicies -n financial-inference
+kubectl get networkpolicies -n seldon-system
 
 # Verify scheduler ingress policy exists
-kubectl describe networkpolicy allow-seldon-scheduler-ingress -n financial-inference
+kubectl describe networkpolicy allow-seldon-scheduler-ingress -n seldon-system
 ```
 
 If missing, apply the network policy:
@@ -199,7 +199,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-seldon-scheduler-ingress
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   podSelector:
     matchLabels:
@@ -229,13 +229,13 @@ Check if the scheduler can see the server:
 
 ```bash
 # Check scheduler's view of available servers
-kubectl logs -n financial-inference seldon-scheduler-0 | grep "Server notification"
+kubectl logs -n seldon-system seldon-scheduler-0 | grep "Server notification"
 
 # Should see messages like:
 # "Server notification mlserver expectedReplicas 1 shared false"
 
 # Check for scheduling failures
-kubectl logs -n financial-inference seldon-scheduler-0 | grep -E "(Failed to schedule|Empty server)"
+kubectl logs -n seldon-system seldon-scheduler-0 | grep -E "(Failed to schedule|Empty server)"
 
 # Common patterns indicating the issue:
 # "Failed to schedule model as no matching servers are available"
@@ -248,7 +248,7 @@ If DNS issues persist (especially with external domain conflicts):
 
 ```bash
 # Check if external DNS is interfering
-nslookup seldon-scheduler.financial-inference
+nslookup seldon-scheduler.seldon-system
 
 # If resolving to external IP, restart CoreDNS
 kubectl delete pod -l k8s-app=kube-dns -n kube-system
@@ -260,10 +260,10 @@ Verify exact capability matching:
 
 ```bash
 # Check model requirements
-kubectl get model baseline-predictor -n financial-inference -o jsonpath='{.spec.requirements}'
+kubectl get model baseline-predictor -n seldon-system -o jsonpath='{.spec.requirements}'
 
 # Check server capabilities
-kubectl get server mlserver -n financial-inference -o jsonpath='{.spec.capabilities}'
+kubectl get server mlserver -n seldon-system -o jsonpath='{.spec.capabilities}'
 
 # Ensure exact match (order doesn't matter, but names must be identical)
 ```
@@ -281,10 +281,10 @@ kubectl get server mlserver -n financial-inference -o jsonpath='{.spec.capabilit
 ### 2. Health Checks
 ```bash
 # Verify scheduler is ready before deploying models
-kubectl wait --for=condition=Ready pod/seldon-scheduler-0 -n financial-inference --timeout=120s
+kubectl wait --for=condition=Ready pod/seldon-scheduler-0 -n seldon-system --timeout=120s
 
 # Verify server is ready
-kubectl wait --for=condition=Ready server/mlserver -n financial-inference --timeout=120s
+kubectl wait --for=condition=Ready server/mlserver -n seldon-system --timeout=120s
 ```
 
 ### 3. Monitoring
@@ -299,17 +299,17 @@ When resolved, you should see:
 
 ```bash
 # Models become ready
-$ kubectl get models -n financial-inference
+$ kubectl get models -n seldon-system
 NAME                 READY   DESIRED REPLICAS   AVAILABLE REPLICAS   AGE
 baseline-predictor   True    1                  1                    20m
 
 # Server shows loaded models
-$ kubectl get servers -n financial-inference  
+$ kubectl get servers -n seldon-system  
 NAME       READY   REPLICAS   LOADED MODELS   AGE
 mlserver   True    1          2               25m
 
 # Scheduler logs show successful registration
-$ kubectl logs seldon-scheduler-0 -n financial-inference | grep "Server notification"
+$ kubectl logs seldon-scheduler-0 -n seldon-system | grep "Server notification"
 "Server notification mlserver expectedReplicas 1 shared false"
 ```
 

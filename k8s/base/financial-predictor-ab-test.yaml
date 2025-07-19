@@ -3,9 +3,9 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: baseline-predictor
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
@@ -22,9 +22,9 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Model
 metadata:
   name: enhanced-predictor
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
@@ -41,9 +41,9 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:

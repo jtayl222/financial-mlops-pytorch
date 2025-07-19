@@ -236,7 +236,7 @@ def train_advanced_model():
     
     # Set experiment name for better organization with variant tracking
     MODEL_VARIANT = os.environ.get("MODEL_VARIANT", "advanced")
-    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"financial-mlops-pytorch-{MODEL_VARIANT}")
+    experiment_name = os.environ.get("MLFLOW_EXPERIMENT_NAME", f"seldon-system-{MODEL_VARIANT}")
     mlflow.set_experiment(experiment_name)
     
     # Start MLflow run

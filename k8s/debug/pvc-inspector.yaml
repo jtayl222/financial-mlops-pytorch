@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: pvc-inspector
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
     app: pvc-inspector
 spec:

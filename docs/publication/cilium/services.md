@@ -32,7 +32,7 @@
 | **MinIO Console** | [http://192.168.1.202:9090](http://192.168.1.202:9090) | [http://192.168.1.85:31578](http://192.168.1.85:31578) | ✅ | **User:** `minioadmin`<br/>**Password:** `minioadmin123` ⚠️ *Demo only* |
 | **Prometheus** | *NodePort Only* | [http://192.168.1.85:30090](http://192.168.1.85:30090) | ✅ | **Metrics Collection** ⚠️ *No auth - secure for production* |
 | **Seldon Core** | [http://192.168.1.202](http://192.168.1.202) | **API/CLI Only** | ✅ | **Model Serving Platform** - Deploy via kubectl |
-| **NGINX Ingress** | [http://192.168.1.249](http://192.168.1.249) | *LoadBalancer Only* | ✅ | **Routes:** ml-api.local → financial-inference services |
+| **NGINX Ingress** | [http://192.168.1.249](http://192.168.1.249) | *LoadBalancer Only* | ✅ | **Routes:** ml-api.local → seldon-system services |
 
 ## 🤖 **Model Serving with Seldon Core**
 

@@ -4,7 +4,7 @@ FROM jupyter/datascience-notebook:latest
 WORKDIR /home/jovyan
 
 # Copy your project's main requirements.txt from the parent directory
-# This assumes requirements.txt is at the root of financial-mlops-pytorch
+# This assumes requirements.txt is at the root of seldon-system
 COPY requirements.txt .
 
 # --- IMPORTANT Dockerfile Fixes Below ---

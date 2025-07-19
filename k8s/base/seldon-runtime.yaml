@@ -3,9 +3,9 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
   name: financial-mlops-runtime
-  namespace: financial-mlops-pytorch
+  namespace: seldon-system
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:

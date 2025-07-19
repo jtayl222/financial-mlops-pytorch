@@ -21,23 +21,23 @@ Ensure traffic splitting and experiment functionality works correctly.
 ### Infrastructure Readiness
 ```bash
 # Verify all required namespaces exist
-kubectl get namespaces financial-inference financial-mlops-pytorch seldon-system
+kubectl get namespaces seldon-system seldon-system seldon-system
 
 # Check Seldon components are running
 kubectl get pods -n seldon-system
 kubectl get deployments -n seldon-system
 
 # Verify secrets are properly configured
-kubectl get secrets -n financial-inference ml-platform
-kubectl get secrets -n financial-mlops-pytorch ml-platform
+kubectl get secrets -n seldon-system ml-platform
+kubectl get secrets -n seldon-system ml-platform
 ```
 
 ### Cluster Resources
 ```bash
 # Check available resources
 kubectl top nodes
-kubectl describe quota -n financial-inference
-kubectl describe quota -n financial-mlops-pytorch
+kubectl describe quota -n seldon-system
+kubectl describe quota -n seldon-system
 ```
 
 ## Test Suite 1: Foundation Testing
@@ -46,7 +46,7 @@ kubectl describe quota -n financial-mlops-pytorch
 
 ```bash
 # Test secret access from a pod
-kubectl run secret-test --image=busybox --rm -it -n financial-inference \
+kubectl run secret-test --image=busybox --rm -it -n seldon-system \
   --overrides='{"spec":{"containers":[{"name":"test","image":"busybox","env":[{"name":"AWS_ACCESS_KEY_ID","valueFrom":{"secretKeyRef":{"name":"ml-platform","key":"AWS_ACCESS_KEY_ID"}}}],"command":["sh","-c","echo $AWS_ACCESS_KEY_ID && sleep 30"]}]}}' \
   -- /bin/sh
 
@@ -57,7 +57,7 @@ kubectl run secret-test --image=busybox --rm -it -n financial-inference \
 
 ```bash
 # Test MLflow tracking server connectivity
-kubectl run mlflow-test --image=python:3.9 --rm -it -n financial-mlops-pytorch \
+kubectl run mlflow-test --image=python:3.9 --rm -it -n seldon-system \
   --overrides='{"spec":{"containers":[{"name":"test","image":"python:3.9","envFrom":[{"secretRef":{"name":"ml-platform"}}],"command":["sh","-c","pip install mlflow requests && python -c \"import mlflow; mlflow.set_tracking_uri(\\\"$MLFLOW_TRACKING_URI\\\"); print(mlflow.list_experiments())\" && sleep 30"]}]}}' \
   -- /bin/sh
 
@@ -68,7 +68,7 @@ kubectl run mlflow-test --image=python:3.9 --rm -it -n financial-mlops-pytorch \
 
 ```bash
 # Test S3 connectivity and model artifact access
-kubectl run s3-test --image=amazon/aws-cli --rm -it -n financial-inference \
+kubectl run s3-test --image=amazon/aws-cli --rm -it -n seldon-system \
   --overrides='{"spec":{"containers":[{"name":"test","image":"amazon/aws-cli","envFrom":[{"secretRef":{"name":"ml-platform"}}],"command":["sh","-c","aws s3 ls s3://mlflow-artifacts/28/ --endpoint-url=$AWS_ENDPOINT_URL && sleep 30"]}]}}' \
   -- /bin/sh
 
@@ -84,12 +84,12 @@ kubectl run s3-test --image=amazon/aws-cli --rm -it -n financial-inference \
 kubectl apply -k k8s/base
 
 # Verify models are created
-kubectl get models -n financial-inference
-kubectl get experiments -n financial-inference
+kubectl get models -n seldon-system
+kubectl get experiments -n seldon-system
 
 # Check model status
-kubectl describe model baseline-predictor -n financial-inference
-kubectl describe model enhanced-predictor -n financial-inference
+kubectl describe model baseline-predictor -n seldon-system
+kubectl describe model enhanced-predictor -n seldon-system
 ```
 
 ### 2.2 Model Loading Verification
@@ -102,7 +102,7 @@ kubectl logs -n seldon-system deployment/seldon-v2-controller-manager | grep -i 
 kubectl logs -n seldon-system mlserver-0 -c mlserver | grep -i "baseline\|enhanced"
 
 # Verify model endpoints are ready
-kubectl get models -n financial-inference -o wide
+kubectl get models -n seldon-system -o wide
 ```
 
 ### 2.3 Model Health Checks
@@ -124,7 +124,7 @@ kubectl exec -n seldon-system mlserver-0 -- curl -s http://localhost:9000/v2/mod
 
 ```bash
 # Test baseline model inference
-kubectl run inference-test --image=curlimages/curl --rm -it -n financial-inference \
+kubectl run inference-test --image=curlimages/curl --rm -it -n seldon-system \
   -- curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"inputs": [{"name": "features", "shape": [1, 10], "datatype": "FP32", "data": [[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]]}]}' \
@@ -137,7 +137,7 @@ kubectl run inference-test --image=curlimages/curl --rm -it -n financial-inferen
 
 ```bash
 # Test experiment endpoint
-kubectl run experiment-test --image=curlimages/curl --rm -it -n financial-inference \
+kubectl run experiment-test --image=curlimages/curl --rm -it -n seldon-system \
   -- curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"inputs": [{"name": "features", "shape": [1, 10], "datatype": "FP32", "data": [[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]]}]}' \
@@ -151,7 +151,7 @@ kubectl run experiment-test --image=curlimages/curl --rm -it -n financial-infere
 ```bash
 # Send multiple requests to verify traffic splitting
 for i in {1..20}; do
-  kubectl run test-request-$i --image=curlimages/curl --rm -n financial-inference \
+  kubectl run test-request-$i --image=curlimages/curl --rm -n seldon-system \
     -- curl -s -X POST \
     -H "Content-Type: application/json" \
     -d '{"inputs": [{"name": "features", "shape": [1, 10], "datatype": "FP32", "data": [[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]]}]}' \
@@ -173,7 +173,7 @@ MODEL_ENDPOINT="http://financial-ab-test-experiment:9000/v2/models/financial-ab-
 REQUESTS=100
 CONCURRENCY=10
 
-kubectl run load-test --image=curlimages/curl --rm -it -n financial-inference \
+kubectl run load-test --image=curlimages/curl --rm -it -n seldon-system \
   -- sh -c "
     for i in \$(seq 1 $REQUESTS); do
       time curl -s -X POST \
@@ -195,10 +195,10 @@ chmod +x load_test.sh
 ```bash
 # Monitor resource usage during load test
 kubectl top pods -n seldon-system
-kubectl top pods -n financial-inference
+kubectl top pods -n seldon-system
 
 # Check if resource quotas are being respected
-kubectl describe quota -n financial-inference
+kubectl describe quota -n seldon-system
 ```
 
 ## Test Suite 5: Workflow Integration Testing
@@ -209,11 +209,11 @@ kubectl describe quota -n financial-inference
 # Submit a training workflow
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=baseline \
-  -n financial-mlops-pytorch \
+  -n seldon-system \
   --watch
 
 # Verify successful completion
-argo get <workflow-name> -n financial-mlops-pytorch
+argo get <workflow-name> -n seldon-system
 
 # Check if new model artifacts are created in MLflow
 mlflow experiments search
@@ -224,12 +224,12 @@ mlflow experiments search
 ```bash
 # Test complete pipeline: data -> training -> deployment -> inference
 # 1. Submit data pipeline
-argo submit --from workflowtemplate/financial-data-pipeline-template -n financial-mlops-pytorch
+argo submit --from workflowtemplate/financial-data-pipeline-template -n seldon-system
 
 # 2. Submit training pipeline
 argo submit --from workflowtemplate/financial-training-pipeline-template \
   -p model-variant=test \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 # 3. Update model deployment with new artifacts
 # 4. Test inference on new model
@@ -308,7 +308,7 @@ chmod +x run_tests.sh
 - ✅ Seldon components healthy
 
 ### Model Deployment Tests (Must Pass)
-- ✅ Models deploy successfully to financial-inference namespace
+- ✅ Models deploy successfully to seldon-system namespace
 - ✅ Models show as "Ready" in status
 - ✅ Model endpoints respond to health checks
 
@@ -334,16 +334,16 @@ chmod +x run_tests.sh
 **Models not loading:**
 ```bash
 # Check secret configuration
-kubectl describe secret ml-platform -n financial-inference
+kubectl describe secret ml-platform -n seldon-system
 
 # Check model storage URI accessibility
-kubectl run debug --image=amazon/aws-cli --rm -it -n financial-inference --envFrom secretRef:ml-platform -- aws s3 ls s3://mlflow-artifacts/28/ --endpoint-url=$AWS_ENDPOINT_URL
+kubectl run debug --image=amazon/aws-cli --rm -it -n seldon-system --envFrom secretRef:ml-platform -- aws s3 ls s3://mlflow-artifacts/28/ --endpoint-url=$AWS_ENDPOINT_URL
 ```
 
 **Inference requests failing:**
 ```bash
 # Check service endpoints
-kubectl get svc -n financial-inference
+kubectl get svc -n seldon-system
 
 # Check model server logs
 kubectl logs -n seldon-system mlserver-0 -c mlserver --tail=50

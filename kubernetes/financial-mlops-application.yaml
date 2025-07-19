@@ -4,17 +4,17 @@ metadata:
   name: financial-mlops-infrastructure
   namespace: argocd
   labels:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
 spec:
   project: default
   source:
-    repoURL: https://github.com/jtayl222/financial-mlops-pytorch.git
+    repoURL: https://github.com/jtayl222/seldon-system.git
     targetRevision: HEAD
     path: k8s/base
   destination:
     server: https://kubernetes.default.svc
-    namespace: financial-mlops-pytorch
+    namespace: seldon-system
   syncPolicy:
     automated:
       prune: true

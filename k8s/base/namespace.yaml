@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: financial-mlops-pytorch
+  name: seldon-system
   labels:
-    name: financial-mlops-pytorch
-    app.kubernetes.io/name: financial-mlops-pytorch
+    name: seldon-system
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize

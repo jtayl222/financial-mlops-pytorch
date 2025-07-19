@@ -7,7 +7,7 @@
 - **Container Orchestration**: Kubernetes (k3s v1.33.1+ recommended)
 - **CNI**: Calico for network policies
 - **LoadBalancer**: MetalLB for service exposure
-- **Namespaces**: `financial-inference` (serving), `financial-mlops-pytorch` (training)
+- **Namespaces**: `seldon-system` (serving), `seldon-system` (training)
 - **Storage**: Persistent volumes for shared data and artifacts
 
 ## Quick Commands
@@ -21,12 +21,12 @@ kubectl get pods -n kube-system
 kubectl apply -k k8s/base
 
 # Check deployment status
-kubectl get models,experiments -n financial-inference
-kubectl get workflows -n financial-mlops-pytorch
+kubectl get models,experiments -n seldon-system
+kubectl get workflows -n seldon-system
 
 # Train models
 argo submit --from workflowtemplate/financial-training-pipeline-template \
-  -p model-variant=baseline -n financial-mlops-pytorch
+  -p model-variant=baseline -n seldon-system
 
 # Update model URIs after training
 python3 scripts/update_model_uris.py
@@ -38,7 +38,7 @@ python3 scripts/update_model_uris.py --experiment-id 28 --model-variant baseline
 ## GitOps with Argo CD
 
 ### Architecture
-- **Main Application**: `financial-mlops-infrastructure` (k8s/base/ → financial-inference namespace)
+- **Main Application**: `financial-mlops-infrastructure` (k8s/base/ → seldon-system namespace)
 - **Auto-sync**: Enabled with prune and self-heal
 - **Status Ignoring**: Models/experiments have dynamic status fields ignored during sync
 
@@ -90,7 +90,7 @@ argocd app history financial-mlops-infrastructure
 ## Architecture Decisions
 
 ### Dedicated MLServer
-- Run MLServer in `financial-inference` namespace for isolation
+- Run MLServer in `seldon-system` namespace for isolation
 - Use dedicated Server resource with model-specific capabilities
 - Avoids cross-namespace dependencies and improves security
 
@@ -112,11 +112,11 @@ argocd app history financial-mlops-infrastructure
 kubectl get pods -A | grep -E "(mlflow|seldon|argo)"
 
 # Monitor training progress  
-argo list -n financial-mlops-pytorch
+argo list -n seldon-system
 
 # Verify model serving
-kubectl get models -n financial-inference
-kubectl describe model baseline-predictor -n financial-inference
+kubectl get models -n seldon-system
+kubectl describe model baseline-predictor -n seldon-system
 ```
 
 ## Security Considerations

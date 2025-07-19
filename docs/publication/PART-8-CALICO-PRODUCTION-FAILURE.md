@@ -34,14 +34,14 @@ Six weeks after the successful Calico migration, [The ML Platform](https://githu
 **Week 1: Sporadic Timeouts**
 ```bash
 # Occasional Seldon Core v2 agent connection failures
-kubectl logs mlserver-0 -c agent -n financial-inference
+kubectl logs mlserver-0 -c agent -n seldon-system
 # WARNING: dial tcp 10.43.51.131:9004: i/o timeout (retrying in 30s)
 ```
 
 **Week 2: Increased Frequency**
 ```bash
 # More frequent model loading failures
-kubectl describe pod mlserver-0 -n financial-inference
+kubectl describe pod mlserver-0 -n seldon-system
 # Warning: Failed to register with scheduler: context deadline exceeded
 ```
 
@@ -235,7 +235,7 @@ The issue stems from a race condition in Calico's Felix agent between:
 
 ```bash
 # Seldon Core v2 scheduler registration
-kubectl logs mlserver-0 -c agent -n financial-inference
+kubectl logs mlserver-0 -c agent -n seldon-system
 # ERROR: failed to register with scheduler at seldon-scheduler.seldon-system:9004
 # ERROR: dial tcp 10.43.51.131:9004: i/o timeout
 
@@ -261,7 +261,7 @@ kubectl logs workflow-pod -n argo
 ```bash
 # Automated pod restart for affected workloads
 #!/bin/bash
-namespaces=("financial-inference" "argo" "mlflow-system")
+namespaces=("seldon-system" "argo" "mlflow-system")
 
 for ns in "${namespaces[@]}"; do
   # Find pods with connectivity issues
@@ -441,7 +441,7 @@ In the next article, I'll cover the migration from Calico to Cilium and the less
 All debugging procedures, monitoring configurations, and workaround scripts discussed are available in:
 
 - **[The ML Platform](https://github.com/jtayl222/ml-platform)**: Complete troubleshooting runbooks and monitoring configurations
-- **[Financial MLOps PyTorch](https://github.com/jtayl222/financial-mlops-pytorch)**: ML workloads affected by networking issues
+- **[Financial MLOps PyTorch](https://github.com/jtayl222/seldon-system)**: ML workloads affected by networking issues
 
 **Current Status:** The debugging methodology and monitoring improvements are production-tested and available for community use. I am currently the sole contributor to both repositories, having developed these troubleshooting approaches with assistance from AI tools (Claude 4, Gemini, and ChatGPT).
 

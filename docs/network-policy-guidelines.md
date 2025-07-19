@@ -11,24 +11,24 @@
 - **Seldon Core configuration** (seldon-config ConfigMap defining inference servers)
 - **Cluster-wide service discovery** and server capability definitions
 
-### Application Team (financial-mlops-pytorch) Responsibilities  
+### Application Team (seldon-system) Responsibilities  
 - **Application-specific** network policies within our namespaces
-- **Service-to-service** communication within financial-inference/financial-mlops-pytorch
+- **Service-to-service** communication within seldon-system/seldon-system
 - **External service access** requirements (documented for platform approval)
 - **Pod-to-pod** communication rules within our application scope
 
 ## Current Network Architecture
 
 ### Namespaces Managed
-- `financial-inference` - Model serving and experiments (Seldon Models/Experiments)
-- `financial-mlops-pytorch` - Training workloads (Argo Workflows)
+- `seldon-system` - Model serving and experiments (Seldon Models/Experiments)
+- `seldon-system` - Training workloads (Argo Workflows)
 
 ### Required Cross-Namespace Communication
-1. **financial-mlops-pytorch** → **financial-inference**
+1. **seldon-system** → **seldon-system**
    - Training workflows need to deploy models to serving namespace
    - MLflow artifacts sharing between training and serving
 
-2. **financial-inference** → **seldon-system**
+2. **seldon-system** → **seldon-system**
    - Model scheduling and server discovery
    - Seldon runtime communication
 
@@ -57,8 +57,8 @@
 
 ### Example Request Format
 ```
-Request: Allow financial-inference namespace to access seldon-scheduler in seldon-system
-Source: financial-inference namespace (all pods)
+Request: Allow seldon-system namespace to access seldon-scheduler in seldon-system
+Source: seldon-system namespace (all pods)
 Destination: seldon-system/seldon-scheduler:9005
 Protocol: TCP
 Justification: Model scheduling requires direct communication with Seldon scheduler
@@ -88,5 +88,5 @@ Our `k8s/base/network-policy.yaml` should focus on:
 ---
 
 **Last Updated**: 2025-07-07  
-**Contact**: financial-mlops-pytorch team  
+**Contact**: seldon-system team  
 **Platform Contact**: Infrastructure/Platform team

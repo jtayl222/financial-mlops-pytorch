@@ -6,8 +6,8 @@ This document outlines the infrastructure requirements and secrets that must be 
 
 The infrastructure should implement **team-based namespace isolation** following industry best practices:
 
-- `financial-inference` - Financial ML models and experiments  
-- `financial-mlops-pytorch` - Application workloads (Argo Workflows, training jobs)
+- `seldon-system` - Financial ML models and experiments  
+- `seldon-system` - Application workloads (Argo Workflows, training jobs)
 - `seldon-system` - Seldon Mesh controller and shared infrastructure
 
 This approach provides:
@@ -18,10 +18,10 @@ This approach provides:
 
 ## Required Secrets
 
-### 1. ML Platform Secret (financial-inference namespace)
+### 1. ML Platform Secret (seldon-system namespace)
 
 **Secret Name:** `ml-platform`  
-**Namespace:** `financial-inference`  
+**Namespace:** `seldon-system`  
 **Type:** `Opaque`
 
 This secret contains S3/MinIO credentials for model storage access. Required keys:
@@ -34,10 +34,10 @@ stringData:
   AWS_ENDPOINT_URL: http://minio.minio.svc.cluster.local:9000
 ```
 
-### 2. ML Platform Secret (financial-mlops-pytorch namespace)
+### 2. ML Platform Secret (seldon-system namespace)
 
 **Secret Name:** `ml-platform`  
-**Namespace:** `financial-mlops-pytorch`  
+**Namespace:** `seldon-system`  
 **Type:** `Opaque`
 
 This secret contains full MLOps platform credentials for training workflows. Required keys:
@@ -66,10 +66,10 @@ stringData:
   RCLONE_CONFIG_S3_ENDPOINT: http://minio.minio.svc.cluster.local:9000
 ```
 
-### 3. Container Registry Secret (financial-mlops-pytorch namespace)
+### 3. Container Registry Secret (seldon-system namespace)
 
 **Secret Name:** `ghcr`  
-**Namespace:** `financial-mlops-pytorch`  
+**Namespace:** `seldon-system`  
 **Type:** `kubernetes.io/dockerconfigjson`
 
 This secret contains GitHub Container Registry credentials for pulling private images.
@@ -95,27 +95,27 @@ This approach enables:
 
 ```bash
 # Infrastructure team creates and delivers packages (done once)
-# Creates: financial-mlops-pytorch-ml-secrets-20250704.tar.gz
-# Creates: financial-mlops-pytorch-models-secrets-20250704.tar.gz
+# Creates: seldon-system-ml-secrets-20250704.tar.gz
+# Creates: seldon-system-models-secrets-20250704.tar.gz
 
 # Development team extracts and applies packages
-tar xzf financial-mlops-pytorch-ml-secrets-20250704.tar.gz -C k8s/manifests/financial-mlops-pytorch
-tar xzf financial-mlops-pytorch-models-secrets-20250704.tar.gz -C k8s/manifests/financial-inference
+tar xzf seldon-system-ml-secrets-20250704.tar.gz -C k8s/manifests/seldon-system
+tar xzf seldon-system-models-secrets-20250704.tar.gz -C k8s/manifests/seldon-system
 
 tree k8s/manifests/
 # k8s/manifests/
-# ├── financial-inference/
+# ├── seldon-system/
 # │   └── production/
 # │       ├── kustomization.yaml
 # │       └── ml-platform-secret.yaml
-# └── financial-mlops-pytorch/
+# └── seldon-system/
 #     └── production/
 #         ├── ghcr-secret.yaml
 #         ├── kustomization.yaml
 #         └── ml-platform-secret.yaml
 
-kubectl apply -k k8s/manifests/financial-inference/production
-kubectl apply -k k8s/manifests/financial-mlops-pytorch/production
+kubectl apply -k k8s/manifests/seldon-system/production
+kubectl apply -k k8s/manifests/seldon-system/production
 ```
 
 ### Secret Lifecycle
@@ -149,8 +149,8 @@ Instead of sharing runtime components across namespaces, deploy dedicated Seldon
 apiVersion: mlops.seldon.io/v1alpha1
 kind: SeldonRuntime
 metadata:
-  name: financial-inference-runtime
-  namespace: financial-inference
+  name: seldon-system-runtime
+  namespace: seldon-system
 spec:
   config:
     agentConfig:

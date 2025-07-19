@@ -23,8 +23,8 @@ This guide sets up the complete MLOps A/B testing demo locally on your MacBook, 
 ### Step 1: Clone and Setup Project
 ```bash
 # Clone the repository (if not already done)
-git clone https://github.com/your-username/financial-mlops-pytorch.git
-cd financial-mlops-pytorch
+git clone https://github.com/your-username/seldon-system.git
+cd seldon-system
 
 # Create virtual environment
 python3 -m venv .venv-demo
@@ -129,7 +129,7 @@ ls -la docs/publication/images/
 source .venv-demo/bin/activate
 
 # 2. Verify cluster connectivity
-curl http://ml-api.local/financial-inference/v2/models
+curl http://ml-api.local/seldon-system/v2/models
 
 # 3. Run live A/B testing demo (production infrastructure)
 python3 scripts/demo/advanced-ab-demo.py --scenarios 500 --workers 3
@@ -186,7 +186,7 @@ open docs/publication/images/monitoring_dashboard_alerts.png
 - [ ] Have architecture diagram ready: `open docs/publication/images/enhanced_architecture_gitops.png`
 - [ ] **With Cluster:** Test command ready: `python3 scripts/demo/advanced-ab-demo.py --scenarios 500 --workers 3`
 - [ ] **Cluster Backup:** Test command ready: `python3 scripts/demo/local-ab-demo.py --scenarios 500`
-- [ ] Verify connectivity (if using cluster): `curl http://ml-api.local/financial-inference/v2/models`
+- [ ] Verify connectivity (if using cluster): `curl http://ml-api.local/seldon-system/v2/models`
 
 ### During Demo
 - [ ] Follow `TRADE-SHOW-DEMO-SCRIPT.md` talking points
@@ -260,7 +260,7 @@ pip install matplotlib seaborn plotly dash boto3
 ## File Structure After Setup
 
 ```
-financial-mlops-pytorch/
+seldon-system/
 ├── .venv-demo/                    # Local virtual environment
 ├── data/
 │   └── processed/                 # Generated training data

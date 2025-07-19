@@ -8,4 +8,4 @@ resources: []
 
 commonLabels:
   app.kubernetes.io/managed-by: argocd
-  app.kubernetes.io/part-of: financial-mlops-pytorch
+  app.kubernetes.io/part-of: seldon-system

@@ -1,13 +1,13 @@
 ---
-# Cross-namespace service reference for financial-mlops-pytorch
+# Cross-namespace service reference for seldon-system
 apiVersion: v1
 kind: Service
 metadata:
-  name: financial-mlops-pytorch-seldon
+  name: seldon-system-seldon
   namespace: ingress-nginx
 spec:
   type: ExternalName
-  externalName: seldon-mesh.financial-mlops-pytorch.svc.cluster.local
+  externalName: seldon-mesh.seldon-system.svc.cluster.local
   ports:
   - port: 80
     targetPort: 80
@@ -53,11 +53,11 @@ spec:
     http:
       paths:
       # Financial inference models (Seldon Core)
-      - path: /financial-mlops-pytorch/(.*)
+      - path: /seldon-system/(.*)
         pathType: ImplementationSpecific
         backend:
           service:
-            name: financial-mlops-pytorch-seldon
+            name: seldon-system-seldon
             port:
               number: 80
       
@@ -75,7 +75,7 @@ spec:
         pathType: ImplementationSpecific
         backend:
           service:
-            name: financial-mlops-pytorch-seldon  # Placeholder for now
+            name: seldon-system-seldon  # Placeholder for now
             port:
               number: 80
       
@@ -84,7 +84,7 @@ spec:
         pathType: ImplementationSpecific
         backend:
           service:
-            name: financial-mlops-pytorch-seldon  # Placeholder for now
+            name: seldon-system-seldon  # Placeholder for now
             port:
               number: 80
   
@@ -97,6 +97,6 @@ spec:
         pathType: ImplementationSpecific
         backend:
           service:
-            name: financial-mlops-pytorch-seldon
+            name: seldon-system-seldon
             port:
               number: 80

@@ -19,7 +19,7 @@ The underlying infrastructure is a complete, production-ready MLOps platform bui
 #### 2. The Financial ML Application (This Project)
 This repository contains the machine learning application that **runs on top of the platform**. It includes the ML code, training pipelines, and deployment manifests to solve a specific business problem.
 
-*   **Repository:** [**github.com/jtayl222/financial-mlops-pytorch**](https://github.com/jtayl222/financial-mlops-pytorch)
+*   **Repository:** [**github.com/jtayl222/seldon-system**](https://github.com/jtayl222/seldon-system)
 *   **Features:** Demonstrates how a real ML application leverages the underlying platform to achieve automated training, versioning, deployment, and advanced A/B testing.
 
 Together, these two repositories demonstrate the crucial separation of concerns between the MLOps platform and the ML application, a key principle in building scalable and maintainable machine learning systems.
@@ -101,7 +101,7 @@ apiVersion: mlops.seldon.io/v1alpha1
 kind: Experiment
 metadata:
   name: financial-ab-test-experiment
-  namespace: financial-inference
+  namespace: seldon-system
 spec:
   default: baseline-predictor
   candidates:

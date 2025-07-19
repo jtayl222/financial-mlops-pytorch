@@ -22,7 +22,7 @@ Seldon Core v2 has **two fundamentally different architecture patterns** that ar
 - seldon-envoy (centralized)
 - seldon-modelgateway (centralized)
 
-# application namespace (financial-inference):
+# application namespace (seldon-system):
 - models only (no SeldonRuntime)
 - server resources only
 ```
@@ -32,7 +32,7 @@ Seldon Core v2 has **two fundamentally different architecture patterns** that ar
 # seldon-system namespace:
 - seldon-v2-controller-manager (global coordinator)
 
-# application namespace (financial-inference):
+# application namespace (seldon-system):
 - SeldonRuntime with full stack
 - seldon-scheduler (per-namespace)
 - seldon-envoy (per-namespace)
@@ -79,7 +79,7 @@ kubectl get pods -A | grep seldon-scheduler
 kubectl logs -n seldon-system seldon-v2-controller-manager-* | grep "connection error"
 
 # Check for DNS conflicts
-kubectl run debug --rm -it --image=busybox -- nslookup seldon-scheduler.financial-inference
+kubectl run debug --rm -it --image=busybox -- nslookup seldon-scheduler.seldon-system
 ```
 
 ### Identify the Problem

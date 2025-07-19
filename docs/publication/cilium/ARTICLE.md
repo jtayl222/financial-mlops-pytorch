@@ -12,7 +12,7 @@ This wasn't a hypothetical scenario—it was our reality after migrating from Fl
 
 ## Why We Needed to Migrate: The Flannel Limitations
 
-Initially, our Kubernetes infrastructure, based on [K3s](https://github.com/k3s-io/k3s), utilized Flannel as the default CNI. However, when adopting Seldon Core v2 for our production MLOps pipelines—such as those demonstrated in our [financial MLOps platform](https://github.com/jtayl222/financial-mlops-pytorch)—we encountered critical limitations with Flannel.
+Initially, our Kubernetes infrastructure, based on [K3s](https://github.com/k3s-io/k3s), utilized Flannel as the default CNI. However, when adopting Seldon Core v2 for our production MLOps pipelines—such as those demonstrated in our [financial MLOps platform](https://github.com/jtayl222/seldon-system)—we encountered critical limitations with Flannel.
 
 ### Intra-Pod Communication Issues
 

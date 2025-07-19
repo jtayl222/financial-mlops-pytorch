@@ -85,10 +85,10 @@ else
     fail "Central control plane namespace 'seldon-system' missing"
 fi
 
-if check_namespace "financial-mlops-pytorch"; then
-    pass "Application namespace 'financial-mlops-pytorch' exists"
+if check_namespace "seldon-system"; then
+    pass "Application namespace 'seldon-system' exists"
 else
-    fail "Application namespace 'financial-mlops-pytorch' missing"
+    fail "Application namespace 'seldon-system' missing"
 fi
 
 # ==============================================================================
@@ -108,11 +108,11 @@ else
 fi
 
 # Check local scheduler is running
-LOCAL_SCHEDULER_REPLICAS=$(kubectl get sts seldon-scheduler -n financial-mlops-pytorch -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+LOCAL_SCHEDULER_REPLICAS=$(kubectl get sts seldon-scheduler -n seldon-system -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
 if [[ "$LOCAL_SCHEDULER_REPLICAS" -gt 0 ]]; then
-    pass "Local scheduler in financial-mlops-pytorch is running ($LOCAL_SCHEDULER_REPLICAS replicas) - Scoped Operator Pattern"
+    pass "Local scheduler in seldon-system is running ($LOCAL_SCHEDULER_REPLICAS replicas) - Scoped Operator Pattern"
 else
-    fail "Local scheduler in financial-mlops-pytorch is not running - required for Scoped Operator Pattern"
+    fail "Local scheduler in seldon-system is not running - required for Scoped Operator Pattern"
 fi
 
 # ==============================================================================
@@ -124,7 +124,7 @@ echo "Reference: docs/operations/scaling-model-capacity.md"
 echo ""
 
 # Check MLServer replicas
-MLSERVER_REPLICAS=$(kubectl get sts mlserver -n financial-mlops-pytorch -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+MLSERVER_REPLICAS=$(kubectl get sts mlserver -n seldon-system -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
 if [[ "$MLSERVER_REPLICAS" -gt 1 ]]; then
     pass "MLServer has multiple replicas for capacity ($MLSERVER_REPLICAS replicas)"
 else
@@ -132,8 +132,8 @@ else
 fi
 
 # Check MLServer resource allocation
-MLSERVER_CPU_REQUEST=$(kubectl get sts mlserver -n financial-mlops-pytorch -o jsonpath='{.spec.template.spec.containers[?(@.name=="mlserver")].resources.requests.cpu}' 2>/dev/null || echo "unknown")
-MLSERVER_MEMORY_REQUEST=$(kubectl get sts mlserver -n financial-mlops-pytorch -o jsonpath='{.spec.template.spec.containers[?(@.name=="mlserver")].resources.requests.memory}' 2>/dev/null || echo "unknown")
+MLSERVER_CPU_REQUEST=$(kubectl get sts mlserver -n seldon-system -o jsonpath='{.spec.template.spec.containers[?(@.name=="mlserver")].resources.requests.cpu}' 2>/dev/null || echo "unknown")
+MLSERVER_MEMORY_REQUEST=$(kubectl get sts mlserver -n seldon-system -o jsonpath='{.spec.template.spec.containers[?(@.name=="mlserver")].resources.requests.memory}' 2>/dev/null || echo "unknown")
 
 info "MLServer resource requests: CPU=$MLSERVER_CPU_REQUEST, Memory=$MLSERVER_MEMORY_REQUEST"
 
@@ -146,15 +146,15 @@ echo "Reference: docs/troubleshooting/SELDON-UNIFIED-TROUBLESHOOTING.md"
 echo ""
 
 # Check if local scheduler is accessible within namespace
-if kubectl exec -n financial-mlops-pytorch sts/mlserver -c agent -- \
-    nslookup seldon-scheduler.financial-mlops-pytorch.svc.cluster.local >/dev/null 2>&1; then
+if kubectl exec -n seldon-system sts/mlserver -c agent -- \
+    nslookup seldon-scheduler.seldon-system.svc.cluster.local >/dev/null 2>&1; then
     pass "Local scheduler DNS resolution works within namespace"
 else
     fail "Cannot resolve local scheduler within namespace"
 fi
 
 # Check agent connection to local scheduler
-AGENT_SCHEDULER_LOGS=$(kubectl logs -n financial-mlops-pytorch sts/mlserver -c agent --tail=50 2>/dev/null | grep -i "subscribed to scheduler" | tail -1)
+AGENT_SCHEDULER_LOGS=$(kubectl logs -n seldon-system sts/mlserver -c agent --tail=50 2>/dev/null | grep -i "subscribed to scheduler" | tail -1)
 if [[ -n "$AGENT_SCHEDULER_LOGS" ]]; then
     pass "Agent successfully connected to local scheduler"
     info "Latest connection: $AGENT_SCHEDULER_LOGS"
@@ -171,14 +171,14 @@ echo "Reference: docs/troubleshooting/seldon-xds-connection-issues.md"
 echo ""
 
 # Check Envoy is running
-if check_pod_ready "financial-mlops-pytorch" "app=seldon-envoy"; then
+if check_pod_ready "seldon-system" "app=seldon-envoy"; then
     pass "Envoy proxy is running and ready"
 else
     fail "Envoy proxy is not ready"
 fi
 
 # Check Envoy xDS connection
-ENVOY_XDS_ERRORS=$(kubectl logs -n financial-mlops-pytorch deployment/seldon-envoy --tail=20 2>/dev/null | grep -c "upstream connect error" || echo "0")
+ENVOY_XDS_ERRORS=$(kubectl logs -n seldon-system deployment/seldon-envoy --tail=20 2>/dev/null | grep -c "upstream connect error" || echo "0")
 if [[ "$ENVOY_XDS_ERRORS" -eq 0 ]]; then
     pass "Envoy xDS connection is healthy (no connection errors)"
 else
@@ -186,8 +186,8 @@ else
 fi
 
 # Check which scheduler Envoy is trying to connect to
-ENVOY_SCHEDULER_HOST=$(kubectl exec -n financial-mlops-pytorch deployment/seldon-envoy -- env | grep SELDON_SCHEDULER_SERVICE_HOST | cut -d'=' -f2 2>/dev/null || echo "unknown")
-LOCAL_SCHEDULER_IP=$(kubectl get svc seldon-scheduler -n financial-mlops-pytorch -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "unknown")
+ENVOY_SCHEDULER_HOST=$(kubectl exec -n seldon-system deployment/seldon-envoy -- env | grep SELDON_SCHEDULER_SERVICE_HOST | cut -d'=' -f2 2>/dev/null || echo "unknown")
+LOCAL_SCHEDULER_IP=$(kubectl get svc seldon-scheduler -n seldon-system -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "unknown")
 
 if [[ "$ENVOY_SCHEDULER_HOST" == "$LOCAL_SCHEDULER_IP" ]]; then
     pass "Envoy is configured to use local scheduler ($ENVOY_SCHEDULER_HOST)"
@@ -204,7 +204,7 @@ echo "Reference: docs/troubleshooting/seldon-v2-api-404-debugging.md"
 echo ""
 
 # Check baseline model
-BASELINE_STATUS=$(kubectl get model baseline-predictor -n financial-mlops-pytorch -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "unknown")
+BASELINE_STATUS=$(kubectl get model baseline-predictor -n seldon-system -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "unknown")
 if [[ "$BASELINE_STATUS" == "True" ]]; then
     pass "Baseline model is ready"
 else
@@ -212,7 +212,7 @@ else
 fi
 
 # Check enhanced model
-ENHANCED_STATUS=$(kubectl get model enhanced-predictor -n financial-mlops-pytorch -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "unknown")
+ENHANCED_STATUS=$(kubectl get model enhanced-predictor -n seldon-system -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "unknown")
 if [[ "$ENHANCED_STATUS" == "True" ]]; then
     pass "Enhanced model is ready"
 else
@@ -220,7 +220,7 @@ else
 fi
 
 # Check experiment
-EXPERIMENT_STATUS=$(kubectl get experiment financial-ab-test-experiment -n financial-mlops-pytorch -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "unknown")
+EXPERIMENT_STATUS=$(kubectl get experiment financial-ab-test-experiment -n seldon-system -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "unknown")
 if [[ "$EXPERIMENT_STATUS" == "True" ]]; then
     pass "A/B test experiment is ready"
 else
@@ -236,19 +236,19 @@ echo "Reference: docs/troubleshooting/network-policy-debugging.md"
 echo ""
 
 # Check if network policy exists
-if kubectl get networkpolicy -n financial-mlops-pytorch >/dev/null 2>&1; then
-    POLICY_COUNT=$(kubectl get networkpolicy -n financial-mlops-pytorch --no-headers | wc -l)
-    pass "Network policies exist in financial-mlops-pytorch namespace ($POLICY_COUNT policies)"
+if kubectl get networkpolicy -n seldon-system >/dev/null 2>&1; then
+    POLICY_COUNT=$(kubectl get networkpolicy -n seldon-system --no-headers | wc -l)
+    pass "Network policies exist in seldon-system namespace ($POLICY_COUNT policies)"
     
     # Check DNS egress
-    DNS_EGRESS=$(kubectl get networkpolicy -n financial-mlops-pytorch -o yaml | grep -A5 -B5 "port: 53" | grep -c "port: 53" || echo "0")
+    DNS_EGRESS=$(kubectl get networkpolicy -n seldon-system -o yaml | grep -A5 -B5 "port: 53" | grep -c "port: 53" || echo "0")
     if [[ "$DNS_EGRESS" -gt 0 ]]; then
         pass "DNS egress (port 53) is allowed in network policy"
     else
         warn "DNS egress (port 53) may not be configured in network policy"
     fi
 else
-    warn "No network policies found in financial-mlops-pytorch namespace"
+    warn "No network policies found in seldon-system namespace"
 fi
 
 # ==============================================================================
@@ -307,14 +307,14 @@ echo "Reference: docs/operations/scaling-model-capacity.md"
 echo ""
 
 # Check resource utilization
-MLSERVER_CPU_USAGE=$(kubectl top pods -n financial-mlops-pytorch --no-headers | grep mlserver | awk '{print $2}' | head -1)
-MLSERVER_MEMORY_USAGE=$(kubectl top pods -n financial-mlops-pytorch --no-headers | grep mlserver | awk '{print $3}' | head -1)
+MLSERVER_CPU_USAGE=$(kubectl top pods -n seldon-system --no-headers | grep mlserver | awk '{print $2}' | head -1)
+MLSERVER_MEMORY_USAGE=$(kubectl top pods -n seldon-system --no-headers | grep mlserver | awk '{print $3}' | head -1)
 
 info "MLServer resource usage: CPU=$MLSERVER_CPU_USAGE, Memory=$MLSERVER_MEMORY_USAGE"
 
 # Check if HPA exists
-if kubectl get hpa -n financial-mlops-pytorch >/dev/null 2>&1; then
-    HPA_COUNT=$(kubectl get hpa -n financial-mlops-pytorch --no-headers | wc -l)
+if kubectl get hpa -n seldon-system >/dev/null 2>&1; then
+    HPA_COUNT=$(kubectl get hpa -n seldon-system --no-headers | wc -l)
     pass "HorizontalPodAutoscaler configured ($HPA_COUNT HPAs)"
 else
     warn "No HorizontalPodAutoscaler found - consider adding for dynamic scaling"

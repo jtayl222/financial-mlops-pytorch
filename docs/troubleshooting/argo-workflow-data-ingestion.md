@@ -14,11 +14,11 @@ argo submit --from workflowtemplate/financial-data-pipeline-template \
   -p ingestion-start-date="2018-01-01" \
   -p ingestion-end-date="2023-12-31" \
   -p tickers="IBB" \
-  -n financial-mlops-pytorch
+  -n seldon-system
 
 # Expected output:
 # Name:                financial-data-pipeline-template-rcgqr
-# Namespace:           financial-mlops-pytorch
+# Namespace:           seldon-system
 # ServiceAccount:      unset
 # Status:              Pending
 # Parameters:          
@@ -27,13 +27,13 @@ argo submit --from workflowtemplate/financial-data-pipeline-template \
 #   tickers:           IBB
 
 # Monitor workflow progress
-argo list -n financial-mlops-pytorch
+argo list -n seldon-system
 
 # Watch workflow execution logs
-argo logs -f financial-data-pipeline-template-xxxxx -n financial-mlops-pytorch
+argo logs -f financial-data-pipeline-template-xxxxx -n seldon-system
 
 # Get detailed workflow status
-argo get financial-data-pipeline-template-xxxxx -n financial-mlops-pytorch
+argo get financial-data-pipeline-template-xxxxx -n seldon-system
 ```
 
 ## Expected Successful Output
@@ -78,10 +78,10 @@ argo get financial-data-pipeline-template-xxxxx -n financial-mlops-pytorch
 **Debug Commands:**
 ```bash
 # Check if workflow templates are properly configured
-kubectl describe workflowtemplate financial-data-pipeline-template -n financial-mlops-pytorch
+kubectl describe workflowtemplate financial-data-pipeline-template -n seldon-system
 
 # Verify service account permissions
-kubectl get serviceaccount argo-workflow-sa -n financial-mlops-pytorch
+kubectl get serviceaccount argo-workflow-sa -n seldon-system
 
 # Check for resource constraints
 kubectl describe nodes
@@ -104,7 +104,7 @@ kubectl get pods -n argo
 **Debug Commands:**
 ```bash
 # Check if template uses parameters correctly
-kubectl get workflowtemplate financial-data-pipeline-template -n financial-mlops-pytorch -o yaml | grep -A 10 -B 5 TICKERS
+kubectl get workflowtemplate financial-data-pipeline-template -n seldon-system -o yaml | grep -A 10 -B 5 TICKERS
 ```
 
 **Solutions:**
@@ -127,10 +127,10 @@ kubectl apply -f k8s/base/financial-data-pipeline.yaml
 **Debug Commands:**
 ```bash
 # Check container image being used
-kubectl describe workflowtemplate financial-data-pipeline-template -n financial-mlops-pytorch | grep image
+kubectl describe workflowtemplate financial-data-pipeline-template -n seldon-system | grep image
 
 # Check pod events for pull errors
-kubectl describe pod <workflow-pod-name> -n financial-mlops-pytorch
+kubectl describe pod <workflow-pod-name> -n seldon-system
 
 # Verify image exists and is accessible
 docker pull jtayl22/financial-predictor:latest
@@ -150,13 +150,13 @@ docker pull jtayl22/financial-predictor:latest
 **Debug Commands:**
 ```bash
 # Check if persistent volumes are bound
-kubectl get pv,pvc -n financial-mlops-pytorch
+kubectl get pv,pvc -n seldon-system
 
 # Verify storage class exists
 kubectl get storageclass
 
 # Check PVC details
-kubectl describe pvc shared-data-pvc -n financial-mlops-pytorch
+kubectl describe pvc shared-data-pvc -n seldon-system
 ```
 
 **Solutions:**
@@ -193,7 +193,7 @@ kubectl get pods -n mlflow
 kubectl port-forward -n mlflow svc/mlflow 5000:5000
 
 # Verify MLflow configuration in workflow
-kubectl get workflowtemplate financial-data-pipeline-template -n financial-mlops-pytorch -o yaml | grep -i mlflow
+kubectl get workflowtemplate financial-data-pipeline-template -n seldon-system -o yaml | grep -i mlflow
 ```
 
 ### 6. Data Verification Issues
@@ -205,15 +205,15 @@ kubectl get workflowtemplate financial-data-pipeline-template -n financial-mlops
 **Debug Commands:**
 ```bash
 # Check data in persistent storage
-kubectl exec -it -n financial-mlops-pytorch <any-pod-with-storage> -- \
+kubectl exec -it -n seldon-system <any-pod-with-storage> -- \
   ls -la /mnt/shared-data/raw/
 
 # Verify file contents
-kubectl exec -it -n financial-mlops-pytorch <any-pod-with-storage> -- \
+kubectl exec -it -n seldon-system <any-pod-with-storage> -- \
   head -10 /mnt/shared-data/raw/IBB_raw_2018-01-01_2023-12-31.csv
 
 # Check processed features
-kubectl exec -it -n financial-mlops-pytorch <any-pod-with-storage> -- \
+kubectl exec -it -n seldon-system <any-pod-with-storage> -- \
   ls -la /mnt/shared-data/processed/
 ```
 
@@ -259,15 +259,15 @@ kubectl exec -it -n financial-mlops-pytorch <any-pod-with-storage> -- \
 
 ```bash
 # Delete failed workflow and retry
-argo delete financial-data-pipeline-template-xxxxx -n financial-mlops-pytorch
+argo delete financial-data-pipeline-template-xxxxx -n seldon-system
 
 # Clean up stuck pods
-kubectl delete pods --field-selector=status.phase=Failed -n financial-mlops-pytorch
+kubectl delete pods --field-selector=status.phase=Failed -n seldon-system
 
 # Restart Argo controller if needed
 kubectl rollout restart deployment argo-workflow-controller -n argo
 
 # Resubmit workflow with fresh parameters
 argo submit --from workflowtemplate/financial-data-pipeline-template \
-  -p tickers="IBB" -n financial-mlops-pytorch
+  -p tickers="IBB" -n seldon-system
 ```

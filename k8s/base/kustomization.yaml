@@ -23,6 +23,6 @@ resources:
 labels:
 - includeSelectors: false
   pairs:
-    app.kubernetes.io/name: financial-mlops-pytorch
+    app.kubernetes.io/name: seldon-system
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
