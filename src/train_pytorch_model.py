@@ -33,6 +33,11 @@ PROCESSED_DATA_DIR = os.getenv("PROCESSED_DATA_DIR", "/mnt/shared-data/processed
 MODEL_SAVE_DIR = os.environ.get("MODEL_SAVE_DIR", "models")  # Directory to save trained models locally before MLflow logging
 os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
 
+# Data Configuration (must be defined before using)
+N_TICKERS = int(os.environ.get("N_TICKERS", 11))  # Number of tickers in dataset (updated for 11-ticker dataset)
+FEATURES_PER_TICKER = 35  # Standard technical indicators per ticker
+EXPECTED_INPUT_SIZE = N_TICKERS * FEATURES_PER_TICKER  # Total expected features (11 × 35 = 385)
+
 # Model variant configuration - can be set via environment variables for A/B testing
 MODEL_VARIANT = os.environ.get("MODEL_VARIANT", "baseline")  # baseline, enhanced, lightweight
 logging.info(f"DEBUG: MODEL_VARIANT env: {os.environ.get('MODEL_VARIANT')}, variable: {MODEL_VARIANT}")
@@ -43,11 +48,6 @@ BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 64))
 EPOCHS = int(os.environ.get("EPOCHS", 50))  # Increased for better convergence
 RANDOM_SEED = 42
 SEQUENCE_LENGTH = int(os.environ.get("SEQUENCE_LENGTH", 10))
-
-# Data Configuration
-N_TICKERS = int(os.environ.get("N_TICKERS", 11))  # Number of tickers in dataset (updated for 11-ticker dataset)
-FEATURES_PER_TICKER = 35  # Standard technical indicators per ticker
-EXPECTED_INPUT_SIZE = N_TICKERS * FEATURES_PER_TICKER  # Total expected features (11 × 35 = 385)
 
 # Model Hyperparameters - Tuned configurations for A/B testing variants
 if MODEL_VARIANT == "enhanced":
