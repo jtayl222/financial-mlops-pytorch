@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  storageUri: s3://mlflow-artifacts/28/models/m-f6272d43441b471dac3db28a69f6e66a/artifacts/
+  storageUri: models:/FinancialDirectionPredictor_Baseline/Production
   requirements:
   - mlflow
   - torch
@@ -28,7 +28,7 @@ metadata:
     app.kubernetes.io/part-of: ml-platform
     app.kubernetes.io/managed-by: kustomize
 spec:
-  storageUri: s3://mlflow-artifacts/34/models/m-5504d1ad4cd3498497ff32099e3926b6/artifacts/
+  storageUri: models:/FinancialDirectionPredictor_Advanced/Production
   requirements:
   - mlflow
   - torch
