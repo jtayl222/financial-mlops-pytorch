@@ -28,9 +28,9 @@ spec:
           memory: 256Mi
 
   volumes:
-  - name: shared-data-pvc
+  - name: financial-historical-data-pvc
     persistentVolumeClaim:
-      claimName: shared-data-pvc
+      claimName: financial-historical-data-pvc
   - name: shared-artifacts-pvc
     persistentVolumeClaim:
       claimName: shared-artifacts-pvc
@@ -42,7 +42,7 @@ spec:
       - name: model-variant
         value: baseline  # Default value, can be overridden by the sensor
     container:
-      image: harbor.test/library/financial-predictor:baseline-v3
+      image: harbor.test/library/financial-predictor:baseline-v5
       command: 
       - sh
       - -c
@@ -60,7 +60,7 @@ spec:
       - name: MLFLOW_TRACKING_URI
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
       - name: PROCESSED_DATA_DIR
-        value: "/mnt/shared-data/processed"
+        value: "/mnt/financial-data/processed"
       - name: SCALER_DIR
         value: "/mnt/shared-artifacts/scalers"
       - name: MODEL_SAVE_DIR
@@ -79,8 +79,8 @@ spec:
         - secretRef:
             name: ml-platform
       volumeMounts:
-        - name: shared-data-pvc
-          mountPath: /mnt/shared-data
+        - name: financial-historical-data-pvc
+          mountPath: /mnt/financial-data
         - name: shared-artifacts-pvc
           mountPath: /mnt/shared-artifacts
       resources:
