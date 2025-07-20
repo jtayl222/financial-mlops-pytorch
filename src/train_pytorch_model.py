@@ -537,6 +537,9 @@ def run_training_pipeline():
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
         val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
         
+        # Extract targets for class weight computation
+        train_targets = np.array([train_dataset.targets[i].item() for i in range(len(train_dataset))])
+        
         logging.info(f"Training dataset size: {len(train_dataset)} sequences")
         logging.info(f"Validation dataset size: {len(val_dataset)} sequences")
 
