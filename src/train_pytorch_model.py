@@ -15,7 +15,19 @@ from sklearn.utils.class_weight import compute_class_weight
 
 # Import the model definition from models.py
 from models import StockPredictor
-from feature_engineering_pytorch import FinancialTimeSeriesDataset  # Re-use the Dataset class
+# Define compatible dataset class for loading saved PyTorch datasets
+class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
+    """Dataset compatible with processed PyTorch datasets"""
+    
+    def __init__(self, sequences, targets):
+        self.sequences = sequences
+        self.targets = targets
+    
+    def __len__(self):
+        return len(self.sequences)
+    
+    def __getitem__(self, idx):
+        return self.sequences[idx], self.targets[idx]
 
 # Configure logging with more detailed format
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
