@@ -540,7 +540,20 @@ def run_training_pipeline():
         val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
         
         # Extract targets for class weight computation
-        train_targets = np.array([train_dataset.targets[i].item() for i in range(len(train_dataset))])
+        # Handle both tensor and numpy array targets robustly
+        if hasattr(train_dataset.targets, 'numpy'):
+            train_targets = train_dataset.targets.numpy().flatten()
+        elif hasattr(train_dataset.targets, 'cpu'):
+            train_targets = train_dataset.targets.cpu().numpy().flatten()
+        else:
+            train_targets = np.array(train_dataset.targets).flatten()
+        
+        # Ensure targets are valid binary class labels (0 and 1)
+        train_targets = np.clip(train_targets, 0, 1).astype(int)
+        logging.info(f"Target extraction successful: shape={train_targets.shape}")
+        logging.info(f"Target value range: min={train_targets.min()}, max={train_targets.max()}")
+        logging.info(f"Unique target values: {np.unique(train_targets)}")
+        logging.info(f"Target dtype: {train_targets.dtype}")
         
         logging.info(f"Training dataset size: {len(train_dataset)} sequences")
         logging.info(f"Validation dataset size: {len(val_dataset)} sequences")

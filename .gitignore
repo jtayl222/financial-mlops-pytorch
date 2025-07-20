@@ -213,6 +213,7 @@ curl.sh
 /tmp/
 
 # ML training artifacts (large files only)
+data/raw
 src/data/
 src/models/
 src/artifacts/

@@ -42,7 +42,7 @@ spec:
       - name: model-variant
         value: baseline  # Default value, can be overridden by the sensor
     container:
-      image: harbor.test/library/financial-predictor:baseline-v5
+      image: harbor.test/library/financial-predictor:baseline-v8
       command: 
       - sh
       - -c
