@@ -410,8 +410,24 @@ def train_advanced_model():
         safe_log_metric("test_f1_score", f1, step=0)
         safe_log_metric("best_val_accuracy", best_val_acc, step=0)
         
-        # Save model artifacts
-        mlflow.pytorch.log_model(model, "model")
+        # Save model artifacts with consistent format (same as baseline model)
+        # Create sample input for MLflow signature
+        sample_input = torch.randn(1, sequence_length, input_size)
+        model_cpu = model.cpu()
+        sample_input_cpu = sample_input.cpu()
+        
+        # Create input example and signature for consistent input format
+        with torch.no_grad():
+            sample_output = model_cpu(sample_input_cpu)
+        
+        registered_model_name = f"FinancialDirectionPredictor_{MODEL_VARIANT.title()}"
+        mlflow.pytorch.log_model(
+            pytorch_model=model_cpu,
+            artifact_path="model",
+            registered_model_name=registered_model_name,
+            input_example=sample_input_cpu.numpy(),
+            signature=mlflow.models.infer_signature(sample_input_cpu.numpy(), sample_output.detach().numpy())
+        )
         
         # Save results
         results = {

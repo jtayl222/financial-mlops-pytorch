@@ -84,28 +84,40 @@ if os.environ.get("MLFLOW_TRACKING_URI"):
 
 # --- Functions ---
 def load_processed_data(data_dir: str):
-    """Loads processed features and targets from .npy files."""
+    """Loads processed PyTorch datasets (compatible with advanced model format)."""
     try:
-        train_features = np.load(os.path.join(data_dir, 'train_features.npy'))
-        train_targets = np.load(os.path.join(data_dir, 'train_targets.npy'))
-        val_features = np.load(os.path.join(data_dir, 'val_features.npy'))
-        val_targets = np.load(os.path.join(data_dir, 'val_targets.npy'))
-        test_features = np.load(os.path.join(data_dir, 'test_features.npy'))
-        test_targets = np.load(os.path.join(data_dir, 'test_targets.npy'))
+        # Load PyTorch datasets directly from current pipeline output
+        train_dataset = torch.load(os.path.join(data_dir, 'train_dataset.pt'), weights_only=False)
+        val_dataset = torch.load(os.path.join(data_dir, 'validation_dataset.pt'), weights_only=False)
+        test_dataset = torch.load(os.path.join(data_dir, 'test_dataset.pt'), weights_only=False)
         
-        logging.info("Successfully loaded processed data.")
-        logging.info(f"Training data shape: Features {train_features.shape}, Targets {train_targets.shape}")
-        logging.info(f"Validation data shape: Features {val_features.shape}, Targets {val_targets.shape}")
-        logging.info(f"Test data shape: Features {test_features.shape}, Targets {test_targets.shape}")
+        logging.info("Successfully loaded PyTorch processed datasets.")
+        logging.info(f"Training dataset length: {len(train_dataset)}")
+        logging.info(f"Validation dataset length: {len(val_dataset)}")
+        logging.info(f"Test dataset length: {len(test_dataset)}")
+        
+        # Get sample to determine input dimensions
+        sample_features, sample_target = train_dataset[0]
+        if len(sample_features.shape) == 2:  # (sequence_length, n_features)
+            sequence_length = sample_features.shape[0]
+            n_features = sample_features.shape[1]
+        else:  # (n_features,) - flattened case
+            sequence_length = 10  # default
+            n_features = sample_features.shape[0]
+        
+        logging.info(f"Sample input shape: {sample_features.shape}")
+        logging.info(f"Detected input_size: {n_features}, sequence_length: {sequence_length}")
         
         return {
-            'train_features': train_features, 'train_targets': train_targets,
-            'val_features': val_features, 'val_targets': val_targets,
-            'test_features': test_features, 'test_targets': test_targets
+            'train_dataset': train_dataset,
+            'val_dataset': val_dataset, 
+            'test_dataset': test_dataset,
+            'input_size': n_features,
+            'sequence_length': sequence_length
         }
     except FileNotFoundError as e:
         logging.error(
-            f"Missing processed data files in {data_dir}. Run feature_engineering_pytorch.py first. Error: {e}")
+            f"Missing processed data files in {data_dir}. Expected PyTorch format (.pt files). Error: {e}")
         exit(1)
 
 
@@ -133,13 +145,12 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
     print(f'\r{prefix} |{bar}| {percent}% {suffix}', end='', flush=True)
 
 
-def evaluate_test_set(model, test_features, test_targets, sequence_length, batch_size):
+def evaluate_test_set(model, test_dataset, batch_size):
     """
     Evaluate the trained model on the test set and return comprehensive metrics.
     """
     logging.info("Starting test set evaluation...")
     
-    test_dataset = FinancialTimeSeriesDataset(test_features, test_targets, sequence_length=sequence_length)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
     model.eval()
@@ -498,35 +509,19 @@ def run_training_pipeline():
         # 1. Load processed data
         logging.info("Step 1: Loading processed data...")
         data = load_processed_data(PROCESSED_DATA_DIR)
-        train_features = data['train_features']
-        train_targets = data['train_targets']
-        val_features = data['val_features']
-        val_targets = data['val_targets']
-        test_features = data['test_features']
-        test_targets = data['test_targets']
-
-        # Check for NaN values in loaded data
-        if np.isnan(train_features).any():
-            logging.error("NaN values found in training features!")
-            return
-        if np.isnan(train_targets).any():
-            logging.error("NaN values found in training targets!")
-            return
-
-        # Adjust input size if needed (dynamic adjustment logic retained)
-        actual_input_size = train_features.shape[1]
-        if actual_input_size != INPUT_SIZE:
-            logging.warning(
-                f"Configured INPUT_SIZE ({INPUT_SIZE}) does not match actual data features ({actual_input_size}). Adjusting to {actual_input_size}.")
-            INPUT_SIZE = actual_input_size
+        train_dataset = data['train_dataset']
+        val_dataset = data['val_dataset']
+        test_dataset = data['test_dataset']
+        
+        # Update input size from loaded data
+        INPUT_SIZE = data['input_size']
+        SEQUENCE_LENGTH = data['sequence_length']
 
         mlflow.log_param("input_size", INPUT_SIZE)
+        mlflow.log_param("sequence_length", SEQUENCE_LENGTH)
         
-        # 2. Create datasets and dataloaders
-        logging.info("Step 2: Creating datasets and dataloaders...")
-        train_dataset = FinancialTimeSeriesDataset(train_features, train_targets, sequence_length=SEQUENCE_LENGTH)
-        val_dataset = FinancialTimeSeriesDataset(val_features, val_targets, sequence_length=SEQUENCE_LENGTH)
-
+        # 2. Create dataloaders from existing datasets
+        logging.info("Step 2: Creating dataloaders...")
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
         val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
         
@@ -605,9 +600,7 @@ def run_training_pipeline():
         logging.info("Step 6: Evaluating on test set...")
         test_results = evaluate_test_set(
             trained_model, 
-            test_features, 
-            test_targets, 
-            SEQUENCE_LENGTH, 
+            test_dataset, 
             BATCH_SIZE
         )
 

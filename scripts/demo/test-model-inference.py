@@ -14,7 +14,7 @@ def test_model_inference(endpoint_url="http://localhost:8082", models=None):
     """Test model inference with correct input shape"""
     
     if models is None:
-        models = ['baseline-predictor', 'enhanced-predictor']
+        models = ['baseline-predictor', 'advanced-predictor']
     
     # Generate test data with correct shape (1, 10, 52) - matching current retrained models (3 tickers)
     test_data = np.random.rand(1, 10, 52).astype(np.float32)
@@ -82,8 +82,8 @@ def main():
     parser.add_argument('--endpoint', default='http://localhost:8082', 
                        help='Base URL for model endpoint (default: http://localhost:8082)')
     parser.add_argument('--models', nargs='+', 
-                       default=['baseline-predictor', 'enhanced-predictor'],
-                       help='Models to test (default: baseline-predictor enhanced-predictor)')
+                       default=['baseline-predictor', 'advanced-predictor'],
+                       help='Models to test (default: baseline-predictor advanced-predictor)')
     
     args = parser.parse_args()
     

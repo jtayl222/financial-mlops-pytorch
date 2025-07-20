@@ -121,7 +121,7 @@ def main():
     parser.add_argument('--experiment', default='financial-forecasting',
                        help='MLflow experiment name')
     parser.add_argument('--model-variant', 
-                       help='Specific model variant to update (baseline, enhanced, lightweight)')
+                       help='Specific model variant to update (baseline, advanced, lightweight)')
     parser.add_argument('--yaml-file', default='k8s/base/financial-predictor-ab-test.yaml',
                        help='YAML file to update')
     parser.add_argument('--mlflow-endpoint', 
@@ -148,7 +148,7 @@ def main():
     print(f"   Experiment ID: {experiment_id}")
     
     # Determine which variants to update
-    variants_to_update = [args.model_variant] if args.model_variant else ['baseline', 'enhanced']
+    variants_to_update = [args.model_variant] if args.model_variant else ['baseline', 'advanced']
     
     print("🔍 Getting latest runs...")
     

@@ -42,7 +42,7 @@ spec:
       - name: model-variant
         value: baseline  # Default value, can be overridden by the sensor
     container:
-      image: jtayl22/financial-predictor:latest
+      image: harbor.test/library/financial-predictor:baseline-v2
       command: ["python", "src/train_pytorch_model.py"]
       env:
       - name: MODEL_VARIANT

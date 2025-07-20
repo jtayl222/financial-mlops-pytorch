@@ -28,12 +28,9 @@ spec:
           memory: 256Mi
 
   volumes:
-  - name: financial-historical-data-pvc
+  - name: shared-data-pvc
     persistentVolumeClaim:
-      claimName: financial-historical-data-pvc
-  - name: financial-features-pvc
-    persistentVolumeClaim:
-      claimName: financial-features-pvc
+      claimName: shared-data-pvc
   - name: shared-artifacts-pvc
     persistentVolumeClaim:
       claimName: shared-artifacts-pvc
@@ -54,9 +51,9 @@ spec:
       - name: MLFLOW_TRACKING_URI
         value: "http://mlflow.mlflow.svc.cluster.local:5000"
       - name: PROCESSED_DATA_DIR
-        value: "/mnt/financial-data/processed"
+        value: "/mnt/shared-data/processed"
       - name: SCALER_DIR
-        value: "/mnt/financial-features/scalers"
+        value: "/mnt/shared-artifacts/scalers"
       - name: MODEL_SAVE_DIR
         value: "/mnt/shared-artifacts/models"
       - name: EPOCHS
@@ -77,10 +74,8 @@ spec:
         - secretRef:
             name: ml-platform
       volumeMounts:
-        - name: financial-historical-data-pvc
-          mountPath: /mnt/financial-data
-        - name: financial-features-pvc
-          mountPath: /mnt/financial-features
+        - name: shared-data-pvc
+          mountPath: /mnt/shared-data
         - name: shared-artifacts-pvc
           mountPath: /mnt/shared-artifacts
       resources:
