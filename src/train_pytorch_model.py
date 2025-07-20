@@ -15,6 +15,7 @@ from sklearn.utils.class_weight import compute_class_weight
 
 # Import the model definition from models.py
 from models import StockPredictor
+from device_utils import get_device
 # Define compatible dataset class for loading saved PyTorch datasets
 class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
     """Dataset compatible with processed PyTorch datasets"""
@@ -178,8 +179,8 @@ def evaluate_test_set(model, test_dataset, batch_size):
     
     with torch.no_grad():
         for batch_idx, (features, targets) in enumerate(test_dataloader):
-            features = features.to(DEVICE)
-            targets = targets.to(DEVICE).float().unsqueeze(1)
+            features = features.to(device)
+            targets = targets.to(device).float().unsqueeze(1)
             
             # Check for NaN in test data
             if torch.isnan(features).any() or torch.isnan(targets).any():
@@ -273,7 +274,8 @@ def train_model(
         optimizer: torch.optim.Optimizer,
         criterion: nn.Module,
         epochs: int,
-        train_targets: np.ndarray
+        train_targets: np.ndarray,
+        device: torch.device
 ):
     """
     Trains and validates the PyTorch model with detailed epoch-by-epoch progress.
@@ -282,7 +284,7 @@ def train_model(
     # Compute class weights for imbalanced dataset handling
     unique_classes = np.unique(train_targets)
     class_weights = compute_class_weight('balanced', classes=unique_classes, y=train_targets)
-    class_weight_tensor = torch.FloatTensor([class_weights[1]]).to(DEVICE)  # Weight for positive class
+    class_weight_tensor = torch.FloatTensor([class_weights[1]]).to(device)  # Weight for positive class
     
     # Update criterion with class weights
     criterion = nn.BCEWithLogitsLoss(pos_weight=class_weight_tensor)
@@ -313,8 +315,8 @@ def train_model(
         
         for batch_idx, (features, targets) in enumerate(train_dataloader):
             # Ensure proper tensor shapes and types
-            features = features.to(DEVICE)
-            targets = targets.to(DEVICE).float().unsqueeze(1)
+            features = features.to(device)
+            targets = targets.to(device).float().unsqueeze(1)
 
             # Check for NaN in input data
             if torch.isnan(features).any() or torch.isnan(targets).any():
@@ -602,7 +604,8 @@ def run_training_pipeline():
             optimizer,
             criterion,
             EPOCHS,
-            train_targets
+            train_targets,
+            DEVICE
         )
         
         training_duration = time.time() - training_start_time
