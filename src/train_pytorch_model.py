@@ -469,7 +469,7 @@ def export_onnx_model(model, sample_input, model_save_dir, model_variant):
 
 
 def run_training_pipeline():
-    global INPUT_SIZE  # Declare global before any use
+    global INPUT_SIZE, SEQUENCE_LENGTH  # Declare global before any use
     
     start_time = datetime.now()
     logging.info("=" * 100)
