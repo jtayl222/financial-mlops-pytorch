@@ -15,7 +15,7 @@ from sklearn.utils.class_weight import compute_class_weight
 
 # Import the model definition from models.py
 from models import StockPredictor
-from feature_engineering_pytorch import FinancialTimeSeriesDataset, SEQUENCE_LENGTH  # Re-use the Dataset class
+from feature_engineering_pytorch import FinancialTimeSeriesDataset  # Re-use the Dataset class
 
 # Configure logging with more detailed format
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()

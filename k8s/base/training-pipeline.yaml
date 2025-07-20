@@ -42,8 +42,18 @@ spec:
       - name: model-variant
         value: baseline  # Default value, can be overridden by the sensor
     container:
-      image: harbor.test/library/financial-predictor:baseline-v2
-      command: ["python", "src/train_pytorch_model.py"]
+      image: harbor.test/library/financial-predictor:baseline-v3
+      command: 
+      - sh
+      - -c
+      - |
+        if [ "{{inputs.parameters.model-variant}}" = "advanced" ]; then
+          echo "Training advanced model..."
+          python src/advanced_financial_model_v2.py
+        else
+          echo "Training baseline model..."
+          python src/train_pytorch_model.py
+        fi
       env:
       - name: MODEL_VARIANT
         value: "{{inputs.parameters.model-variant}}"
