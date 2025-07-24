@@ -1,0 +1,59 @@
+{
+  "feature_engineering": {
+    "type": "AdvancedFeaturesShapeContract",
+    "selected_tickers": [
+      "IBB",
+      "XBI",
+      "SPY",
+      "QQQ",
+      "XLV",
+      "MRNA"
+    ],
+    "features_per_ticker": 33,
+    "market_features": 7,
+    "total_features": 205
+  },
+  "model_architecture": {
+    "type": "EnhancedFinancialLSTM",
+    "input_size": 205,
+    "hidden_size": 128,
+    "num_layers": 3,
+    "dropout_prob": 0.3,
+    "multi_scale": true,
+    "attention": true
+  },
+  "training_strategy": {
+    "optimizer_config": {
+      "type": "AdamW",
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "betas": [
+        0.9,
+        0.999
+      ]
+    },
+    "scheduler_config": {
+      "type": "CosineAnnealingWarmRestarts",
+      "T_0": 20,
+      "T_mult": 2,
+      "eta_min": 1e-06
+    },
+    "training_config": {
+      "batch_size": 32,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "gradient_clip_value": 0.5,
+      "label_smoothing": 0.1
+    }
+  },
+  "expected_performance": {
+    "baseline": 0.527,
+    "target": 0.8,
+    "improvement": "+52.6%"
+  },
+  "shape_contract": {
+    "sequence_length": 10,
+    "n_features": 205,
+    "compliant": true
+  }
+}

@@ -26,3 +26,11 @@ loguru
 
 boto3  # If using AWS S3 for storage
 onnx   # For ONNX model export and inference
+
+seaborn
+ta-lib
+
+# For A/B testing and market-aware features
+matplotlib
+requests
+beautifulsoup4

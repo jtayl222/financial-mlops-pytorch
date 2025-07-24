@@ -1,0 +1,9 @@
+{
+  "model_a": {
+    "model": "Multi-scale Dual LSTM",
+    "accuracy": 0.5078534031413613,
+    "precision": 0.5078534031413613,
+    "recall": 1.0,
+    "f1_score": 0.6736111111111112,
+    "test_samples": 191,
+    "up_prediction_rate": 

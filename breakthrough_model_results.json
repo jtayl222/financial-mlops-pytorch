@@ -1,0 +1,41 @@
+{
+  "model_variant": "breakthrough_financial_v1",
+  "test_accuracy": 0.4973821989528796,
+  "test_precision": 0.5036496350364964,
+  "test_recall": 0.711340206185567,
+  "test_f1_score": 0.5897435897435898,
+  "best_val_accuracy": 0.49206349206349204,
+  "best_val_f1": 0.5897435897435898,
+  "total_parameters": 56737,
+  "input_features": 33,
+  "sequence_length": 15,
+  "architecture_inspiration": "90.2_percent_model",
+  "key_innovations": [
+    "Multi-scale dual LSTM processing",
+    "15-step sequences (vs 10)",
+    "33 selected financial features",
+    "Layer normalization",
+    "Cosine annealing scheduler",
+    "Gradient clipping",
+    "BCEWithLogitsLoss with pos_weight"
+  ],
+  "probability_analysis": {
+    "mean": 0.4979553520679474,
+    "std": 0.010172475129365921,
+    "up_prediction_rate": 0.717277467250824
+  },
+  "training_config": {
+    "model_variant": "breakthrough_financial",
+    "hidden_size": 96,
+    "num_layers": 2,
+    "dropout_prob": 0.3,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "epochs": 100,
+    "patience": 15,
+    "sequence_length": 15,
+    "input_features": 33
+  },
+  "timestamp": "2025-07-20T17:11:23.677760"
+}

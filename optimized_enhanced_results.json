@@ -1,0 +1,20 @@
+{
+  "model_variant": "optimized_enhanced_v1",
+  "test_accuracy": 0.5078534031413613,
+  "test_precision": 0.5078534031413613,
+  "test_recall": 1.0,
+  "test_f1_score": 0.6736111111111112,
+  "best_val_accuracy": 0.5502645502645502,
+  "best_val_f1": 0.7058823529411765,
+  "total_parameters": 56235,
+  "input_features": 10,
+  "improvements": [
+    "Feature selection (205 \u2192 100)",
+    "Reduced model capacity (225k \u2192 ~15k params)",
+    "Focal Loss for class imbalance",
+    "OneCycle learning rate schedule",
+    "Enhanced regularization",
+    "Data augmentation with noise"
+  ],
+  "probability_analysis": {
+    "mean": 

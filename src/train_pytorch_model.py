@@ -21,8 +21,8 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
     """Dataset compatible with processed PyTorch datasets"""
     
     def __init__(self, sequences, targets):
-        self.sequences = sequences
-        self.targets = targets
+        self.sequences = torch.tensor(sequences, dtype=torch.float32)
+        self.targets = torch.tensor(targets, dtype=torch.float32)
     
     def __len__(self):
         return len(self.sequences)
@@ -97,40 +97,59 @@ if os.environ.get("MLFLOW_TRACKING_URI"):
 
 # --- Functions ---
 def load_processed_data(data_dir: str):
-    """Loads processed PyTorch datasets (compatible with advanced model format)."""
+    """Loads processed sequence data following shape contract."""
     try:
-        # Load PyTorch datasets directly from current pipeline output
-        train_dataset = torch.load(os.path.join(data_dir, 'train_dataset.pt'), weights_only=False)
-        val_dataset = torch.load(os.path.join(data_dir, 'validation_dataset.pt'), weights_only=False)
-        test_dataset = torch.load(os.path.join(data_dir, 'test_dataset.pt'), weights_only=False)
+        # Load shape contract metadata
+        import json
+        metadata_path = os.path.join(data_dir, 'shape_contract_metadata.json')
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+            logging.info(f"Loaded shape contract: {metadata}")
+        else:
+            # Fallback metadata
+            metadata = {'sequence_length': 10, 'n_features': 205, 'input_shape': [10, 205]}
+            logging.warning("Shape contract metadata not found, using defaults")
         
-        logging.info("Successfully loaded PyTorch processed datasets.")
-        logging.info(f"Training dataset length: {len(train_dataset)}")
-        logging.info(f"Validation dataset length: {len(val_dataset)}")
-        logging.info(f"Test dataset length: {len(test_dataset)}")
+        # Load sequence arrays following shape contract
+        train_sequences = np.load(os.path.join(data_dir, 'train_sequences.npy'))
+        train_targets = np.load(os.path.join(data_dir, 'train_sequence_targets.npy'))
+        val_sequences = np.load(os.path.join(data_dir, 'val_sequences.npy'))
+        val_targets = np.load(os.path.join(data_dir, 'val_sequence_targets.npy'))
+        test_sequences = np.load(os.path.join(data_dir, 'test_sequences.npy'))
+        test_targets = np.load(os.path.join(data_dir, 'test_sequence_targets.npy'))
         
-        # Get sample to determine input dimensions
+        # Create PyTorch datasets
+        train_dataset = FinancialTimeSeriesDataset(train_sequences, train_targets)
+        val_dataset = FinancialTimeSeriesDataset(val_sequences, val_targets)
+        test_dataset = FinancialTimeSeriesDataset(test_sequences, test_targets)
+        
+        logging.info("Successfully loaded sequence datasets following shape contract.")
+        logging.info(f"Training dataset: {len(train_dataset)} sequences")
+        logging.info(f"Validation dataset: {len(val_dataset)} sequences")
+        logging.info(f"Test dataset: {len(test_dataset)} sequences")
+        
+        # Verify shape contract compliance
         sample_features, sample_target = train_dataset[0]
-        if len(sample_features.shape) == 2:  # (sequence_length, n_features)
-            sequence_length = sample_features.shape[0]
-            n_features = sample_features.shape[1]
-        else:  # (n_features,) - flattened case
-            sequence_length = 10  # default
-            n_features = sample_features.shape[0]
+        expected_shape = (metadata['sequence_length'], metadata['n_features'])
+        actual_shape = sample_features.shape
         
-        logging.info(f"Sample input shape: {sample_features.shape}")
-        logging.info(f"Detected input_size: {n_features}, sequence_length: {sequence_length}")
-        
+        if actual_shape == expected_shape:
+            logging.info(f"✅ Shape contract verified: {actual_shape}")
+        else:
+            logging.error(f"❌ Shape contract violation: expected {expected_shape}, got {actual_shape}")
+            
         return {
             'train_dataset': train_dataset,
             'val_dataset': val_dataset, 
             'test_dataset': test_dataset,
-            'input_size': n_features,
-            'sequence_length': sequence_length
+            'input_size': metadata['n_features'],
+            'sequence_length': metadata['sequence_length'],
+            'metadata': metadata
         }
     except FileNotFoundError as e:
         logging.error(
-            f"Missing processed data files in {data_dir}. Expected PyTorch format (.pt files). Error: {e}")
+            f"Missing processed sequence files in {data_dir}. Expected sequence format (.npy files). Error: {e}")
         exit(1)
 
 
@@ -289,7 +308,10 @@ def train_model(
     # Update criterion with class weights
     criterion = nn.BCEWithLogitsLoss(pos_weight=class_weight_tensor)
     
-    logging.info(f"Class distribution: {np.bincount(train_targets.astype(int))}")
+    # Safe bincount with explicit validation
+    safe_targets = np.maximum(train_targets.astype(int), 0)  # Ensure no negative values
+    logging.info(f"Class distribution: {np.bincount(safe_targets)}")
+    logging.info(f"Target stats: min={train_targets.min()}, max={train_targets.max()}, mean={train_targets.mean():.3f}")
     logging.info(f"Applied class weight for positive class: {class_weight_tensor.item():.4f}")
     
     best_val_loss = float('inf')
@@ -376,8 +398,8 @@ def train_model(
 
         with torch.no_grad():
             for batch_idx, (features, targets) in enumerate(val_dataloader):
-                features = features.to(DEVICE)
-                targets = targets.to(DEVICE).float().unsqueeze(1)
+                features = features.to(device)
+                targets = targets.to(device).float().unsqueeze(1)
                 
                 # Check for NaN in validation data
                 if torch.isnan(features).any() or torch.isnan(targets).any():
@@ -541,10 +563,11 @@ def run_training_pipeline():
         
         # Extract targets for class weight computation
         # Handle both tensor and numpy array targets robustly
-        if hasattr(train_dataset.targets, 'numpy'):
+        if hasattr(train_dataset.targets, 'detach'):
+            # PyTorch tensor - handle requires_grad case
+            train_targets = train_dataset.targets.detach().cpu().numpy().flatten()
+        elif hasattr(train_dataset.targets, 'numpy'):
             train_targets = train_dataset.targets.numpy().flatten()
-        elif hasattr(train_dataset.targets, 'cpu'):
-            train_targets = train_dataset.targets.cpu().numpy().flatten()
         else:
             train_targets = np.array(train_dataset.targets).flatten()
         

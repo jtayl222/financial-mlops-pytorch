@@ -1,0 +1,22 @@
+{
+  "baseline": {
+    "accuracy": 0.5039795338260376,
+    "precision": 0.2539953705155101,
+    "recall": 0.5039795338260376,
+    "f1_score": 0.33776439745740483,
+    "n_samples": 3518
+  },
+  "advanced": {
+    "accuracy": 0.5039795338260376,
+    "precision": 0.2539953705155101,
+    "recall": 0.5039795338260376,
+    "f1_score": 0.33776439745740483,
+    "n_samples": 3518
+  },
+  "comparison": {
+    "accuracy_diff": 0.0,
+    "precision_diff": 0.0,
+    "recall_diff": 0.0,
+    "f1_diff": 0.0
+  }
+}

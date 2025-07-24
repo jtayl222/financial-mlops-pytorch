@@ -1,0 +1,27 @@
+{
+  "model_variant": "simple_902_evaluated",
+  "test_accuracy": 0.5380952380952381,
+  "test_precision": 0.5567010309278351,
+  "test_recall": 0.5,
+  "test_f1_score": 0.526829268292683,
+  "total_parameters": 63649,
+  "input_features": 51,
+  "tickers": [
+    "IBB",
+    "XBI",
+    "XLV"
+  ],
+  "approach": "simple_902_biotech_focus",
+  "probability_analysis": {
+    "mean": 0.5000531077384949,
+    "std": 0.17438623309135437,
+    "up_prediction_rate": 0.46190476417541504
+  },
+  "status": "still_random",
+  "comparison": {
+    "complex_enhanced": 0.492,
+    "optimized": 0.508,
+    "breakthrough": 0.497,
+    "simple_902": 0.5380952380952381
+  }
+}

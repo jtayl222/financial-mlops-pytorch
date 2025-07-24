@@ -109,8 +109,8 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
     """Dataset compatible with processed PyTorch datasets"""
     
     def __init__(self, sequences, targets):
-        self.sequences = sequences
-        self.targets = targets
+        self.sequences = torch.tensor(sequences, dtype=torch.float32)
+        self.targets = torch.tensor(targets, dtype=torch.float32)
     
     def __len__(self):
         return len(self.sequences)
@@ -119,54 +119,65 @@ class FinancialTimeSeriesDataset(torch.utils.data.Dataset):
         return self.sequences[idx], self.targets[idx]
 
 def load_processed_datasets(processed_data_dir):
-    """Load the processed datasets - use PyTorch format from current pipeline"""
+    """Load processed sequence data following shape contract (same as baseline)"""
     
-    logging.info(f"Loading processed data from {processed_data_dir}")
+    logging.info(f"Loading processed sequence data from {processed_data_dir}")
     
     try:
-        # Load PyTorch datasets directly from current pipeline output
-        train_dataset = torch.load(os.path.join(processed_data_dir, 'train_dataset.pt'), weights_only=False)
-        val_dataset = torch.load(os.path.join(processed_data_dir, 'validation_dataset.pt'), weights_only=False)
-        test_dataset = torch.load(os.path.join(processed_data_dir, 'test_dataset.pt'), weights_only=False)
-        
-        # Load metadata if available, otherwise create empty dict
-        metadata_path = os.path.join(processed_data_dir, 'metadata.pkl')
+        # Load shape contract metadata (same format as baseline)
+        import json
+        metadata_path = os.path.join(processed_data_dir, 'shape_contract_metadata.json')
         if os.path.exists(metadata_path):
-            with open(metadata_path, 'rb') as f:
-                metadata = pickle.load(f)
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+            logging.info(f"Loaded shape contract: {metadata}")
         else:
-            logging.warning("No metadata.pkl found, creating basic metadata from data")
-            metadata = {}
+            # Fallback metadata
+            metadata = {'sequence_length': 10, 'n_features': 205, 'input_shape': [10, 205]}
+            logging.warning("Shape contract metadata not found, using defaults")
         
-        logging.info("Successfully loaded PyTorch processed datasets.")
-        logging.info(f"Training dataset length: {len(train_dataset)}")
-        logging.info(f"Validation dataset length: {len(val_dataset)}")
-        logging.info(f"Test dataset length: {len(test_dataset)}")
+        # Load sequence arrays (same as baseline)
+        train_sequences = np.load(os.path.join(processed_data_dir, 'train_sequences.npy'))
+        train_targets = np.load(os.path.join(processed_data_dir, 'train_sequence_targets.npy'))
+        val_sequences = np.load(os.path.join(processed_data_dir, 'val_sequences.npy'))
+        val_targets = np.load(os.path.join(processed_data_dir, 'val_sequence_targets.npy'))
+        test_sequences = np.load(os.path.join(processed_data_dir, 'test_sequences.npy'))
+        test_targets = np.load(os.path.join(processed_data_dir, 'test_sequence_targets.npy'))
         
-        # Get sample to determine input dimensions and create metadata
+        # Create datasets (same as baseline)
+        train_dataset = FinancialTimeSeriesDataset(train_sequences, train_targets)
+        val_dataset = FinancialTimeSeriesDataset(val_sequences, val_targets)
+        test_dataset = FinancialTimeSeriesDataset(test_sequences, test_targets)
+        
+        logging.info("Successfully loaded sequence datasets following shape contract.")
+        logging.info(f"Training dataset: {len(train_dataset)} sequences")
+        logging.info(f"Validation dataset: {len(val_dataset)} sequences")
+        logging.info(f"Test dataset: {len(test_dataset)} sequences")
+        
+        # Verify shape contract compliance (same as baseline)
         sample_features, sample_target = train_dataset[0]
-        if len(sample_features.shape) == 2:  # (sequence_length, n_features)
-            sequence_length = sample_features.shape[0]
-            n_features = sample_features.shape[1]
-        else:  # (n_features,) - flattened case
-            sequence_length = 10  # default
-            n_features = sample_features.shape[0]
+        expected_shape = (metadata['sequence_length'], metadata['n_features'])
+        actual_shape = sample_features.shape
         
-        # Create or update metadata with actual dimensions
-        if metadata is None:
-            metadata = {}
+        if actual_shape == expected_shape:
+            logging.info(f"✅ Shape contract verified: {actual_shape}")
+        else:
+            logging.error(f"❌ Shape contract violation: expected {expected_shape}, got {actual_shape}")
         
-        metadata.update({
-            'n_features': n_features,
-            'sequence_length': sequence_length,
-            'input_size': n_features,
+        # Return metadata in advanced model format
+        advanced_metadata = {
+            'n_features': metadata['n_features'],
+            'sequence_length': metadata['sequence_length'],
+            'input_size': metadata['n_features'],
             'train_size': len(train_dataset),
             'val_size': len(val_dataset),
-            'test_size': len(test_dataset)
-        })
+            'test_size': len(test_dataset),
+            'ticker_names': ['multi-ticker-shape-contract'],
+            'feature_engineering': 'shape_contract_compliant'
+        }
         
-        logging.info(f"Dataset metadata: {metadata}")
-        return train_dataset, val_dataset, test_dataset, metadata
+        logging.info(f"Advanced model metadata: {advanced_metadata}")
+        return train_dataset, val_dataset, test_dataset, advanced_metadata
         
     except FileNotFoundError as e:
         logging.error(f"Missing processed data files in {processed_data_dir}. Error: {e}")
